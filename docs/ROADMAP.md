@@ -1,6 +1,6 @@
 # Hoja de ruta
 
-Versión operativa de `Planning Claude.docx`. Claude la lee al inicio de cada sesión y marca las casillas al terminar cada tarea.
+Plan del proyecto. Claude la lee al inicio de cada sesión y marca las casillas al terminar cada tarea.
 
 Etiquetas: **[C]** lo hace Claude solo · **[T]** requiere al usuario (cuentas, claves, revisión) · **[J]** Claude propone o pregunta, el usuario aprueba.
 🛑 = punto de control: Claude se detiene y espera el OK del usuario.
@@ -11,7 +11,7 @@ Etiquetas: **[C]** lo hace Claude solo · **[T]** requiere al usuario (cuentas, 
 2. Hacer seguidas las tareas [C] de la fase activa, en orden. Por cada tarea: implementar → `npm run check` → commit → marcar `[x]` aquí.
 3. Parar en la primera tarea [T], [J] o 🛑: decir al usuario exactamente qué necesita hacer o decidir.
 4. No empezar una fase hasta cerrar todas las casillas de la anterior.
-5. Al cerrar una fase: marcarla también en `Planning Claude.docx` (☐ → ☒), hacer push y recomendar `/clear`.
+5. Al cerrar una fase: hacer push y recomendar `/clear`.
 6. Nunca: subir secretos, usar `service_role` en el cliente, fusionar en `main` con la CI en rojo o tocar la base de datos de producción sin migración.
 
 ## Fase 0 · Cimientos ✅

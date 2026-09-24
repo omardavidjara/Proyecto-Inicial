@@ -13,4 +13,3 @@ npm run check    # lint + tipos + tests
 ## Documentación
 
 - Hoja de ruta: [docs/ROADMAP.md](docs/ROADMAP.md)
-- Plan original: `Planning Claude.docx`

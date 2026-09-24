@@ -7,7 +7,6 @@ Qué hace y para quién: ver `docs/SPEC.md` (aún pendiente, Fase 1).
 
 ## Hoja de ruta
 Sigue `docs/ROADMAP.md` y su protocolo de sesión. Si el usuario dice "continúa", toma la siguiente tarea abierta.
-El plan de referencia del usuario es `Planning Claude.docx`: actualiza sus casillas al cerrar cada fase.
 
 ## Stack
 Next.js 16 (App Router) + TypeScript · Tailwind v4 + shadcn/ui · Supabase (Postgres, Auth, RLS) · Vitest · GitHub + Vercel · Capacitor
