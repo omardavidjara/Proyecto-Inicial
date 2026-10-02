@@ -29,7 +29,7 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [x] [J] Entrevista al usuario → `docs/SPEC.md` (qué hace, usuarios, pantallas, datos)
 - [x] [J] Qué necesita el móvil: notificaciones, cámara, uso sin conexión… (define el alcance de la Fase 8)
 - [x] [C] `docs/ARCHITECTURE.md`: tablas en Neon, relaciones, rutas, permisos y cómo se enlazan los usuarios de Neon Auth (`user_id`) con los datos
-- [ ] [C] Índices, paginación y reparto servidor/cliente
+- [x] [C] Índices, paginación y reparto servidor/cliente
 - [ ] 🛑 [T] Revisar y corregir SPEC y ARCHITECTURE
 
 ## Fase 2 · Sistema de diseño y PWA

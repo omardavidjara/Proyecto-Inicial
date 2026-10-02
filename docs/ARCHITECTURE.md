@@ -45,7 +45,7 @@ Convenciones: `id uuid` (default `gen_random_uuid()`), `created_at`/`updated_at 
 | user_id | text PK, FK → neon_auth.user.id | |
 | full_name | text | |
 | phone | text null | |
-| avatar_url | text null | foto de perfil (almacenamiento: ver §8) |
+| avatar_url | text null | foto de perfil (almacenamiento: ver §11) |
 | role | enum `developer \| admin \| coach \| client` | default `client` |
 | status | enum `pending \| active \| inactive` | default `pending` |
 | approved_at, deactivated_at | timestamptz null | |
@@ -221,7 +221,47 @@ lib/validation/ esquemas Zod
 __tests__/      tests
 ```
 
-## 8. Decisiones pendientes para fases posteriores
+## 8. Índices
+
+Además de las PK y los únicos ya citados (en Postgres las FK **no** crean índice solas):
+
+| Tabla | Índice | Para |
+|---|---|---|
+| sessions | `(starts_at)` | calendario y agenda por rango de fechas |
+| sessions | `(coach_id, starts_at)` | "Mis clases" del entrenador |
+| bookings | `(session_id, status)` | ocupación y asistentes de una sesión |
+| bookings | `(session_id, waitlisted_at) where status = 'waitlisted'` | siguiente de la lista de espera |
+| bookings | `(user_id, created_at desc)` | mis reservas / ficha de cliente |
+| memberships | `(user_id, starts_on desc)` | tarifa vigente |
+| profiles | `(status, role)` | altas pendientes, filtros de clientes |
+| profiles | `gin (full_name gin_trgm_ops)` (extensión `pg_trgm`) | búsqueda de clientes por nombre |
+| incidents | `(status, created_at desc)` | lista de incidencias |
+| incidents | `(user_id)`, `(session_id)` | incidencias en ficha de cliente / sesión |
+| announcements | `(published_at desc)` | avisos |
+| push_devices | `(user_id)` | envío de notificaciones |
+
+El cupo de la tarifa se calcula con `bookings` unido a `sessions` por rango de `starts_at` del periodo; con los índices anteriores es una consulta acotada (un cliente tiene pocas reservas por mes). Si crece, se añade un índice `(user_id, status)`.
+
+## 9. Paginación
+
+| Lista | Estrategia |
+|---|---|
+| Calendario, agenda día/semana/mes, "Mis clases" | **Sin paginar**: se consulta un rango de fechas acotado (`fecha`, `vista`) |
+| Clientes, incidencias, historial de reservas, avisos | **Por cursor** (keyset) sobre `(created_at, id)` o `(full_name, user_id)`, 20 por página, botón "Cargar más". Nada de `OFFSET` |
+| Asistentes y lista de espera de una sesión | Sin paginar (limitado por el aforo) |
+
+Los filtros y la página viven en la URL (`searchParams`), así se pueden compartir y el botón atrás funciona.
+
+## 10. Reparto servidor / cliente
+
+- **Por defecto, Server Components**: páginas y listas se renderizan en el servidor con datos de `lib/dal.ts`. No hay API REST interna ni `fetch` desde el navegador a la base de datos.
+- **Client Components** (`'use client'`) solo para interacción: selector de día/semana del calendario, botones de reservar/anular (con `useOptimistic` y estado pendiente), formularios con validación inmediata, diálogos, menús, cambio de vista.
+- Los Client Components reciben **DTOs** mínimos (solo los campos necesarios); nunca objetos completos de la base de datos ni datos de otros usuarios.
+- **Mutaciones** → Server Actions → Zod → `lib/dal.ts` → `revalidatePath`/`refresh` de la ruta afectada.
+- `db/` y `lib/dal.ts` importan `server-only` para que el build falle si alguien los usa desde el cliente.
+- Tareas periódicas (generar sesiones, recordatorios) → Vercel Cron, nunca en el cliente.
+
+## 11. Decisiones pendientes para fases posteriores
 
 - **Fotos de perfil**: almacenamiento (Vercel Blob propuesto) → Fase 5, al implementar F1.
 - **Push**: Web Push (PWA) y FCM/APNs vía Capacitor → Fase 8; la tabla `push_devices` sirve para ambos.
