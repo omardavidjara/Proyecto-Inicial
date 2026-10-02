@@ -24,13 +24,20 @@ Modo claro y oscuro según el sistema (`prefers-color-scheme`). Todos los pares 
 | `muted` | Fondos secundarios, selector de día | `#f4f4f5` | `#27272a` |
 | `muted-foreground` | Texto secundario (horas, metadatos) | `#52525b` (zinc-600) | `#a1a1aa` (zinc-400) |
 | `border` / `input` | Bordes y campos | `#e4e4e7` | `#3f3f46` |
-| `primary` | Acción principal, día seleccionado, pestaña activa | `#c2410c` (naranja Athlos) | `#f97316` |
+| `brand` | Naranja del logo: decoración, ilustraciones, nunca texto pequeño sobre blanco | `#c4713e` | `#c4713e` |
+| `primary` | Acción principal, día seleccionado, pestaña activa | `#a85a2c` (naranja Athlos oscuro) | `#e0915c` |
 | `primary-foreground` | Texto sobre `primary` | `#ffffff` | `#0b0b0c` |
 | `secondary` | Botones secundarios | `#f4f4f5` | `#27272a` |
 | `destructive` | Anular, dar de baja, eliminar | `#b91c1c` | `#f87171` |
-| `ring` | Anillo de foco | `#c2410c` | `#fb923c` |
+| `ring` | Anillo de foco | `#a85a2c` | `#e0915c` |
 
-El naranja es la marca provisional; el tono exacto se ajustará cuando haya logo. `#c2410c` sobre blanco da 5,2:1; en oscuro el texto sobre `#f97316` es casi negro (7,0:1).
+El naranja sale del logo de Athlos Centro Deportivo (`#c4713e`, terracota). Sobre blanco solo da 3,6:1, insuficiente para texto, así que la acción principal usa el mismo tono oscurecido: `#a85a2c` con texto blanco da 5,0:1. En oscuro se aclara a `#e0915c` con texto casi negro (7,9:1).
+
+### 2.1.1 Logo
+
+- Original: `public/logo.png` (círculo recortado, fondo transparente). Fuente: imagen de WhatsApp de 755 px; **para las tiendas (icono de 1024 px) hará falta el original en alta resolución o vectorial**.
+- Iconos generados: `app/icon.png` (favicon), `app/apple-icon.png` (iOS, sobre `#18181b`), `public/icons/icon-{192,512}.png` (PWA) y `public/icons/icon-maskable-{192,512}.png` (Android, logo dentro de la zona segura sobre `#18181b`).
+- En la app el logo aparece solo en login, registro y cabecera; nunca a menos de 32 px (el texto "Centro deportivo" deja de leerse por debajo de 96 px).
 
 ### 2.2 Estados de sesión y reserva
 
@@ -51,7 +58,7 @@ El administrador elige el color de cada tipo de clase de una **paleta fija de 8*
 
 | Clave | Claro | Oscuro |
 |---|---|---|
-| `orange` | `#ea580c` | `#fb923c` |
+| `orange` | `#c4713e` | `#e0915c` |
 | `red` | `#dc2626` | `#f87171` |
 | `amber` | `#d97706` | `#fbbf24` |
 | `green` | `#16a34a` | `#4ade80` |
