@@ -76,7 +76,7 @@ En base de datos se guarda la **clave** (`class_types.color = 'teal'`), no el he
 
 | Estilo | Clase Tailwind | Uso |
 |---|---|---|
-| Título de pantalla | `text-2xl font-semibold tracking-tight` | Uno por pantalla, en la cabecera |
+| Título de pantalla | `text-xl font-semibold tracking-tight` | Uno por pantalla (`h1`), en la cabecera fija de 56 px |
 | Título de sección | `text-lg font-semibold` | "Próximas", "Historial" |
 | Cuerpo | `text-base` | Texto general, campos |
 | Secundario | `text-sm text-muted-foreground` | Entrenador, duración, metadatos |
@@ -115,7 +115,7 @@ Formato de fechas y horas: `es-ES`, 24 h, en la zona horaria del gimnasio. "lun 
 
 ## 7. Componentes base (shadcn/ui)
 
-Viven en `components/ui/` (generados con la CLI de shadcn y adaptables). Componentes propios de la app en `components/`.
+Viven en `components/ui/` (generados con la CLI de shadcn y adaptables). Componentes propios de la app en `components/`. El marco de pantalla es `components/app-shell/`: `AppShell` (navegación del rol) y `Page` (cabecera con título, "Volver" y acciones; `wide` para admin).
 
 | Componente | Variantes / notas |
 |---|---|
