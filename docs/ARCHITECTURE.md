@@ -47,6 +47,7 @@ Convenciones: `id uuid` (default `gen_random_uuid()`), `created_at`/`updated_at 
 | phone | text null | |
 | avatar_url | text null | foto de perfil (almacenamiento: ver §11) |
 | role | enum `developer \| admin \| coach \| client` | default `client` |
+| is_coach | boolean | default `false`. `true` en todo `coach`; un `admin`/`developer` con `true` también imparte clases |
 | status | enum `pending \| active \| inactive` | default `pending` |
 | approved_at, deactivated_at | timestamptz null | |
 
@@ -59,7 +60,6 @@ Convenciones: `id uuid` (default `gen_random_uuid()`), `created_at`/`updated_at 
 | booking_window_days | int | 7 |
 | cancel_deadline_minutes | int | 120 |
 | reminder_minutes | int | 120 |
-| late_cancel_consumes | boolean | true |
 
 ### `class_types`
 id, name, kind enum `group | individual`, duration_minutes, default_capacity, color, is_active.
@@ -92,6 +92,8 @@ id, class_type_id → class_types, weekday (0 = lunes … 6), start_time (`time`
 | created_by | FK → profiles | el propio cliente o un admin |
 | waitlisted_at | timestamptz null | orden de la lista de espera |
 | cancelled_at | timestamptz null | |
+| late_cancel_charged | boolean null | solo en `late_cancelled`: `null` = pendiente de decidir, `true` = se descuenta, `false` = no |
+| late_cancel_decided_by | FK → profiles null | administrador que decidió |
 
 Único parcial `(session_id, user_id) where status in ('confirmed','waitlisted')`: un cliente no puede tener dos reservas vivas en la misma sesión.
 
@@ -119,7 +121,7 @@ neon_auth.user 1─1 profiles 1─* bookings *─1 sessions *─1 class_types
                     │  1─* memberships *─1 plans          │ *─1 schedule_slots *─1 class_types
                     │  1─* incidents (user / created_by / assigned_to)
                     │  1─* push_devices
-                    └─ coach_id en sessions y schedule_slots
+                    └─ coach_id en sessions y schedule_slots (perfil con is_coach = true)
 ```
 
 ## 4. Reglas de negocio en el servidor
@@ -129,10 +131,10 @@ Todas en `lib/booking.ts` (funciones puras testeables) + una transacción en la 
 **Reservar** (transacción):
 1. `SELECT … FROM sessions WHERE id = $1 FOR UPDATE` (bloquea la sesión → no hay sobreventa con reservas simultáneas).
 2. Comprobar: perfil `active`, sesión `scheduled`, `now()` dentro de la ventana (`starts_at - booking_window_days` … `starts_at`), sin reserva viva previa.
-3. Comprobar cupo de la tarifa: reservas `confirmed`, `late_cancelled` (si consume) y `no_show` del periodo (semana ISO o mes natural de la sesión) < `classes_per_period`.
+3. Comprobar cupo de la tarifa: reservas `confirmed`, `late_cancelled` con `late_cancel_charged = true` y `no_show` del periodo (semana de lunes a domingo o mes natural de la sesión) < `classes_per_period`.
 4. Si hay plaza → `confirmed`; si no → `waitlisted` (sin consumir cupo).
 
-**Anular**: si faltan ≥ `cancel_deadline_minutes` → `cancelled`; si no → `late_cancelled`. Después, **promover** de la lista de espera (misma transacción): el primer `waitlisted` por `waitlisted_at` cuya tarifa lo permita pasa a `confirmed` → notificación.
+**Anular**: si faltan ≥ `cancel_deadline_minutes` → `cancelled`; si no → `late_cancelled` con `late_cancel_charged = null` (pendiente). Un administrador decide después `true`/`false`; mientras sea `null` no descuenta. Después, **promover** de la lista de espera (misma transacción): el primer `waitlisted` por `waitlisted_at` cuya tarifa lo permita pasa a `confirmed` → notificación.
 
 **Modificar** = anular + reservar la nueva sesión en una sola transacción; si la nueva falla, no se anula la antigua.
 
@@ -156,11 +158,12 @@ app/
   (client)/reservas                Mis reservas
   (client)/avisos                  Avisos
   (client)/perfil                  Perfil
-  entrenador/                      Mis clases
+  entrenador/                      Mis clases (cualquier perfil con is_coach)
   entrenador/sesiones/[sessionId]  Asistentes + marcar asistencia
   admin/                           Hoy
   admin/agenda                     ?vista=dia|semana|mes&fecha=AAAA-MM-DD
   admin/sesiones/[sessionId]       Detalle de sesión
+  admin/anulaciones                Anulaciones tardías pendientes de decidir
   admin/horario                    Plantilla semanal
   admin/tipos-clase
   admin/clientes                   ?estado=pendiente|activo|baja&q=
@@ -176,7 +179,7 @@ app/
   api/cron/reminders               Cada 15 min: recordatorios de clase
 ```
 
-- `/` redirige según rol: cliente → `/calendario`, entrenador → `/entrenador`, admin/desarrollador → `/admin`.
+- `/` redirige según rol: cliente → `/calendario`, entrenador → `/entrenador`, admin/desarrollador → `/admin` (si además es entrenador, el layout de admin enlaza a "Mis clases").
 - **Vista cliente** para admins: simplemente pueden abrir las rutas de `(client)`; el layout de admin tiene un enlace "Vista cliente" y viceversa.
 - Mutaciones: **Server Actions** (en `app/**/actions.ts`), cada una valida con Zod y llama a la capa de datos.
 - `api/cron/*` exige la cabecera `Authorization: Bearer $CRON_SECRET`.
@@ -202,7 +205,10 @@ Dos capas (según la guía de autenticación de Next 16):
 | Incidencias: ver / gestionar | — | las suyas | ✔ | ✔ |
 | Avisos: publicar | — | — | ✔ | ✔ |
 | Ajustes del gimnasio | — | — | ✔ | ✔ |
-| Asignar roles admin / coach | — | — | — | ✔ |
+| Decidir si una anulación tardía descuenta | — | — | ✔ | ✔ |
+| Asignar rol admin / marca de entrenador | — | — | — | ✔ |
+
+La columna **coach** aplica a cualquier perfil con `is_coach = true` (también admins) para las sesiones donde es `coach_id`.
 
 Cliente `pending` o `inactive`: solo `/pendiente` y `/perfil`.
 
@@ -232,6 +238,7 @@ Además de las PK y los únicos ya citados (en Postgres las FK **no** crean índ
 | bookings | `(session_id, status)` | ocupación y asistentes de una sesión |
 | bookings | `(session_id, waitlisted_at) where status = 'waitlisted'` | siguiente de la lista de espera |
 | bookings | `(user_id, created_at desc)` | mis reservas / ficha de cliente |
+| bookings | `(cancelled_at) where status = 'late_cancelled' and late_cancel_charged is null` | anulaciones tardías pendientes |
 | memberships | `(user_id, starts_on desc)` | tarifa vigente |
 | profiles | `(status, role)` | altas pendientes, filtros de clientes |
 | profiles | `gin (full_name gin_trgm_ops)` (extensión `pg_trgm`) | búsqueda de clientes por nombre |

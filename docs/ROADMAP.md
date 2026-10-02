@@ -25,12 +25,12 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [x] [C] Vitest; `npm run check` = lint + tipos + tests
 - [x] [C] docs/ROADMAP.md
 
-## Fase 1 · Especificación y arquitectura
+## Fase 1 · Especificación y arquitectura ✅
 - [x] [J] Entrevista al usuario → `docs/SPEC.md` (qué hace, usuarios, pantallas, datos)
 - [x] [J] Qué necesita el móvil: notificaciones, cámara, uso sin conexión… (define el alcance de la Fase 8)
 - [x] [C] `docs/ARCHITECTURE.md`: tablas en Neon, relaciones, rutas, permisos y cómo se enlazan los usuarios de Neon Auth (`user_id`) con los datos
 - [x] [C] Índices, paginación y reparto servidor/cliente
-- [ ] 🛑 [T] Revisar y corregir SPEC y ARCHITECTURE
+- [x] 🛑 [T] Revisar y corregir SPEC y ARCHITECTURE
 
 ## Fase 2 · Sistema de diseño y PWA
 - [ ] [C] `docs/DESIGN.md`: colores, tipografía, espaciados, estados de carga, vacío y error
@@ -59,7 +59,17 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 
 ## Fase 5 · Funcionalidades (una por sesión, en el orden de SPEC)
 Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → CI verde → PR → [T] el usuario fusiona.
-- [ ] (se llena desde docs/SPEC.md al cerrar la Fase 1)
+- [ ] F1 · Registro, alta pendiente/aprobación, perfil con foto y bajas
+- [ ] F2 · Tipos de clase (grupal / individual, aforo, color)
+- [ ] F3 · Horario: plantilla semanal, generación de sesiones y sesiones sueltas/cancelación
+- [ ] F4 · Tarifas y asignación a clientes
+- [ ] F5 · Calendario y reservas del cliente (reservar, modificar, anular, lista de espera)
+- [ ] F6 · Agenda del administrador (día / semana / mes) y anulaciones tardías
+- [ ] F7 · Entrenadores: mis clases, asistentes y asistencia
+- [ ] F8 · Gestión de clientes (lista, ficha, filtros)
+- [ ] F9 · Incidencias
+- [ ] F10 · Avisos y notificaciones push
+- [ ] F11 · Equipo: roles y ajustes del gimnasio (solo desarrollador)
 
 ## Fase 6 · Auditoría de seguridad
 - [ ] [C] `docs/AUDIT.md` por gravedad: filtrado por usuario en cada consulta a Neon, sesión de Neon Auth, autorización, validación, secretos, cabeceras/CSP, límite de peticiones, dependencias, subida de archivos

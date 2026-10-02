@@ -21,6 +21,8 @@ Alcance: **un solo gimnasio** (sin multi-gimnasio), aunque el diseño no debe im
 | **Desarrollador** | El propietario técnico (Omar) | Superadministrador: todo lo del administrador + crear/quitar administradores y entrenadores + ajustes técnicos. |
 | **Administrador** | Gerencia / recepción del gimnasio | Gestiona clases, horario, sesiones, clientes, tarifas, incidencias y avisos. Puede cambiar a la **vista cliente** (y reservar como un cliente más). |
 | **Entrenador** | Coach del gimnasio | Ve las sesiones que imparte y su **lista de asistentes**; marca asistencia en sus sesiones. No gestiona clientes ni tarifas. |
+
+**Un administrador (o el desarrollador) también puede ser entrenador**: además de todo lo suyo, imparte sesiones y tiene su sección "Mis clases". Ser entrenador es una marca que se suma al rol, no un rol excluyente.
 | **Cliente** | Socio del gimnasio | Ve el calendario, reserva / cambia / anula sus clases, ve su tarifa y clases restantes, recibe avisos. Solo ve sus propios datos. |
 
 Cada usuario ve solo lo suyo. Un cliente nunca ve datos de otros clientes (en una clase puede ver cuántas plazas quedan, no quién va).
@@ -61,13 +63,15 @@ Reglas (configurables por el administrador):
 |---|---|
 | Apertura de reservas | 7 días antes de la sesión |
 | Anulación sin penalización | hasta 2 horas antes |
-| Anulación tardía (menos de 2 h) o falta sin avisar | la clase **cuenta** como consumida en la tarifa |
+| Anulación tardía (menos de 2 h) | Se permite y queda **marcada como tardía**. El administrador decide si se descuenta la clase de la tarifa o no. Hasta que decida, no se descuenta |
+| Falta sin avisar | la clase **cuenta** como consumida en la tarifa |
 | Lista de espera | Sí. Si se libera plaza, entra automáticamente el primero de la lista (si su tarifa lo permite) y se le notifica |
 | Cierre de reservas | al empezar la sesión |
 
 ### F6. Agenda del administrador
 - Vistas **día / semana / mes** con todas las sesiones, ocupación (p. ej. 8/12) y lista de espera.
-- Detalle de sesión: asistentes, lista de espera, añadir o quitar un cliente a mano (saltándose límites si hace falta), marcar asistencia.
+- Detalle de sesión: asistentes, lista de espera, anulaciones tardías, añadir o quitar un cliente a mano (saltándose límites si hace falta), marcar asistencia.
+- **Anulaciones tardías pendientes**: lista con las anulaciones tardías sin decidir; por cada una, "Descontar clase" o "No descontar".
 
 ### F7. Entrenadores
 - "Mis clases": sesiones que imparte hoy y próximas.
@@ -92,7 +96,7 @@ Reglas (configurables por el administrador):
   - Alta aprobada
 
 ### F11. Gestión del equipo (solo desarrollador)
-- Asignar o quitar los roles de administrador y entrenador.
+- Asignar o quitar el rol de administrador y la marca de entrenador (a clientes o administradores).
 - Ajustes del gimnasio (nombre, zona horaria, reglas de reserva).
 
 ## 4. Pantallas
@@ -109,7 +113,8 @@ Reglas (configurables por el administrador):
 - Mis clases · Detalle de sesión con asistentes
 
 **Administrador** (navegación: Hoy · Agenda · Clientes · Incidencias · Más)
-- Hoy (sesiones del día con ocupación)
+- Hoy (sesiones del día con ocupación y anulaciones tardías pendientes)
+- Mis clases (si también es entrenador)
 - Agenda (día / semana / mes) · Detalle de sesión
 - Horario (plantilla semanal) · Tipos de clase
 - Clientes · Ficha de cliente · Altas pendientes
@@ -150,9 +155,11 @@ Reglas (configurables por el administrador):
 - Registro de marcas / resultados de entrenamientos (WOD, RM).
 - Chat entre usuarios.
 
-## 8. Preguntas abiertas
+## 8. Decisiones tomadas en la revisión
 
-1. **Sesiones individuales**: ¿las reserva el cliente en huecos libres publicados, o las crea el administrador/entrenador directamente para un cliente concreto? (Supuesto actual: ambas cosas son posibles; una sesión individual es una sesión de aforo 1.)
-2. ¿La anulación tardía debe **consumir** la clase de la tarifa (supuesto actual) o solo quedar registrada?
-3. ¿Un entrenador puede abrir incidencias? (Supuesto actual: sí.)
-4. ¿Las tarifas por mes cuentan por **mes natural** (supuesto actual) o desde la fecha de alta?
+1. **Sesiones individuales**: ambas vías. El cliente puede reservar huecos individuales publicados y el administrador/entrenador puede crear una sesión directamente para un cliente. Una sesión individual es una sesión de aforo 1.
+2. **Anulación tardía**: se marca como tardía y el administrador decide si se descuenta la clase.
+3. **Incidencias**: un entrenador puede abrirlas.
+4. **Tarifas mensuales**: cuentan por **mes natural** (las semanales, de lunes a domingo).
+5. **Horario**: plantilla semanal + sesiones sueltas.
+6. **Administradores entrenadores**: un administrador puede ser también entrenador.
