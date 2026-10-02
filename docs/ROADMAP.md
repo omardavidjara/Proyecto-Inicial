@@ -12,7 +12,9 @@ Etiquetas: **[C]** lo hace Claude solo · **[T]** requiere al usuario (cuentas, 
 3. Parar en la primera tarea [T], [J] o 🛑: decir al usuario exactamente qué necesita hacer o decidir.
 4. No empezar una fase hasta cerrar todas las casillas de la anterior.
 5. Al cerrar una fase: hacer push y recomendar `/clear`.
-6. Nunca: subir secretos, usar `service_role` en el cliente, fusionar en `main` con la CI en rojo o tocar la base de datos de producción sin migración.
+6. Nunca: subir secretos, exponer `DATABASE_URL` o claves de servidor al cliente, fusionar en `main` con la CI en rojo o tocar la base de datos de producción sin migración.
+
+Arquitectura de datos: **Supabase solo para autenticación**; **todos los datos de la app en Neon** (Postgres) con Drizzle ORM, accedidos únicamente desde el servidor.
 
 ## Fase 0 · Cimientos ✅
 - [x] [T] Instalar Node.js, Git, VS Code y Claude Code
@@ -26,7 +28,7 @@ Etiquetas: **[C]** lo hace Claude solo · **[T]** requiere al usuario (cuentas, 
 ## Fase 1 · Especificación y arquitectura
 - [ ] [J] Entrevista al usuario → `docs/SPEC.md` (qué hace, usuarios, pantallas, datos)
 - [ ] [J] Qué necesita el móvil: notificaciones, cámara, uso sin conexión… (define el alcance de la Fase 8)
-- [ ] [C] `docs/ARCHITECTURE.md`: tablas, relaciones, rutas, permisos
+- [ ] [C] `docs/ARCHITECTURE.md`: tablas en Neon, relaciones, rutas, permisos y cómo se enlaza el usuario de Supabase Auth (`user_id`) con los datos
 - [ ] [C] Índices, paginación y reparto servidor/cliente
 - [ ] 🛑 [T] Revisar y corregir SPEC y ARCHITECTURE
 
@@ -40,12 +42,12 @@ Etiquetas: **[C]** lo hace Claude solo · **[T]** requiere al usuario (cuentas, 
 - [ ] [C] Contraste, foco de teclado y comportamiento en móvil
 
 ## Fase 3 · Datos y seguridad base
-- [ ] [T] Crear el proyecto en Supabase y dar a Claude URL + anon key (+ service_role) para `.env.local`
-- [ ] [T] Conectar el repositorio a Vercel y copiar las variables de entorno
-- [ ] [C] Migraciones en `supabase/migrations/` (nunca a mano en el panel)
-- [ ] [C] RLS en todas las tablas, con una política por operación
-- [ ] [C] Login con Supabase Auth
-- [ ] [C] Permisos comprobados en servidor; validar toda entrada con Zod
+- [ ] [T] Crear el proyecto en Supabase (solo Auth): activar los métodos de login, configurar las URL de redirección y dar a Claude URL + anon key para `.env.local`
+- [ ] [T] Crear el proyecto en Neon y dar a Claude `DATABASE_URL` (con pooling) y `DATABASE_URL_UNPOOLED` (directa, para migraciones)
+- [ ] [T] Conectar el repositorio a Vercel, añadir la integración de Neon (una rama de base de datos por cada preview) y copiar las variables de entorno
+- [ ] [C] Drizzle ORM + driver serverless de Neon; esquema en `db/schema.ts` y migraciones en `drizzle/` generadas con drizzle-kit (nunca a mano en la consola de Neon)
+- [ ] [C] Login con Supabase Auth (`@supabase/ssr`, sesión en cookies); tabla `profiles` en Neon creada en el primer inicio de sesión
+- [ ] [C] Capa de datos solo en servidor: cada consulta filtra por el `user_id` de la sesión verificada; validar toda entrada con Zod
 - [ ] [C] Test con dos usuarios: ninguno ve los datos del otro
 
 ## Fase 4 · Auto-auditoría automatizada
@@ -60,7 +62,7 @@ Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → 
 - [ ] (se llena desde docs/SPEC.md al cerrar la Fase 1)
 
 ## Fase 6 · Auditoría de seguridad
-- [ ] [C] `docs/AUDIT.md` por gravedad: RLS, autorización, validación, secretos, cabeceras/CSP, límite de peticiones, dependencias, subida de archivos
+- [ ] [C] `docs/AUDIT.md` por gravedad: filtrado por usuario en cada consulta a Neon, sesión de Supabase, autorización, validación, secretos, cabeceras/CSP, límite de peticiones, dependencias, subida de archivos
 - [ ] 🛑 [T] Revisar la auditoría
 - [ ] [C] Corregir los puntos críticos, un commit por punto
 

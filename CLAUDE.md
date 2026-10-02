@@ -9,7 +9,7 @@ Qué hace y para quién: ver `docs/SPEC.md` (aún pendiente, Fase 1).
 Sigue `docs/ROADMAP.md` y su protocolo de sesión. Si el usuario dice "continúa", toma la siguiente tarea abierta.
 
 ## Stack
-Next.js 16 (App Router) + TypeScript · Tailwind v4 + shadcn/ui · Supabase (Postgres, Auth, RLS) · Vitest · GitHub + Vercel · Capacitor
+Next.js 16 (App Router) + TypeScript · Tailwind v4 + shadcn/ui · Supabase Auth (solo autenticación) · Neon (Postgres) + Drizzle ORM · Vitest · GitHub + Vercel · Capacitor
 
 ## Comandos
 - `npm run dev`: servidor local
@@ -25,8 +25,10 @@ Next.js 16 (App Router) + TypeScript · Tailwind v4 + shadcn/ui · Supabase (Pos
 - Idioma: UI y documentos en español; código e identificadores en inglés.
 - Antes de usar una API de Next.js, lee su guía en `node_modules/next/dist/docs/`.
 - Tests junto a cada funcionalidad, en `__tests__/`.
-- Cambios de esquema solo con migraciones en `supabase/migrations/`.
-- RLS en todas las tablas. `service_role` solo en código de servidor.
+- Supabase se usa solo para Auth: no crear tablas de la app en Supabase. Los datos viven en Neon.
+- Cambios de esquema solo en `db/schema.ts` + migraciones de drizzle-kit en `drizzle/`.
+- A Neon solo se accede desde el servidor. Cada consulta filtra por el `user_id` de la sesión verificada de Supabase.
+- `DATABASE_URL` y cualquier clave de servidor nunca con prefijo `NEXT_PUBLIC_` ni en componentes de cliente.
 - Valida toda entrada con Zod en el servidor.
 - Secretos en `.env.local`, nunca en el código.
 - Una funcionalidad por rama. No fusionar en `main` con la CI en rojo.
