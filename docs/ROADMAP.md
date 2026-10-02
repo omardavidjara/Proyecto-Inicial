@@ -35,11 +35,11 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [x] 🛑 [T] Revisar y corregir SPEC y ARCHITECTURE
 
 ## Fase 2 · Sistema de diseño y PWA
-- [ ] [C] `docs/DESIGN.md`: colores, tipografía, espaciados, estados de carga, vacío y error
-- [ ] [C] shadcn/ui + botón, campo, tarjeta, diálogo, tabla
-- [ ] [C] Diseño pensado primero para móvil: zonas táctiles de 44px o más, navegación inferior, safe areas
-- [ ] [C] PWA: manifest, iconos, service worker básico y página sin conexión
-- [ ] [C] Prototipo de las 2 o 3 pantallas clave
+- [x] [C] `docs/DESIGN.md`: colores, tipografía, espaciados, estados de carga, vacío y error
+- [x] [C] shadcn/ui + botón, campo, tarjeta, diálogo, tabla
+- [x] [C] Diseño pensado primero para móvil: zonas táctiles de 44px o más, navegación inferior, safe areas
+- [x] [C] PWA: manifest, iconos, service worker básico y página sin conexión
+- [x] [C] Prototipo de las 2 o 3 pantallas clave
 - [ ] 🛑 [T] Revisar el prototipo (también en un móvil)
 - [ ] [C] Contraste, foco de teclado y comportamiento en móvil
 

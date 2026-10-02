@@ -194,6 +194,8 @@ app/
   admin/avisos
   admin/ajustes
   admin/equipo                     Solo desarrollador
+  admin/mas                        Menú "Más" en móvil: horario, tipos de clase, tarifas, avisos, ajustes, vista cliente
+  offline                          Página sin conexión (la guarda el service worker, public/sw.js)
   api/auth/[...path]               Neon Auth
   api/cron/generate-sessions       Diario: crea sesiones de la plantilla (próximas 4 semanas)
   api/cron/reminders               Cada 15 min: recordatorios de clase (ver §11: requiere plan Pro o programador externo)
