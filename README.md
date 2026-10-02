@@ -16,3 +16,4 @@ npm run check    # lint + tipos + tests
 - Hoja de ruta: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Especificación: [docs/SPEC.md](docs/SPEC.md)
 - Arquitectura: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
+- Límites de los servicios: [docs/LIMITS.md](docs/LIMITS.md)

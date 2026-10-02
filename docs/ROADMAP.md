@@ -14,6 +14,8 @@ Etiquetas: **[C]** lo hace Claude solo · **[T]** requiere al usuario (cuentas, 
 5. Al cerrar una fase: hacer push y recomendar `/clear`.
 6. Nunca: subir secretos, exponer `DATABASE_URL` o claves de servidor al cliente, fusionar en `main` con la CI en rojo o tocar la base de datos de producción sin migración.
 
+Límites de los planes gratuitos (Vercel Hobby, Neon Free, GitHub, Sentry) y sus alternativas: `docs/LIMITS.md`. Revisarlo antes de cada plan de tarea.
+
 Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle ORM, accedido solo desde el servidor) y **Neon Auth** para la autenticación (los usuarios viven en el esquema `neon_auth` de la misma base de datos). No se usa Supabase.
 
 ## Fase 0 · Cimientos ✅
@@ -42,10 +44,12 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [ ] [C] Contraste, foco de teclado y comportamiento en móvil
 
 ## Fase 3 · Datos y seguridad base
-- [ ] [T] Crear la cuenta y el proyecto en Neon y dar a Claude `DATABASE_URL` (con pooling) y `DATABASE_URL_UNPOOLED` (directa, para migraciones) para `.env.local`
+- [ ] [T] Crear la cuenta y el proyecto en Neon (región AWS Frankfurt, `aws-eu-central-1`; autoescalado 0,25–1 CU, ver LIMITS D3) y dar a Claude `DATABASE_URL` (con pooling) y `DATABASE_URL_UNPOOLED` (directa, para migraciones) para `.env.local`
 - [ ] [T] Activar Neon Auth en el proyecto (pestaña Auth de la consola), elegir los métodos de login, configurar las URL de redirección y dar a Claude sus claves
 - [ ] [T] Conectar el repositorio a Vercel, añadir la integración de Neon (una rama de base de datos por cada preview) y copiar las variables de entorno
-- [ ] [J] Tareas programadas: Vercel Hobby solo permite cron diario; decidir entre Vercel Pro o un programador externo para los recordatorios (ver ARCHITECTURE §11)
+- [ ] [J] Tareas programadas: Vercel Hobby solo permite cron diario; confirmar la alternativa propuesta (programador externo en horario del gimnasio + ruta idempotente, LIMITS D2) o Vercel Pro
+- [ ] [J] Copias de seguridad: Neon Free solo guarda 6 h de historial; decidir dónde guardar el `pg_dump` diario cifrado (LIMITS D5)
+- [ ] [C] `vercel.json` con región `fra1`, *Ignored Build Step* para cambios solo de documentación y borrado de ramas de Neon al cerrar PR (LIMITS D3, D4, D6)
 - [ ] [C] Drizzle ORM + driver serverless de Neon; esquema en `db/schema.ts` y migraciones en `drizzle/` generadas con drizzle-kit (nunca a mano en la consola de Neon)
 - [ ] [C] Login con Neon Auth (SDK oficial, sesión en cookies); tabla `profiles` con el mismo `user_id` que `neon_auth.user`, creada en el primer inicio de sesión (sin FK hacia `neon_auth`, ver ARCHITECTURE §2)
 - [ ] [C] Capa de datos solo en servidor: cada consulta filtra por el `user_id` de la sesión verificada; validar toda entrada con Zod
@@ -80,6 +84,7 @@ Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → 
 ## Fase 7 · Rendimiento y publicación web
 - [ ] [C] Lighthouse (rendimiento, accesibilidad, buenas prácticas, SEO) → cifras en `docs/PERF.md`
 - [ ] [C] Imágenes con `next/image`, carga diferida, índices para consultas lentas
+- [ ] [J] Uso comercial: Vercel Hobby no lo permite; antes de abrir la app al gimnasio real, Vercel Pro u otro alojamiento (LIMITS D1)
 - [ ] [T] Dominio propio en Vercel
 - [ ] [T] Probar la web publicada en un móvil real
 
@@ -96,6 +101,7 @@ La app nativa carga la web publicada en Vercel (SSR), así que las mejoras de la
 
 ## Fase 9 · Mantenimiento
 - Semanal: errores de Sentry y PR de Dependabot
+- Mensual: consumo en Neon (CU-h, almacenamiento, ramas), Vercel (uso y Blob) y Sentry frente a `docs/LIMITS.md`; volver a comprobar las cifras del documento
 - Mensual: repetir la Fase 6
 - Tras cada funcionalidad: actualizar SPEC y ARCHITECTURE
 - App móvil: recompilar solo si cambian plugins, iconos o permisos nativos
