@@ -1,6 +1,6 @@
 # Proyecto-Inicial (mi-app)
 
-Aplicación web y móvil: Next.js + Supabase, publicada en Vercel y empaquetada para móvil con Capacitor.
+Aplicación web y móvil: Next.js + Neon (Postgres + Neon Auth), publicada en Vercel y empaquetada para móvil con Capacitor.
 
 ## Desarrollo
 

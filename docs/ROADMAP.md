@@ -14,11 +14,11 @@ Etiquetas: **[C]** lo hace Claude solo · **[T]** requiere al usuario (cuentas, 
 5. Al cerrar una fase: hacer push y recomendar `/clear`.
 6. Nunca: subir secretos, exponer `DATABASE_URL` o claves de servidor al cliente, fusionar en `main` con la CI en rojo o tocar la base de datos de producción sin migración.
 
-Arquitectura de datos: **Supabase solo para autenticación**; **todos los datos de la app en Neon** (Postgres) con Drizzle ORM, accedidos únicamente desde el servidor.
+Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle ORM, accedido solo desde el servidor) y **Neon Auth** para la autenticación (los usuarios viven en el esquema `neon_auth` de la misma base de datos). No se usa Supabase.
 
 ## Fase 0 · Cimientos ✅
 - [x] [T] Instalar Node.js, Git, VS Code y Claude Code
-- [x] [T] Cuentas en GitHub, Supabase y Vercel
+- [x] [T] Cuentas en GitHub y Vercel
 - [x] [C] Proyecto Next.js + TypeScript + Tailwind
 - [x] [C] Repositorio en GitHub con todo el proyecto subido
 - [x] [C] CLAUDE.md con reglas y protocolo
@@ -28,7 +28,7 @@ Arquitectura de datos: **Supabase solo para autenticación**; **todos los datos 
 ## Fase 1 · Especificación y arquitectura
 - [ ] [J] Entrevista al usuario → `docs/SPEC.md` (qué hace, usuarios, pantallas, datos)
 - [ ] [J] Qué necesita el móvil: notificaciones, cámara, uso sin conexión… (define el alcance de la Fase 8)
-- [ ] [C] `docs/ARCHITECTURE.md`: tablas en Neon, relaciones, rutas, permisos y cómo se enlaza el usuario de Supabase Auth (`user_id`) con los datos
+- [ ] [C] `docs/ARCHITECTURE.md`: tablas en Neon, relaciones, rutas, permisos y cómo se enlazan los usuarios de Neon Auth (`user_id`) con los datos
 - [ ] [C] Índices, paginación y reparto servidor/cliente
 - [ ] 🛑 [T] Revisar y corregir SPEC y ARCHITECTURE
 
@@ -42,11 +42,11 @@ Arquitectura de datos: **Supabase solo para autenticación**; **todos los datos 
 - [ ] [C] Contraste, foco de teclado y comportamiento en móvil
 
 ## Fase 3 · Datos y seguridad base
-- [ ] [T] Crear el proyecto en Supabase (solo Auth): activar los métodos de login, configurar las URL de redirección y dar a Claude URL + anon key para `.env.local`
-- [ ] [T] Crear el proyecto en Neon y dar a Claude `DATABASE_URL` (con pooling) y `DATABASE_URL_UNPOOLED` (directa, para migraciones)
+- [ ] [T] Crear la cuenta y el proyecto en Neon y dar a Claude `DATABASE_URL` (con pooling) y `DATABASE_URL_UNPOOLED` (directa, para migraciones) para `.env.local`
+- [ ] [T] Activar Neon Auth en el proyecto (pestaña Auth de la consola), elegir los métodos de login, configurar las URL de redirección y dar a Claude sus claves
 - [ ] [T] Conectar el repositorio a Vercel, añadir la integración de Neon (una rama de base de datos por cada preview) y copiar las variables de entorno
 - [ ] [C] Drizzle ORM + driver serverless de Neon; esquema en `db/schema.ts` y migraciones en `drizzle/` generadas con drizzle-kit (nunca a mano en la consola de Neon)
-- [ ] [C] Login con Supabase Auth (`@supabase/ssr`, sesión en cookies); tabla `profiles` en Neon creada en el primer inicio de sesión
+- [ ] [C] Login con Neon Auth (SDK oficial, sesión en cookies); las tablas de la app referencian a `neon_auth.users` por `user_id`
 - [ ] [C] Capa de datos solo en servidor: cada consulta filtra por el `user_id` de la sesión verificada; validar toda entrada con Zod
 - [ ] [C] Test con dos usuarios: ninguno ve los datos del otro
 
@@ -62,7 +62,7 @@ Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → 
 - [ ] (se llena desde docs/SPEC.md al cerrar la Fase 1)
 
 ## Fase 6 · Auditoría de seguridad
-- [ ] [C] `docs/AUDIT.md` por gravedad: filtrado por usuario en cada consulta a Neon, sesión de Supabase, autorización, validación, secretos, cabeceras/CSP, límite de peticiones, dependencias, subida de archivos
+- [ ] [C] `docs/AUDIT.md` por gravedad: filtrado por usuario en cada consulta a Neon, sesión de Neon Auth, autorización, validación, secretos, cabeceras/CSP, límite de peticiones, dependencias, subida de archivos
 - [ ] 🛑 [T] Revisar la auditoría
 - [ ] [C] Corregir los puntos críticos, un commit por punto
 
@@ -76,7 +76,7 @@ Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → 
 La app nativa carga la web publicada en Vercel (SSR), así que las mejoras de la web llegan sin recompilar.
 - [ ] [C] Capacitor con plataformas Android e iOS; iconos y splash
 - [ ] [C] Plugins nativos según SPEC (push, cámara, compartir, barra de estado). Apple rechaza las apps que solo envuelven una web
-- [ ] [C] Deep links para volver a la app después del login de Supabase
+- [ ] [C] Deep links para volver a la app después del login
 - [ ] [T] Cuentas: Google Play Console (pago único) y Apple Developer (anual)
 - [ ] [T] Compilar iOS: requiere Mac con Xcode o un servicio en la nube (Codemagic, Appflow). Android funciona en Windows con Android Studio
 - [ ] [J] Pruebas internas: TestFlight y pista interna de Play Console
