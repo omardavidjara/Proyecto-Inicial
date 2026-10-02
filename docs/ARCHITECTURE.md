@@ -1,6 +1,6 @@
 # Arquitectura · Athlos App
 
-> Basada en `docs/SPEC.md`. Estado: borrador para revisión (Fase 1).
+> Basada en `docs/SPEC.md`. Estado: **aprobado** el 2026-10-02 (cierre de la Fase 1).
 
 ## 1. Visión general
 
@@ -27,13 +27,15 @@ Next.js 16 en Vercel ── proxy.ts (solo redirecciones optimistas por cookie)
 
 ## 2. Enlace usuarios ↔ datos
 
-- `profiles.user_id` = `neon_auth.user.id` (clave primaria de `profiles`, FK con `on delete cascade`).
+- `profiles.user_id` = `neon_auth.user.id` (clave primaria de `profiles`). **Sin FK declarada** hacia `neon_auth`: ese esquema lo gestiona Neon y, al eliminar una cuenta, el perfil debe quedar anonimizado (no borrado) para conservar el historial. La integridad la garantiza la app: el perfil solo se crea a partir de una sesión verificada.
 - `profiles` se crea en el **primer inicio de sesión** (estado `pending`, rol `client`) si no existe.
 - El **rol y el estado viven en `profiles`**, no en Neon Auth: así los cambia la app con sus propias reglas.
 - Todas las demás tablas que pertenecen a una persona referencian `profiles.user_id`.
 - El rol `developer` se asigna a mano una sola vez (semilla con migración/script), nunca desde la UI.
+- **Eliminar cuenta**: se borra el usuario en Neon Auth, el perfil pasa a `status = inactive`, `deleted_at = now()` y se vacían `full_name` ("Usuario eliminado"), `phone` y `avatar_url` (y el archivo de la foto). Sus reservas futuras se anulan y sus `push_devices` se borran.
+- Las FK de las tablas de la app hacia `profiles` son `on delete restrict`: un perfil nunca se borra físicamente.
 
-> A verificar en Fase 3: tipo exacto de `neon_auth.user.id` (texto/uuid) para declarar la FK en Drizzle.
+> A verificar en Fase 3: tipo exacto de `neon_auth.user.id` (texto/uuid) para que `profiles.user_id` use el mismo.
 
 ## 3. Tablas (`public`)
 
@@ -49,7 +51,9 @@ Convenciones: `id uuid` (default `gen_random_uuid()`), `created_at`/`updated_at 
 | role | enum `developer \| admin \| coach \| client` | default `client` |
 | is_coach | boolean | default `false`. `true` en todo `coach`; un `admin`/`developer` con `true` también imparte clases |
 | status | enum `pending \| active \| inactive` | default `pending` |
-| approved_at, deactivated_at | timestamptz null | |
+| approved_at, deactivated_at, deleted_at | timestamptz null | `deleted_at` = cuenta eliminada y anonimizada |
+
+Restricción `check`: `role = 'coach'` implica `is_coach = true`; `role = 'client'` implica `is_coach = false`.
 
 ### `gym_settings` (una sola fila)
 | columna | tipo | default |
@@ -61,11 +65,13 @@ Convenciones: `id uuid` (default `gen_random_uuid()`), `created_at`/`updated_at 
 | cancel_deadline_minutes | int | 120 |
 | reminder_minutes | int | 120 |
 
+`name` y `timezone` solo los cambia el desarrollador; el resto, también el administrador.
+
 ### `class_types`
 id, name, kind enum `group | individual`, duration_minutes, default_capacity, color, is_active.
 
 ### `schedule_slots` (plantilla semanal)
-id, class_type_id → class_types, weekday (0 = lunes … 6), start_time (`time`), duration_minutes, capacity, coach_id → profiles null, valid_from `date`, valid_to `date null`, is_active.
+id, class_type_id → class_types, weekday (0 = lunes … 6), start_time (`time`, hora local del gimnasio), duration_minutes, capacity, coach_id → profiles null, valid_from `date`, valid_to `date null`, is_active.
 
 ### `sessions`
 | columna | tipo | notas |
@@ -73,13 +79,17 @@ id, class_type_id → class_types, weekday (0 = lunes … 6), start_time (`time`
 | id | uuid PK | |
 | class_type_id | FK → class_types | |
 | slot_id | FK → schedule_slots null | null = sesión suelta |
+| slot_date | date null | fecha de la ocurrencia de la plantilla que originó la sesión (no cambia aunque se mueva) |
+| is_customized | boolean | default `false`; `true` si se editó a mano → los cambios de plantilla ya no la tocan |
 | starts_at, ends_at | timestamptz | |
 | capacity | int | |
 | coach_id | FK → profiles null | |
 | status | enum `scheduled \| cancelled` | |
 | cancel_reason | text null | |
 
-Único `(slot_id, starts_at)` para que generar sesiones desde la plantilla sea idempotente.
+Único `(slot_id, slot_date)` para que generar sesiones desde la plantilla sea idempotente, aunque una sesión se haya movido de hora o cancelado (si se usara `starts_at`, mover una sesión haría que el generador la volviera a crear).
+
+`coach_id` (aquí y en `schedule_slots`) debe ser un perfil con `is_coach = true`: lo valida la capa de datos (no se puede expresar con una FK).
 
 ### `bookings`
 | columna | tipo | notas |
@@ -89,7 +99,7 @@ id, class_type_id → class_types, weekday (0 = lunes … 6), start_time (`time`
 | user_id | FK → profiles | |
 | status | enum `confirmed \| waitlisted \| cancelled \| late_cancelled` | |
 | attendance | enum `pending \| attended \| no_show` | default `pending` |
-| created_by | FK → profiles | el propio cliente o un admin |
+| created_by | FK → profiles | el propio cliente, un admin o el entrenador de una sesión individual |
 | waitlisted_at | timestamptz null | orden de la lista de espera |
 | cancelled_at | timestamptz null | |
 | late_cancel_charged | boolean null | solo en `late_cancelled`: `null` = pendiente de decidir, `true` = se descuenta, `false` = no |
@@ -101,7 +111,7 @@ id, class_type_id → class_types, weekday (0 = lunes … 6), start_time (`time`
 id, name, period enum `week | month | unlimited`, classes_per_period int null, is_active.
 
 ### `memberships` (tarifa asignada a un cliente)
-id, user_id → profiles, plan_id → plans, starts_on `date`, ends_on `date null`. La vigente es la que cubre la fecha de la sesión. Historial completo.
+id, user_id → profiles, plan_id → plans, starts_on `date`, ends_on `date null`. La vigente es la que cubre la fecha de la sesión. Historial completo. No puede haber dos tarifas solapadas para el mismo cliente: restricción de exclusión `exclude using gist (user_id with =, daterange(starts_on, ends_on, '[]') with &&)` (extensión `btree_gist`).
 
 ### `incidents`
 id, title, description, priority enum `low | medium | high`, status enum `open | in_progress | closed`, user_id → profiles null (cliente afectado), session_id → sessions null, created_by → profiles, assigned_to → profiles null, closed_at.
@@ -113,7 +123,7 @@ id, title, body, created_by → profiles, published_at.
 id, user_id → profiles, platform enum `web | android | ios`, token text único, last_seen_at.
 
 ### `notifications` (registro de envíos, evita duplicados)
-id, user_id, kind enum `reminder | waitlist_promoted | session_cancelled | account_approved | announcement`, ref_id uuid null, sent_at. Único `(user_id, kind, ref_id)`.
+id, user_id, kind enum `reminder | waitlist_promoted | session_cancelled | account_approved | announcement`, ref_id uuid null (reserva, sesión o aviso), sent_at. Único `(user_id, kind, ref_id)`.
 
 ### Relaciones
 ```
@@ -131,7 +141,7 @@ Todas en `lib/booking.ts` (funciones puras testeables) + una transacción en la 
 **Reservar** (transacción):
 1. `SELECT … FROM sessions WHERE id = $1 FOR UPDATE` (bloquea la sesión → no hay sobreventa con reservas simultáneas).
 2. Comprobar: perfil `active`, sesión `scheduled`, `now()` dentro de la ventana (`starts_at - booking_window_days` … `starts_at`), sin reserva viva previa.
-3. Comprobar cupo de la tarifa: reservas `confirmed`, `late_cancelled` con `late_cancel_charged = true` y `no_show` del periodo (semana de lunes a domingo o mes natural de la sesión) < `classes_per_period`.
+3. Comprobar tarifa: debe existir una `membership` vigente en la fecha de la sesión; si el plan no es `unlimited`, las reservas `confirmed`, `late_cancelled` con `late_cancel_charged = true` y con `attendance = no_show` del periodo (semana de lunes a domingo o mes natural, calculados en la zona horaria del gimnasio) deben ser < `classes_per_period`.
 4. Si hay plaza → `confirmed`; si no → `waitlisted` (sin consumir cupo).
 
 **Anular**: si faltan ≥ `cancel_deadline_minutes` → `cancelled`; si no → `late_cancelled` con `late_cancel_charged = null` (pendiente). Un administrador decide después `true`/`false`; mientras sea `null` no descuenta. Después, **promover** de la lista de espera (misma transacción): el primer `waitlisted` por `waitlisted_at` cuya tarifa lo permita pasa a `confirmed` → notificación.
@@ -140,7 +150,17 @@ Todas en `lib/booking.ts` (funciones puras testeables) + una transacción en la 
 
 **Cancelar sesión** (admin): sesión `cancelled`, reservas vivas `cancelled` (sin consumir), notificación a afectados.
 
-Los administradores pueden forzar una reserva (saltar aforo/cupo/ventana); queda `created_by` = admin.
+**Ampliar aforo** (admin): tras subir `capacity`, se promueve la lista de espera como al anular.
+
+**Lista de espera caducada**: una reserva `waitlisted` de una sesión ya empezada se trata como caducada (no se muestra ni cuenta); no hace falta ningún proceso que la cambie.
+
+**Baja de cliente** o **eliminación de cuenta**: sus reservas futuras pasan a `cancelled` (sin descontar) y se promueve la lista de espera de cada sesión afectada.
+
+**Decidir anulación tardía** (admin): fija `late_cancel_charged` y `late_cancel_decided_by`. Si se descuenta y el cliente ya superaba su cupo del periodo, no se anula nada: solo cuenta para la próxima comprobación.
+
+Los administradores pueden forzar una reserva (saltar aforo/cupo/ventana); queda `created_by` = admin. Un admin o desarrollador que reserva **para sí** también necesita tarifa vigente salvo que fuerce la reserva.
+
+Un **entrenador** puede crear una sesión individual (`class_types.kind = individual`, aforo 1) con él mismo como `coach_id` y reservarla para un cliente activo; solo puede anular reservas de sesiones que imparte.
 
 > Driver: las transacciones interactivas necesitan el `Pool` (WebSocket) de `@neondatabase/serverless`, no el driver HTTP. Se usa el Pool para escrituras con transacción y HTTP para lecturas simples.
 
@@ -176,7 +196,7 @@ app/
   admin/equipo                     Solo desarrollador
   api/auth/[...path]               Neon Auth
   api/cron/generate-sessions       Diario: crea sesiones de la plantilla (próximas 4 semanas)
-  api/cron/reminders               Cada 15 min: recordatorios de clase
+  api/cron/reminders               Cada 15 min: recordatorios de clase (ver §11: requiere plan Pro o programador externo)
 ```
 
 - `/` redirige según rol: cliente → `/calendario`, entrenador → `/entrenador`, admin/desarrollador → `/admin` (si además es entrenador, el layout de admin enlaza a "Mis clases").
@@ -188,7 +208,7 @@ app/
 
 Dos capas (según la guía de autenticación de Next 16):
 1. **`proxy.ts`** — comprobación optimista: sin cookie de sesión → `/login`. No consulta la base de datos.
-2. **Capa de datos `lib/dal.ts`** (la que de verdad protege): `getCurrentUser()` (memorizada con `cache`) verifica la sesión de Neon Auth y carga `profiles`; `requireRole(...roles)` y `requireActive()` lanzan/redirigen. Toda consulta usa el `user_id` de esa sesión, nunca uno que venga del cliente salvo para admins.
+2. **Capa de datos `lib/dal.ts`** (la que de verdad protege): `getCurrentUser()` (memorizada con `cache`) verifica la sesión de Neon Auth y carga `profiles`; `requireRole(...roles)`, `requireCoach()` y `requireActive()` lanzan/redirigen. Toda consulta usa el `user_id` de esa sesión. Un `user_id` que llegue del navegador solo se acepta en acciones de administrador, o de entrenador sobre una sesión que imparte, y siempre se comprueba ese permiso en el servidor.
 
 | Acción | client | coach | admin | developer |
 |---|:-:|:-:|:-:|:-:|
@@ -196,6 +216,7 @@ Dos capas (según la guía de autenticación de Next 16):
 | Reservar / anular **para sí** | ✔ (activo) | — | ✔ | ✔ |
 | Ver mis reservas | ✔ | — | ✔ | ✔ |
 | Ver asistentes de una sesión | — | solo las suyas | ✔ | ✔ |
+| Crear sesión individual y apuntar a un cliente | — | solo como su entrenador | ✔ | ✔ |
 | Marcar asistencia | — | solo las suyas | ✔ | ✔ |
 | Reservar / anular **para otro**, forzar plaza | — | — | ✔ | ✔ |
 | Crear / cancelar sesiones, horario, tipos | — | — | ✔ | ✔ |
@@ -204,13 +225,15 @@ Dos capas (según la guía de autenticación de Next 16):
 | Incidencias: crear | — | ✔ | ✔ | ✔ |
 | Incidencias: ver / gestionar | — | las suyas | ✔ | ✔ |
 | Avisos: publicar | — | — | ✔ | ✔ |
-| Ajustes del gimnasio | — | — | ✔ | ✔ |
+| Ajustes: reglas de reserva | — | — | ✔ | ✔ |
+| Ajustes técnicos: nombre, zona horaria | — | — | — | ✔ |
+| Eliminar mi cuenta | ✔ | ✔ | ✔ | — |
 | Decidir si una anulación tardía descuenta | — | — | ✔ | ✔ |
-| Asignar rol admin / marca de entrenador | — | — | — | ✔ |
+| Cambiar roles y marca de entrenador | — | — | — | ✔ |
 
-La columna **coach** aplica a cualquier perfil con `is_coach = true` (también admins) para las sesiones donde es `coach_id`.
+La columna **coach** aplica a cualquier perfil con `is_coach = true` (también admins) para las sesiones donde es `coach_id`. Un entrenador que no es admin no ve datos de clientes fuera de las sesiones que imparte.
 
-Cliente `pending` o `inactive`: solo `/pendiente` y `/perfil`.
+Usuario `pending` o `inactive`: solo `/pendiente` y `/perfil`.
 
 ## 7. Estructura de carpetas
 
@@ -270,6 +293,13 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 11. Decisiones pendientes para fases posteriores
 
+- **Tareas programadas**: el plan gratuito (Hobby) de Vercel solo permite cron **una vez al día**. `generate-sessions` cabe; `reminders` (cada 15 min) necesita **Vercel Pro** o un programador externo que llame a la ruta con `CRON_SECRET` (p. ej. GitHub Actions programado o un servicio de cron). Se decide en la Fase 3 al conectar Vercel; hasta entonces los recordatorios se pueden enviar con el cron diario como "tus clases de hoy".
+
 - **Fotos de perfil**: almacenamiento (Vercel Blob propuesto) → Fase 5, al implementar F1.
 - **Push**: Web Push (PWA) y FCM/APNs vía Capacitor → Fase 8; la tabla `push_devices` sirve para ambos.
-- **Sin conexión**: el service worker cachea "Mis reservas" (solo lectura) → Fase 2 (básico) y Fase 8.
+- **Sin conexión**: el service worker cachea "Mis reservas" (solo lectura) → Fase 2 (básico) y Fase 8. Al cerrar sesión o eliminar la cuenta se vacía la caché.
+- **Política de privacidad** (RGPD y tiendas): página pública `/privacidad` → antes de la Fase 8.
+
+## 12. Historial de cambios
+
+- 2026-10-02 · Versión inicial aprobada. Revisión final: sin FK a `neon_auth` y perfiles anonimizados (eliminación de cuenta), `slot_date` + `is_customized` para que mover sesiones no las duplique, `check` de rol/entrenador, tarifas sin solapes, reglas de baja / ampliar aforo / lista de espera caducada, permisos del entrenador en sesiones individuales, reparto de ajustes admin/desarrollador y límite de cron de Vercel Hobby.

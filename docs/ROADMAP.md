@@ -45,8 +45,9 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [ ] [T] Crear la cuenta y el proyecto en Neon y dar a Claude `DATABASE_URL` (con pooling) y `DATABASE_URL_UNPOOLED` (directa, para migraciones) para `.env.local`
 - [ ] [T] Activar Neon Auth en el proyecto (pestaña Auth de la consola), elegir los métodos de login, configurar las URL de redirección y dar a Claude sus claves
 - [ ] [T] Conectar el repositorio a Vercel, añadir la integración de Neon (una rama de base de datos por cada preview) y copiar las variables de entorno
+- [ ] [J] Tareas programadas: Vercel Hobby solo permite cron diario; decidir entre Vercel Pro o un programador externo para los recordatorios (ver ARCHITECTURE §11)
 - [ ] [C] Drizzle ORM + driver serverless de Neon; esquema en `db/schema.ts` y migraciones en `drizzle/` generadas con drizzle-kit (nunca a mano en la consola de Neon)
-- [ ] [C] Login con Neon Auth (SDK oficial, sesión en cookies); las tablas de la app referencian a `neon_auth.user` por `user_id`
+- [ ] [C] Login con Neon Auth (SDK oficial, sesión en cookies); tabla `profiles` con el mismo `user_id` que `neon_auth.user`, creada en el primer inicio de sesión (sin FK hacia `neon_auth`, ver ARCHITECTURE §2)
 - [ ] [C] Capa de datos solo en servidor: cada consulta filtra por el `user_id` de la sesión verificada; validar toda entrada con Zod
 - [ ] [C] Test con dos usuarios: ninguno ve los datos del otro
 
@@ -90,6 +91,7 @@ La app nativa carga la web publicada en Vercel (SSR), así que las mejoras de la
 - [ ] [T] Cuentas: Google Play Console (pago único) y Apple Developer (anual)
 - [ ] [T] Compilar iOS: requiere Mac con Xcode o un servicio en la nube (Codemagic, Appflow). Android funciona en Windows con Android Studio
 - [ ] [J] Pruebas internas: TestFlight y pista interna de Play Console
+- [ ] [C] Política de privacidad pública (`/privacidad`) y comprobar que la eliminación de cuenta funciona desde la app (requisitos de App Store y Google Play)
 - [ ] 🛑 [T] Enviar a revisión en las tiendas
 
 ## Fase 9 · Mantenimiento
