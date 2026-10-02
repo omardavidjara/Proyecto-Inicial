@@ -26,8 +26,8 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [x] [C] docs/ROADMAP.md
 
 ## Fase 1 · Especificación y arquitectura
-- [ ] [J] Entrevista al usuario → `docs/SPEC.md` (qué hace, usuarios, pantallas, datos)
-- [ ] [J] Qué necesita el móvil: notificaciones, cámara, uso sin conexión… (define el alcance de la Fase 8)
+- [x] [J] Entrevista al usuario → `docs/SPEC.md` (qué hace, usuarios, pantallas, datos)
+- [x] [J] Qué necesita el móvil: notificaciones, cámara, uso sin conexión… (define el alcance de la Fase 8)
 - [ ] [C] `docs/ARCHITECTURE.md`: tablas en Neon, relaciones, rutas, permisos y cómo se enlazan los usuarios de Neon Auth (`user_id`) con los datos
 - [ ] [C] Índices, paginación y reparto servidor/cliente
 - [ ] 🛑 [T] Revisar y corregir SPEC y ARCHITECTURE
@@ -46,7 +46,7 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [ ] [T] Activar Neon Auth en el proyecto (pestaña Auth de la consola), elegir los métodos de login, configurar las URL de redirección y dar a Claude sus claves
 - [ ] [T] Conectar el repositorio a Vercel, añadir la integración de Neon (una rama de base de datos por cada preview) y copiar las variables de entorno
 - [ ] [C] Drizzle ORM + driver serverless de Neon; esquema en `db/schema.ts` y migraciones en `drizzle/` generadas con drizzle-kit (nunca a mano en la consola de Neon)
-- [ ] [C] Login con Neon Auth (SDK oficial, sesión en cookies); las tablas de la app referencian a `neon_auth.users` por `user_id`
+- [ ] [C] Login con Neon Auth (SDK oficial, sesión en cookies); las tablas de la app referencian a `neon_auth.user` por `user_id`
 - [ ] [C] Capa de datos solo en servidor: cada consulta filtra por el `user_id` de la sesión verificada; validar toda entrada con Zod
 - [ ] [C] Test con dos usuarios: ninguno ve los datos del otro
 

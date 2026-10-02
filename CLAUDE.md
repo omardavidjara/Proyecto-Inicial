@@ -3,7 +3,7 @@
 # mi-app
 
 App web (Next.js) que se instala en el móvil como PWA y se publica en las tiendas con Capacitor.
-Qué hace y para quién: ver `docs/SPEC.md` (aún pendiente, Fase 1).
+Qué hace y para quién: ver `docs/SPEC.md` (nombre provisional: Athlos App, gestión de reservas de un gimnasio).
 
 ## Hoja de ruta
 Sigue `docs/ROADMAP.md` y su protocolo de sesión. Si el usuario dice "continúa", toma la siguiente tarea abierta.
