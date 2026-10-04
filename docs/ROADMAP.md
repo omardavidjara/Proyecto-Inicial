@@ -34,7 +34,8 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [x] [C] Índices, paginación y reparto servidor/cliente
 - [x] 🛑 [T] Revisar y corregir SPEC y ARCHITECTURE
 
-## Fase 2 · Sistema de diseño y PWA
+## Fase 2 · Sistema de diseño y PWA ✅
+Revisión de cierre: `docs/reviews/FASE-2.md` (pendientes heredados por otras fases).
 - [x] [C] `docs/DESIGN.md`: colores, tipografía, espaciados, estados de carga, vacío y error
 - [x] [C] shadcn/ui + botón, campo, tarjeta, diálogo, tabla
 - [x] [C] Diseño pensado primero para móvil: zonas táctiles de 44px o más, navegación inferior, safe areas
@@ -52,11 +53,12 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [ ] [C] `vercel.json` con región `fra1`, *Ignored Build Step* para cambios solo de documentación y borrado de ramas de Neon al cerrar PR (LIMITS D3, D4, D6)
 - [ ] [C] Drizzle ORM + driver serverless de Neon; esquema en `db/schema.ts` y migraciones en `drizzle/` generadas con drizzle-kit (nunca a mano en la consola de Neon)
 - [ ] [C] Login con Neon Auth (SDK oficial, sesión en cookies); tabla `profiles` con el mismo `user_id` que `neon_auth.user`, creada en el primer inicio de sesión (sin FK hacia `neon_auth`, ver ARCHITECTURE §2)
+- [ ] [C] Proteger las rutas: `(client)`, `admin/` y `entrenador/` exigen sesión y rol (hoy, prototipo, se abren sin login); `/` deja de ser el índice del prototipo y redirige a `/login` o al inicio de cada rol (ARCHITECTURE §5)
 - [ ] [C] Capa de datos solo en servidor: cada consulta filtra por el `user_id` de la sesión verificada; validar toda entrada con Zod
 - [ ] [C] Test con dos usuarios: ninguno ve los datos del otro
 
 ## Fase 4 · Auto-auditoría automatizada
-- [ ] [C] `.github/workflows/ci.yml`: lint, tipos, tests, build, npm audit
+- [ ] [C] `.github/workflows/ci.yml`: lint, tipos, tests, build, `npm audit --omit=dev` bloqueante (el completo solo como aviso, ver `docs/reviews/FASE-2.md` §5)
 - [ ] [C] Hooks de Claude Code: `npm run check` tras cada edición
 - [ ] [C] `.github/dependabot.yml`
 - [ ] [J] Sentry: el usuario crea la cuenta y da el DSN; Claude lo integra
@@ -64,6 +66,7 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 
 ## Fase 5 · Funcionalidades (una por sesión, en el orden de SPEC)
 Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → CI verde → PR → [T] el usuario fusiona.
+Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/prototype/` por consultas reales, páginas "Próximamente" (`components/coming-soon.tsx`) por las pantallas reales y la franja `PrototypeNotice`. Cuando no quede nada, borrar `lib/prototype/` y esos dos componentes.
 - [ ] F1 · Registro, alta pendiente/aprobación, perfil con foto y bajas
 - [ ] F2 · Tipos de clase (grupal / individual, aforo, color)
 - [ ] F3 · Horario: plantilla semanal, generación de sesiones y sesiones sueltas/cancelación

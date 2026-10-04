@@ -107,11 +107,11 @@ Formato de fechas y horas: `es-ES`, 24 h, en la zona horaria del gimnasio. "lun 
 |---|---|---|
 | **Cargando** | Esqueletos con la forma del contenido final (no spinners a pantalla completa) | `loading.tsx` por ruta + componente `Skeleton` |
 | **Acción en curso** | El botón muestra un spinner y se desactiva; el texto cambia ("Reservando…") | `useFormStatus` / `useTransition` |
-| **Vacío** | Icono suave + frase que explica + acción si la hay. Ej.: "No tienes reservas próximas" → "Ver calendario" | Componente `EmptyState` |
+| **Vacío** | Icono suave + frase que explica + acción si la hay. Ej.: "No tienes reservas próximas" → "Ver calendario" | `components/empty-state.tsx` |
 | **Error de pantalla** | Mensaje en lenguaje claro + botón "Reintentar"; nunca trazas ni códigos técnicos | `error.tsx` por segmento |
 | **Error de acción** | Mensaje bajo el botón o aviso breve (toast) con la causa: "La sesión está completa", "No te quedan clases esta semana" | Resultado de la Server Action |
-| **Éxito** | Aviso breve (toast) de 3 s: "Reserva confirmada" | Toast |
-| **Sin conexión** | Franja superior "Sin conexión · mostrando tus reservas guardadas"; los botones que necesitan red se desactivan | `useOffline` de Next + página `/offline` del service worker |
+| **Éxito** | Aviso breve (toast) de 3 s: "Reserva confirmada" | `toast()` de sonner (`<Toaster>` ya está en el layout raíz) |
+| **Sin conexión** | Hoy: al navegar sin red, el service worker (`public/sw.js`) muestra `/offline` con "Reintentar". Con F5: franja superior "Sin conexión · mostrando tus reservas guardadas" y botones que necesitan red desactivados | `/offline` (hecho) · `useOffline` de Next y caché de "Mis reservas" (F5, borrándola al cerrar sesión) |
 
 ## 7. Componentes base (shadcn/ui)
 
@@ -126,6 +126,9 @@ Viven en `components/ui/` (generados con la CLI de shadcn y adaptables). Compone
 | `Table` | Listas de admin en escritorio; en móvil se muestran como lista de tarjetas |
 | `Badge` | Estados de sesión/reserva (sección 2.2) |
 | `Skeleton` | Estados de carga |
+| `Toaster` (sonner) | Avisos breves de éxito o error, arriba en el centro |
+
+Componentes propios ya creados: `SessionCard`, `SessionStatusBadge` y `DayPicker` (`components/sessions/`), `EmptyState`, y el marco de pantalla (`components/app-shell/`).
 
 ## 8. Iconos
 
