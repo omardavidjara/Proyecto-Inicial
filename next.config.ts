@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false, // no anunciar la tecnología del servidor
   // Solo en desarrollo: probar desde un móvil en la misma Wi-Fi (npm run dev -- -H 0.0.0.0)
   allowedDevOrigins: ["192.168.*.*"],
   async headers() {

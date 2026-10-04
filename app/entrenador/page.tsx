@@ -5,7 +5,6 @@ import { Page } from "@/components/app-shell/app-shell"
 import { PrototypeNotice } from "@/components/prototype-notice"
 import {
   addDays,
-  formatDayLong,
   formatDayNumber,
   formatWeekRange,
   formatWeekdayShort,
@@ -58,11 +57,10 @@ export default async function CoachWeekPage({
             <li key={day} className="min-w-0">
               <Link
                 href={`/entrenador/dia/${day}`}
-                aria-label={`${formatDayLong(day)}: ${sessions.length === 0 ? "sin clases" : `${sessions.length} clases`}`}
                 className={cn(
                   "flex min-h-16 min-w-0 gap-4 rounded-xl border bg-card p-3 outline-none transition-colors hover:bg-muted/50 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:h-full lg:min-h-48 lg:flex-col lg:gap-3",
                   isToday && "border-primary",
-                  past && "opacity-60"
+                  past && "bg-transparent"
                 )}
               >
                 <span className="flex w-12 shrink-0 flex-col items-center justify-center lg:w-auto lg:flex-row lg:justify-start lg:gap-2">
@@ -80,7 +78,7 @@ export default async function CoachWeekPage({
                         key={s.id}
                         className={cn(
                           "flex min-w-0 items-center gap-1.5 rounded-md bg-muted px-2 py-1 text-sm lg:flex-wrap",
-                          s.status === "cancelled" && "line-through opacity-70"
+                          s.status === "cancelled" && "line-through"
                         )}
                       >
                         <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", CLASS_COLOR_BG[s.classType.color])} />

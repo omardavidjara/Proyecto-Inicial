@@ -24,7 +24,8 @@ export function SessionCard({ session }: { session: SessionCardData }) {
       className={cn(
         "relative flex min-h-20 items-center gap-4 overflow-hidden rounded-xl border bg-card py-3 pr-3 pl-5 outline-none transition-colors hover:bg-muted/50 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         mine && "border-primary",
-        (session.closed || cancelled) && "opacity-60"
+        // Sin opacidad: bajaría el contraste del texto por debajo de AA
+        (session.closed || cancelled) && "bg-transparent text-muted-foreground"
       )}
     >
       <span aria-hidden="true" className={cn("absolute inset-y-0 left-0 w-1.5", CLASS_COLOR_BG[session.color])} />

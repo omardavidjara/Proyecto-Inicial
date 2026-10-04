@@ -13,7 +13,9 @@ export function LoginForm() {
 
   return (
     <div className="flex flex-col gap-6">
+      {/* method="post": si se envía antes de cargar el JS, la contraseña nunca va en la URL */}
       <form
+        method="post"
         className="flex flex-col gap-4"
         onSubmit={(event) => {
           event.preventDefault()

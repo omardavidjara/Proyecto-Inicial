@@ -6,10 +6,16 @@ const VERSION = "v1"
 const STATIC_CACHE = `athlos-static-${VERSION}`
 const OFFLINE_URL = "/offline"
 const PRECACHE = [OFFLINE_URL, "/logo.png", "/icons/icon-192.png"]
+// Cada despliegue genera ficheros con hash nuevos: se guardan como mucho estos, borrando los más antiguos
+const MAX_STATIC_ENTRIES = 150
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting())
+    caches
+      .open(STATIC_CACHE)
+      // "reload": saltarse la caché HTTP para guardar siempre la versión actual
+      .then((cache) => cache.addAll(PRECACHE.map((url) => new Request(url, { cache: "reload" }))))
+      .then(() => self.skipWaiting())
   )
 })
 
@@ -45,7 +51,7 @@ self.addEventListener("fetch", (event) => {
           fetch(request).then((response) => {
             if (response.ok) {
               const copy = response.clone()
-              caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy))
+              caches.open(STATIC_CACHE).then((cache) => cache.put(request, copy).then(() => trim(cache)))
             }
             return response
           })
@@ -53,3 +59,10 @@ self.addEventListener("fetch", (event) => {
     )
   }
 })
+
+async function trim(cache) {
+  const keys = await cache.keys()
+  const isPrecached = (request) => PRECACHE.includes(new URL(request.url).pathname)
+  const excess = keys.filter((request) => !isPrecached(request)).slice(0, Math.max(0, keys.length - MAX_STATIC_ENTRIES))
+  await Promise.all(excess.map((request) => cache.delete(request)))
+}

@@ -29,5 +29,5 @@ export const adminNav: NavItem[] = [
   { href: "/admin/agenda", label: "Agenda", icon: <CalendarRange /> },
   { href: "/admin/clientes", label: "Clientes", icon: <Users /> },
   { href: "/admin/incidencias", label: "Incidencias", icon: <TriangleAlert /> },
-  { href: "/admin/mas", label: "Más", icon: <Menu /> },
+  { href: "/admin/mas", label: "Más", srHint: "opciones", icon: <Menu /> },
 ]

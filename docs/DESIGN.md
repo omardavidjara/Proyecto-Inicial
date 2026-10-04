@@ -50,7 +50,7 @@ El naranja sale del logo de Athlos Centro Deportivo (`#c4713e`, terracota). Sobr
 | En lista de espera | ámbar `warning` | "En espera · nº 3" |
 | Anulación tardía | `destructive` | "Anulación tardía" |
 | Cancelada por el gimnasio | `muted-foreground`, texto tachado | "Cancelada" |
-| Cerrada (ya empezada) | opacidad 60 % | "Cerrada" |
+| Cerrada (ya empezada) | tarjeta sin fondo y texto `muted-foreground` (nunca opacidad: baja el contraste por debajo de AA) | "Cerrada" |
 
 ### 2.3 Colores de tipo de clase
 

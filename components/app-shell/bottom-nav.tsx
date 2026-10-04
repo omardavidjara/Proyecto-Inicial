@@ -9,6 +9,8 @@ export type NavItem = {
   href: string
   label: string
   icon: ReactNode
+  /** Texto extra solo para lectores de pantalla, cuando la etiqueta visible es muy corta ("Más") */
+  srHint?: string
 }
 
 /**
@@ -52,6 +54,7 @@ export function BottomNav({ items, label }: { items: NavItem[]; label: string })
               >
                 <span aria-hidden="true">{item.icon}</span>
                 {item.label}
+                {item.srHint && <span className="sr-only"> {item.srHint}</span>}
               </Link>
             </li>
           )
