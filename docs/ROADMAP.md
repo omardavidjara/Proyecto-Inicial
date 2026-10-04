@@ -45,8 +45,6 @@ Revisión de cierre: `docs/reviews/FASE-2.md` (pendientes heredados por otras fa
 - [x] [C] Contraste, foco de teclado y comportamiento en móvil
 
 ## Fase 3 · Datos y seguridad base
-- [ ] [T] Dar los datos del titular del gimnasio para los textos legales (razón social, NIF, dirección, correo de privacidad) → `lib/legal.ts`. Recomendable que un profesional revise `/privacidad` y `/aviso-legal` antes de abrir la app al gimnasio real
-- [ ] [J] Firmar o aceptar los contratos de encargado del tratamiento (DPA, RGPD art. 28) de Vercel y Neon, y registrar las actividades de tratamiento del gimnasio (RGPD art. 30)
 - [ ] [T] Crear la cuenta y el proyecto en Neon (región AWS Frankfurt, `aws-eu-central-1`; autoescalado 0,25–1 CU, ver LIMITS D3) y dar a Claude `DATABASE_URL` (con pooling) y `DATABASE_URL_UNPOOLED` (directa, para migraciones) para `.env.local`
 - [ ] [T] Activar Neon Auth en el proyecto (pestaña Auth de la consola), elegir los métodos de login, configurar las URL de redirección y dar a Claude sus claves
 - [ ] [T] Conectar el repositorio a Vercel, añadir la integración de Neon (una rama de base de datos por cada preview) y copiar las variables de entorno
@@ -90,6 +88,8 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 - [ ] [C] Lighthouse (rendimiento, accesibilidad, buenas prácticas, SEO) → cifras en `docs/PERF.md`
 - [ ] [C] Imágenes con `next/image`, carga diferida, índices para consultas lentas
 - [ ] [J] Uso comercial: Vercel Hobby no lo permite; antes de abrir la app al gimnasio real, Vercel Pro u otro alojamiento (LIMITS D1)
+- [ ] [T] Dar los datos del titular del gimnasio para los textos legales (razón social, NIF, dirección, correo de privacidad) → `lib/legal.ts`. Recomendable que un profesional revise `/privacidad` y `/aviso-legal` antes de abrir la app al gimnasio real
+- [ ] [J] Firmar o aceptar los contratos de encargado del tratamiento (DPA, RGPD art. 28) de Vercel y Neon, y registrar las actividades de tratamiento del gimnasio (RGPD art. 30)
 - [ ] [C] Antes de abrir la app al gimnasio real: `lib/legal.ts` completo (`isLegalComplete` en `true`, sin aviso de "Borrador") y fecha de `updatedAt` al día
 - [ ] [T] Dominio propio en Vercel
 - [ ] [T] Probar la web publicada en un móvil real
