@@ -35,7 +35,7 @@ Next.js 16 en Vercel ── proxy.ts (solo redirecciones optimistas por cookie)
 - **Eliminar cuenta**: se borra el usuario en Neon Auth, el perfil pasa a `status = inactive`, `deleted_at = now()` y se vacían `full_name` ("Usuario eliminado"), `phone` y `avatar_url` (y el archivo de la foto). Sus reservas futuras se anulan y sus `push_devices` se borran.
 - Las FK de las tablas de la app hacia `profiles` son `on delete restrict`: un perfil nunca se borra físicamente.
 
-> A verificar en Fase 3: tipo exacto de `neon_auth.user.id` (texto/uuid) para que `profiles.user_id` use el mismo.
+> Verificado en la Fase 3 (2026-10-04): `neon_auth.user.id` es `uuid`, así que `profiles.user_id` y todas las columnas que lo referencian también son `uuid`.
 
 ## 3. Tablas (`public`)
 
@@ -44,7 +44,7 @@ Convenciones: `id uuid` (default `gen_random_uuid()`), `created_at`/`updated_at 
 ### `profiles`
 | columna | tipo | notas |
 |---|---|---|
-| user_id | text PK, FK → neon_auth.user.id | |
+| user_id | uuid PK, = neon_auth.user.id (sin FK, ver §2) | |
 | full_name | text | |
 | phone | text null | |
 | avatar_url | text null | foto de perfil (almacenamiento: ver §11) |
@@ -312,6 +312,7 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 12. Historial de cambios
 
+- 2026-10-04 · `profiles.user_id` y sus referencias pasan de `text` a `uuid`, el tipo real de `neon_auth.user.id`.
 - 2026-10-04 · Esquema en `db/schema.ts` y migraciones iniciales. Restricciones `check` añadidas además de las de §3: valores positivos (aforos, duraciones, ventana de reserva), rangos de fechas válidos, `weekday` 0–6, `ends_at > starts_at`, `slot_id` y `slot_date` juntos, `waitlisted_at` obligatorio en lista de espera, decisión de anulación tardía solo en `late_cancelled` y cupo de tarifa coherente con el periodo. `notifications` único con `NULLS NOT DISTINCT` (los avisos sin `ref_id` tampoco se duplican). Índices extra en FK sin índice (`class_type_id`, `coach_id` de la plantilla, `plan_id`).
 
 - 2026-10-04 · Rutas públicas `privacidad` y `aviso-legal`; datos del titular en `lib/legal.ts`.

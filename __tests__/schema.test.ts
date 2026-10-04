@@ -1,4 +1,6 @@
 // @vitest-environment node
+import { randomUUID } from "node:crypto";
+
 import { afterAll, beforeAll, describe, expect, test } from "vitest";
 
 import {
@@ -33,11 +35,17 @@ const UNIQUE_VIOLATION = "23505";
 const EXCLUSION_VIOLATION = "23P01";
 const FK_VIOLATION = "23503";
 
+// Mismo tipo que neon_auth.user.id (uuid)
+const ANA = randomUUID();
+const COACH = randomUUID();
+const ADMIN = randomUUID();
+const NOBODY = randomUUID();
+
 beforeAll(async () => {
   ({ db, close } = await createTestDb());
   await db.insert(profiles).values([
-    { userId: "user-ana", fullName: "Ana Prueba" },
-    { userId: "user-coach", fullName: "Carlos Prueba", role: "coach", isCoach: true },
+    { userId: ANA, fullName: "Ana Prueba" },
+    { userId: COACH, fullName: "Carlos Prueba", role: "coach", isCoach: true },
   ]);
 }, 60_000);
 
@@ -87,25 +95,25 @@ describe("restricciones de profiles", () => {
   test("un entrenador siempre tiene is_coach y un cliente nunca", async () => {
     expect(
       await pgErrorCode(
-        db.insert(profiles).values({ userId: "x1", fullName: "X", role: "coach", isCoach: false }),
+        db.insert(profiles).values({ userId: randomUUID(), fullName: "X", role: "coach", isCoach: false }),
       ),
     ).toBe(CHECK_VIOLATION);
     expect(
       await pgErrorCode(
-        db.insert(profiles).values({ userId: "x2", fullName: "X", role: "client", isCoach: true }),
+        db.insert(profiles).values({ userId: randomUUID(), fullName: "X", role: "client", isCoach: true }),
       ),
     ).toBe(CHECK_VIOLATION);
     // Un admin puede impartir clases
     await db
       .insert(profiles)
-      .values({ userId: "user-admin", fullName: "Admin", role: "admin", isCoach: true });
+      .values({ userId: ADMIN, fullName: "Admin", role: "admin", isCoach: true });
   });
 });
 
 describe("restricciones de bookings", () => {
   test("un cliente no puede tener dos reservas vivas en la misma sesión", async () => {
     const session = await newSession();
-    const booking = { sessionId: session.id, userId: "user-ana", createdBy: "user-ana" };
+    const booking = { sessionId: session.id, userId: ANA, createdBy: ANA };
     await db.insert(bookings).values({ ...booking, status: "confirmed" });
     expect(
       await pgErrorCode(
@@ -118,7 +126,7 @@ describe("restricciones de bookings", () => {
 
   test("la lista de espera exige waitlisted_at y la decisión de anulación tardía solo en late_cancelled", async () => {
     const session = await newSession();
-    const booking = { sessionId: session.id, userId: "user-ana", createdBy: "user-ana" };
+    const booking = { sessionId: session.id, userId: ANA, createdBy: ANA };
     expect(await pgErrorCode(db.insert(bookings).values({ ...booking, status: "waitlisted" }))).toBe(
       CHECK_VIOLATION,
     );
@@ -135,7 +143,7 @@ describe("restricciones de bookings", () => {
       await pgErrorCode(
         db
           .insert(bookings)
-          .values({ sessionId: session.id, userId: "nadie", createdBy: "nadie", status: "confirmed" }),
+          .values({ sessionId: session.id, userId: NOBODY, createdBy: NOBODY, status: "confirmed" }),
       ),
     ).toBe(FK_VIOLATION);
   });
@@ -149,19 +157,19 @@ describe("restricciones de memberships y plans", () => {
       .returning();
     await db
       .insert(memberships)
-      .values({ userId: "user-ana", planId: plan.id, startsOn: "2026-10-01", endsOn: "2026-10-31" });
+      .values({ userId: ANA, planId: plan.id, startsOn: "2026-10-01", endsOn: "2026-10-31" });
     expect(
       await pgErrorCode(
         db
           .insert(memberships)
-          .values({ userId: "user-ana", planId: plan.id, startsOn: "2026-10-31" }),
+          .values({ userId: ANA, planId: plan.id, startsOn: "2026-10-31" }),
       ),
     ).toBe(EXCLUSION_VIOLATION);
     // Consecutiva sin solape: correcta; y otro cliente puede tener las mismas fechas
-    await db.insert(memberships).values({ userId: "user-ana", planId: plan.id, startsOn: "2026-11-01" });
+    await db.insert(memberships).values({ userId: ANA, planId: plan.id, startsOn: "2026-11-01" });
     await db
       .insert(memberships)
-      .values({ userId: "user-coach", planId: plan.id, startsOn: "2026-10-01" });
+      .values({ userId: COACH, planId: plan.id, startsOn: "2026-10-01" });
   });
 
   test("las tarifas ilimitadas no tienen cupo y las demás sí", async () => {
@@ -192,10 +200,10 @@ describe("restricciones de sessions y notifications", () => {
   });
 
   test("la misma notificación no se registra dos veces, ni siquiera sin ref_id", async () => {
-    await db.insert(notifications).values({ userId: "user-ana", kind: "account_approved" });
+    await db.insert(notifications).values({ userId: ANA, kind: "account_approved" });
     expect(
       await pgErrorCode(
-        db.insert(notifications).values({ userId: "user-ana", kind: "account_approved" }),
+        db.insert(notifications).values({ userId: ANA, kind: "account_approved" }),
       ),
     ).toBe(UNIQUE_VIOLATION);
   });

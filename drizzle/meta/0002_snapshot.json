@@ -1,6 +1,6 @@
 {
-  "id": "9dc221eb-7c2f-4006-afff-de13d5b81532",
-  "prevId": "c52a6f77-ffcd-4f67-af92-1f02d084fd97",
+  "id": "84d15b7a-1e9a-4b56-a8dd-6ade424ed873",
+  "prevId": "49d4210c-9cdf-4c60-a095-16bc211f0f03",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -29,7 +29,7 @@
         },
         "created_by": {
           "name": "created_by",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -112,7 +112,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -133,7 +133,7 @@
         },
         "created_by": {
           "name": "created_by",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -157,7 +157,7 @@
         },
         "late_cancel_decided_by": {
           "name": "late_cancel_decided_by",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -557,7 +557,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -569,13 +569,13 @@
         },
         "created_by": {
           "name": "created_by",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
         "assigned_to": {
           "name": "assigned_to",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -726,7 +726,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -853,7 +853,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -981,7 +981,7 @@
       "columns": {
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": true,
           "notNull": true
         },
@@ -1126,7 +1126,7 @@
         },
         "user_id": {
           "name": "user_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
@@ -1254,7 +1254,7 @@
         },
         "coach_id": {
           "name": "coach_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },
@@ -1431,7 +1431,7 @@
         },
         "coach_id": {
           "name": "coach_id",
-          "type": "text",
+          "type": "uuid",
           "primaryKey": false,
           "notNull": false
         },

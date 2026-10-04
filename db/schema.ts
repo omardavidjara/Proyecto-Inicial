@@ -65,8 +65,8 @@ export const notificationKindEnum = pgEnum("notification_kind", [
 export const profiles = pgTable(
   "profiles",
   {
-    // = neon_auth.user.id, sin FK (el perfil sobrevive anonimizado a la cuenta)
-    userId: text("user_id").primaryKey(),
+    // = neon_auth.user.id (uuid), sin FK (el perfil sobrevive anonimizado a la cuenta)
+    userId: uuid("user_id").primaryKey(),
     fullName: text("full_name").notNull(),
     phone: text("phone"),
     avatarUrl: text("avatar_url"),
@@ -138,7 +138,7 @@ export const scheduleSlots = pgTable(
     startTime: time("start_time").notNull(), // hora local del gimnasio
     durationMinutes: integer("duration_minutes").notNull(),
     capacity: integer("capacity").notNull(),
-    coachId: text("coach_id").references(() => profiles.userId, { onDelete: "restrict" }),
+    coachId: uuid("coach_id").references(() => profiles.userId, { onDelete: "restrict" }),
     validFrom: date("valid_from").notNull(),
     validTo: date("valid_to"),
     isActive: boolean("is_active").notNull().default(true),
@@ -167,7 +167,7 @@ export const sessions = pgTable(
     startsAt: timestamptz("starts_at").notNull(),
     endsAt: timestamptz("ends_at").notNull(),
     capacity: integer("capacity").notNull(),
-    coachId: text("coach_id").references(() => profiles.userId, { onDelete: "restrict" }),
+    coachId: uuid("coach_id").references(() => profiles.userId, { onDelete: "restrict" }),
     status: sessionStatusEnum("status").notNull().default("scheduled"),
     cancelReason: text("cancel_reason"),
     ...timestamps,
@@ -193,18 +193,18 @@ export const bookings = pgTable(
     sessionId: uuid("session_id")
       .notNull()
       .references(() => sessions.id, { onDelete: "restrict" }),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .notNull()
       .references(() => profiles.userId, { onDelete: "restrict" }),
     status: bookingStatusEnum("status").notNull(),
     attendance: attendanceEnum("attendance").notNull().default("pending"),
-    createdBy: text("created_by")
+    createdBy: uuid("created_by")
       .notNull()
       .references(() => profiles.userId, { onDelete: "restrict" }),
     waitlistedAt: timestamptz("waitlisted_at"),
     cancelledAt: timestamptz("cancelled_at"),
     lateCancelCharged: boolean("late_cancel_charged"),
-    lateCancelDecidedBy: text("late_cancel_decided_by").references(() => profiles.userId, {
+    lateCancelDecidedBy: uuid("late_cancel_decided_by").references(() => profiles.userId, {
       onDelete: "restrict",
     }),
     ...timestamps,
@@ -259,7 +259,7 @@ export const memberships = pgTable(
   "memberships",
   {
     id: id(),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .notNull()
       .references(() => profiles.userId, { onDelete: "restrict" }),
     planId: uuid("plan_id")
@@ -286,12 +286,12 @@ export const incidents = pgTable(
     description: text("description").notNull(),
     priority: incidentPriorityEnum("priority").notNull().default("medium"),
     status: incidentStatusEnum("status").notNull().default("open"),
-    userId: text("user_id").references(() => profiles.userId, { onDelete: "restrict" }),
+    userId: uuid("user_id").references(() => profiles.userId, { onDelete: "restrict" }),
     sessionId: uuid("session_id").references(() => sessions.id, { onDelete: "restrict" }),
-    createdBy: text("created_by")
+    createdBy: uuid("created_by")
       .notNull()
       .references(() => profiles.userId, { onDelete: "restrict" }),
-    assignedTo: text("assigned_to").references(() => profiles.userId, { onDelete: "restrict" }),
+    assignedTo: uuid("assigned_to").references(() => profiles.userId, { onDelete: "restrict" }),
     closedAt: timestamptz("closed_at"),
     ...timestamps,
   },
@@ -308,7 +308,7 @@ export const announcements = pgTable(
     id: id(),
     title: text("title").notNull(),
     body: text("body").notNull(),
-    createdBy: text("created_by")
+    createdBy: uuid("created_by")
       .notNull()
       .references(() => profiles.userId, { onDelete: "restrict" }),
     publishedAt: timestamptz("published_at").notNull().defaultNow(),
@@ -323,7 +323,7 @@ export const pushDevices = pgTable(
   "push_devices",
   {
     id: id(),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .notNull()
       .references(() => profiles.userId, { onDelete: "restrict" }),
     platform: platformEnum("platform").notNull(),
@@ -339,7 +339,7 @@ export const notifications = pgTable(
   "notifications",
   {
     id: id(),
-    userId: text("user_id")
+    userId: uuid("user_id")
       .notNull()
       .references(() => profiles.userId, { onDelete: "restrict" }),
     kind: notificationKindEnum("kind").notNull(),

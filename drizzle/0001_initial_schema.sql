@@ -13,7 +13,7 @@ CREATE TABLE "announcements" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"title" text NOT NULL,
 	"body" text NOT NULL,
-	"created_by" text NOT NULL,
+	"created_by" uuid NOT NULL,
 	"published_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -22,14 +22,14 @@ CREATE TABLE "announcements" (
 CREATE TABLE "bookings" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"session_id" uuid NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
 	"status" "booking_status" NOT NULL,
 	"attendance" "attendance" DEFAULT 'pending' NOT NULL,
-	"created_by" text NOT NULL,
+	"created_by" uuid NOT NULL,
 	"waitlisted_at" timestamp with time zone,
 	"cancelled_at" timestamp with time zone,
 	"late_cancel_charged" boolean,
-	"late_cancel_decided_by" text,
+	"late_cancel_decided_by" uuid,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "bookings_waitlisted_at_when_waitlisted" CHECK ("bookings"."status" <> 'waitlisted' or "bookings"."waitlisted_at" is not null),
@@ -71,10 +71,10 @@ CREATE TABLE "incidents" (
 	"description" text NOT NULL,
 	"priority" "incident_priority" DEFAULT 'medium' NOT NULL,
 	"status" "incident_status" DEFAULT 'open' NOT NULL,
-	"user_id" text,
+	"user_id" uuid,
 	"session_id" uuid,
-	"created_by" text NOT NULL,
-	"assigned_to" text,
+	"created_by" uuid NOT NULL,
+	"assigned_to" uuid,
 	"closed_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
@@ -82,7 +82,7 @@ CREATE TABLE "incidents" (
 --> statement-breakpoint
 CREATE TABLE "memberships" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
 	"plan_id" uuid NOT NULL,
 	"starts_on" date NOT NULL,
 	"ends_on" date,
@@ -93,7 +93,7 @@ CREATE TABLE "memberships" (
 --> statement-breakpoint
 CREATE TABLE "notifications" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
 	"kind" "notification_kind" NOT NULL,
 	"ref_id" uuid,
 	"sent_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE "plans" (
 );
 --> statement-breakpoint
 CREATE TABLE "profiles" (
-	"user_id" text PRIMARY KEY NOT NULL,
+	"user_id" uuid PRIMARY KEY NOT NULL,
 	"full_name" text NOT NULL,
 	"phone" text,
 	"avatar_url" text,
@@ -130,7 +130,7 @@ CREATE TABLE "profiles" (
 --> statement-breakpoint
 CREATE TABLE "push_devices" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
-	"user_id" text NOT NULL,
+	"user_id" uuid NOT NULL,
 	"platform" "platform" NOT NULL,
 	"token" text NOT NULL,
 	"last_seen_at" timestamp with time zone DEFAULT now() NOT NULL,
@@ -146,7 +146,7 @@ CREATE TABLE "schedule_slots" (
 	"start_time" time NOT NULL,
 	"duration_minutes" integer NOT NULL,
 	"capacity" integer NOT NULL,
-	"coach_id" text,
+	"coach_id" uuid,
 	"valid_from" date NOT NULL,
 	"valid_to" date,
 	"is_active" boolean DEFAULT true NOT NULL,
@@ -167,7 +167,7 @@ CREATE TABLE "sessions" (
 	"starts_at" timestamp with time zone NOT NULL,
 	"ends_at" timestamp with time zone NOT NULL,
 	"capacity" integer NOT NULL,
-	"coach_id" text,
+	"coach_id" uuid,
 	"status" "session_status" DEFAULT 'scheduled' NOT NULL,
 	"cancel_reason" text,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
