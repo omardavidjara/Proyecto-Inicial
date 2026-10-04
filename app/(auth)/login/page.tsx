@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
+import { LegalLinks } from "@/components/legal/legal-links"
 import { LoginForm } from "./login-form"
 
 export const metadata: Metadata = { title: "Iniciar sesión" }
@@ -22,6 +23,7 @@ export default function LoginPage() {
           Regístrate
         </Link>
       </p>
+      <LegalLinks />
     </main>
   )
 }

@@ -89,7 +89,7 @@ Cifras en un PC local; las definitivas, con la web publicada, irán en `docs/PER
 | La CI debería ejecutar `npm audit --omit=dev` (producción) como bloqueante y el completo como aviso | 4 |
 | Sustituir datos de `lib/prototype/`, páginas "Próximamente" y la franja de prototipo por lo real en cada funcionalidad; al final, borrar `lib/prototype/` | 5 |
 | Lectura sin conexión de "Mis reservas" (SPEC §6) y franja con `useOffline`; la caché debe borrarse al cerrar sesión | 5 (F5) |
-| `robots`: las pantallas privadas no deben indexarse (solo `/login` y `/privacidad`) | 7 |
+| `robots`: las pantallas privadas no deben indexarse (solo `/login`, `/privacidad` y `/aviso-legal`) | 7 |
 | Rendimiento: ~29 KB de JS sin usar y *polyfills* heredados en el paquete del framework (no accionable ahora); `logo.png` de 349 KB (Next lo optimiza al servirlo) | 7 |
 | CSP completa para toda la web (hoy solo en `sw.js`) | 6 |
 | **Logo en alta resolución o vectorial**: el actual sale de una imagen de WhatsApp de 755 px; las tiendas piden 1024 px | 8 |

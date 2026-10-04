@@ -200,6 +200,8 @@ app/
   admin/equipo                     Solo desarrollador
   admin/mas                        Menú "Más" en móvil: horario, tipos de clase, tarifas, avisos, ajustes, vista cliente
   offline                          Página sin conexión (la guarda el service worker, public/sw.js)
+  privacidad                       Política de privacidad (pública, sin sesión; RGPD y tiendas)
+  aviso-legal                      Aviso legal y condiciones de uso (pública, sin sesión; LSSI)
   api/auth/[...path]               Neon Auth
   api/cron/generate-sessions       Diario: crea sesiones de la plantilla (próximas 4 semanas)
   api/cron/reminders               Cada 15 min: recordatorios de clase (ver §11: requiere plan Pro o programador externo)
@@ -306,9 +308,10 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 - **Fotos de perfil**: almacenamiento (Vercel Blob propuesto, R2 como alternativa) → Fase 5, al implementar F1. El límite de 4,5 MB por petición de Vercel y el cupo de Blob obligan a redimensionar en el cliente y subir directamente a Blob (LIMITS D7).
 - **Push**: Web Push (PWA) y FCM/APNs vía Capacitor → Fase 8; la tabla `push_devices` sirve para ambos.
 - **Sin conexión**: el service worker cachea "Mis reservas" (solo lectura) → Fase 2 (básico) y Fase 8. Al cerrar sesión o eliminar la cuenta se vacía la caché.
-- **Política de privacidad** (RGPD y tiendas): página pública `/privacidad` → antes de la Fase 8.
+- **Textos legales**: `/privacidad` (RGPD arts. 13-14, LOPDGDD) y `/aviso-legal` (LSSI art. 10) ya existen, públicas y enlazadas desde login, registro, perfil y "Más". Los datos del titular viven en `lib/legal.ts` y están **pendientes** (entre corchetes; las páginas muestran "Borrador" mientras falten). `proxy.ts` (Fase 3) debe dejarlas fuera de la protección por sesión. Si se añade un proveedor que trate datos personales (Sentry, Blob, push…), actualizar la lista de encargados de `/privacidad`. Las incidencias no deben contener datos de salud (RGPD art. 9). `/privacidad` afirma que los datos están en Fráncfort: depende de aplicar LIMITS D3 (Neon `aws-eu-central-1` y Vercel `fra1`) en la Fase 3; si cambia la región, cambiar el texto. Cualquier cambio de los textos legales actualiza `LEGAL.updatedAt`.
 
 ## 12. Historial de cambios
 
+- 2026-10-04 · Rutas públicas `privacidad` y `aviso-legal`; datos del titular en `lib/legal.ts`.
 - 2026-10-04 · Inicio por rol: `(client)/inicio`, `entrenador/` como "Mi semana" (`?semana=`), `entrenador/dia/[date]`, `entrenador/incidencias` y `entrenador/perfil`; `/` lleva a `/login` sin sesión.
 - 2026-10-02 · Versión inicial aprobada. Revisión final: sin FK a `neon_auth` y perfiles anonimizados (eliminación de cuenta), `slot_date` + `is_customized` para que mover sesiones no las duplique, `check` de rol/entrenador, tarifas sin solapes, reglas de baja / ampliar aforo / lista de espera caducada, permisos del entrenador en sesiones individuales, reparto de ajustes admin/desarrollador y límite de cron de Vercel Hobby.

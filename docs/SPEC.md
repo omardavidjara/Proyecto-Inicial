@@ -181,6 +181,8 @@ Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada 
 
 ## 9. Historial de cambios
 
+- 2026-10-04 · Textos legales: política de privacidad (`/privacidad`) y aviso legal (`/aviso-legal`) públicos, información básica de protección de datos en el registro y enlaces en login y perfil. Falta completar los datos del titular.
+
 - 2026-10-04 · Revisión del prototipo (Fase 2): pantalla de **inicio por rol**. El cliente tiene "Inicio" (Avisos pasa a estar dentro de Inicio y en la cabecera) y el entrenador entra en "Mi semana" (calendario semanal → día → sesión).
 
 - 2026-10-02 · Versión inicial aprobada. Revisión final: entrenadores con y sin rol de administrador, sesiones individuales creadas por el entrenador, rechazo de alta = baja, eliminación de cuenta (App Store / RGPD), caducidad de la lista de espera, reglas de reserva para el administrador y ajustes técnicos para el desarrollador.

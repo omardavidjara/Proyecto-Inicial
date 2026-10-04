@@ -60,6 +60,7 @@ describe.each([
     ['botón principal', 'primary-foreground', 'primary'],
     ['enlaces y cifras en primary', 'primary', 'background'],
     ['primary sobre tarjeta', 'primary', 'card'],
+    ['enlace primary sobre muted (información de privacidad)', 'primary', 'muted'],
     ['botón secundario', 'secondary-foreground', 'secondary'],
     ['destructive sobre fondo', 'destructive', 'background'],
   ])('%s ≥ 4,5:1', (_, fg, bg) => {

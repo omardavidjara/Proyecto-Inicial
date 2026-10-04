@@ -23,7 +23,7 @@ El service worker (modo sin conexión) solo se registra en producción: `npm run
 app/                 Rutas (App Router): (auth), (client), admin, entrenador, offline
 components/ui/       Componentes de shadcn/ui adaptados al sistema de diseño
 components/          Componentes propios (marco de pantalla, sesiones, estados)
-lib/                 Utilidades (fechas en la zona del gimnasio, plazas) y datos del prototipo
+lib/                 Utilidades (fechas en la zona del gimnasio, plazas), datos del titular (legal.ts) y datos del prototipo
 public/              Logo, iconos de la PWA y service worker (sw.js)
 __tests__/           Tests (Vitest), incluido el contraste de colores
 docs/                Documentación del proyecto
@@ -37,3 +37,7 @@ docs/                Documentación del proyecto
 - Sistema de diseño: [docs/DESIGN.md](docs/DESIGN.md)
 - Límites de los servicios: [docs/LIMITS.md](docs/LIMITS.md)
 - Revisiones de cierre de fase: [docs/reviews/](docs/reviews/)
+
+## Textos legales
+
+Política de privacidad (`/privacidad`, RGPD y LOPDGDD) y aviso legal (`/aviso-legal`, LSSI), públicos y enlazados desde el inicio de sesión, el registro y el perfil. Los datos del titular se rellenan en `lib/legal.ts`; mientras falten, las páginas se marcan como borrador.

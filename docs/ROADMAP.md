@@ -45,6 +45,8 @@ Revisión de cierre: `docs/reviews/FASE-2.md` (pendientes heredados por otras fa
 - [x] [C] Contraste, foco de teclado y comportamiento en móvil
 
 ## Fase 3 · Datos y seguridad base
+- [ ] [T] Dar los datos del titular del gimnasio para los textos legales (razón social, NIF, dirección, correo de privacidad) → `lib/legal.ts`. Recomendable que un profesional revise `/privacidad` y `/aviso-legal` antes de abrir la app al gimnasio real
+- [ ] [J] Firmar o aceptar los contratos de encargado del tratamiento (DPA, RGPD art. 28) de Vercel y Neon, y registrar las actividades de tratamiento del gimnasio (RGPD art. 30)
 - [ ] [T] Crear la cuenta y el proyecto en Neon (región AWS Frankfurt, `aws-eu-central-1`; autoescalado 0,25–1 CU, ver LIMITS D3) y dar a Claude `DATABASE_URL` (con pooling) y `DATABASE_URL_UNPOOLED` (directa, para migraciones) para `.env.local`
 - [ ] [T] Activar Neon Auth en el proyecto (pestaña Auth de la consola), elegir los métodos de login, configurar las URL de redirección y dar a Claude sus claves
 - [ ] [T] Conectar el repositorio a Vercel, añadir la integración de Neon (una rama de base de datos por cada preview) y copiar las variables de entorno
@@ -53,7 +55,7 @@ Revisión de cierre: `docs/reviews/FASE-2.md` (pendientes heredados por otras fa
 - [ ] [C] `vercel.json` con región `fra1`, *Ignored Build Step* para cambios solo de documentación y borrado de ramas de Neon al cerrar PR (LIMITS D3, D4, D6)
 - [ ] [C] Drizzle ORM + driver serverless de Neon; esquema en `db/schema.ts` y migraciones en `drizzle/` generadas con drizzle-kit (nunca a mano en la consola de Neon)
 - [ ] [C] Login con Neon Auth (SDK oficial, sesión en cookies); tabla `profiles` con el mismo `user_id` que `neon_auth.user`, creada en el primer inicio de sesión (sin FK hacia `neon_auth`, ver ARCHITECTURE §2)
-- [ ] [C] Proteger las rutas: `(client)`, `admin/` y `entrenador/` exigen sesión y rol (hoy, prototipo, se abren sin login); `/` deja de ser el índice del prototipo y redirige a `/login` o al inicio de cada rol (ARCHITECTURE §5)
+- [ ] [C] Proteger las rutas: `(client)`, `admin/` y `entrenador/` exigen sesión y rol (hoy, prototipo, se abren sin login; `/login`, `/registro`, `/privacidad`, `/aviso-legal` y `/offline` siguen públicas); `/` deja de ser el índice del prototipo y redirige a `/login` o al inicio de cada rol (ARCHITECTURE §5)
 - [ ] [C] Capa de datos solo en servidor: cada consulta filtra por el `user_id` de la sesión verificada; validar toda entrada con Zod
 - [ ] [C] Test con dos usuarios: ninguno ve los datos del otro
 
@@ -67,7 +69,7 @@ Revisión de cierre: `docs/reviews/FASE-2.md` (pendientes heredados por otras fa
 ## Fase 5 · Funcionalidades (una por sesión, en el orden de SPEC)
 Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → CI verde → PR → [T] el usuario fusiona.
 Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/prototype/` por consultas reales, páginas "Próximamente" (`components/coming-soon.tsx`) por las pantallas reales y la franja `PrototypeNotice`. Cuando no quede nada, borrar `lib/prototype/` y esos dos componentes.
-- [ ] F1 · Registro, alta pendiente/aprobación, perfil con foto y bajas
+- [ ] F1 · Registro, alta pendiente/aprobación, perfil con foto y bajas (el formulario de registro muestra `PrivacySummary` antes de enviar; perfil con enlaces legales y "Eliminar mi cuenta")
 - [ ] F2 · Tipos de clase (grupal / individual, aforo, color)
 - [ ] F3 · Horario: plantilla semanal, generación de sesiones y sesiones sueltas/cancelación
 - [ ] F4 · Tarifas y asignación a clientes
@@ -80,7 +82,7 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 - [ ] F11 · Equipo: roles y ajustes del gimnasio (solo desarrollador)
 
 ## Fase 6 · Auditoría de seguridad
-- [ ] [C] `docs/AUDIT.md` por gravedad: filtrado por usuario en cada consulta a Neon, sesión de Neon Auth, autorización, validación, secretos, cabeceras/CSP, límite de peticiones, dependencias, subida de archivos
+- [ ] [C] `docs/AUDIT.md` por gravedad: filtrado por usuario en cada consulta a Neon, sesión de Neon Auth, autorización, validación, secretos, cabeceras/CSP, límite de peticiones, dependencias, subida de archivos y protección de datos (lo que dice `/privacidad` coincide con lo que hace la app: datos que se guardan, proveedores, conservación, eliminación de cuenta y vaciado de la caché al cerrar sesión)
 - [ ] 🛑 [T] Revisar la auditoría
 - [ ] [C] Corregir los puntos críticos, un commit por punto
 
@@ -88,6 +90,7 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 - [ ] [C] Lighthouse (rendimiento, accesibilidad, buenas prácticas, SEO) → cifras en `docs/PERF.md`
 - [ ] [C] Imágenes con `next/image`, carga diferida, índices para consultas lentas
 - [ ] [J] Uso comercial: Vercel Hobby no lo permite; antes de abrir la app al gimnasio real, Vercel Pro u otro alojamiento (LIMITS D1)
+- [ ] [C] Antes de abrir la app al gimnasio real: `lib/legal.ts` completo (`isLegalComplete` en `true`, sin aviso de "Borrador") y fecha de `updatedAt` al día
 - [ ] [T] Dominio propio en Vercel
 - [ ] [T] Probar la web publicada en un móvil real
 
@@ -99,7 +102,8 @@ La app nativa carga la web publicada en Vercel (SSR), así que las mejoras de la
 - [ ] [T] Cuentas: Google Play Console (pago único) y Apple Developer (anual)
 - [ ] [T] Compilar iOS: requiere Mac con Xcode o un servicio en la nube (Codemagic, Appflow). Android funciona en Windows con Android Studio
 - [ ] [J] Pruebas internas: TestFlight y pista interna de Play Console
-- [ ] [C] Política de privacidad pública (`/privacidad`) y comprobar que la eliminación de cuenta funciona desde la app (requisitos de App Store y Google Play)
+- [x] [C] Política de privacidad pública (`/privacidad`) y aviso legal (`/aviso-legal`), enlazados desde login, registro y perfil (adelantado el 2026-10-04)
+- [ ] [C] Revisar que `/privacidad` sigue al día (proveedores, permisos nativos) y comprobar que la eliminación de cuenta funciona desde la app (requisitos de App Store y Google Play)
 - [ ] 🛑 [T] Enviar a revisión en las tiendas
 
 ## Fase 9 · Mantenimiento
