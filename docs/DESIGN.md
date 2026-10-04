@@ -25,13 +25,13 @@ Modo claro y oscuro según el sistema (`prefers-color-scheme`). Todos los pares 
 | `muted-foreground` | Texto secundario (horas, metadatos) | `#52525b` (zinc-600) | `#a1a1aa` (zinc-400) |
 | `border` / `input` | Bordes y campos | `#e4e4e7` | `#3f3f46` |
 | `brand` | Naranja del logo: decoración, ilustraciones, nunca texto pequeño sobre blanco | `#c4713e` | `#c4713e` |
-| `primary` | Acción principal, día seleccionado, pestaña activa | `#a85a2c` (naranja Athlos oscuro) | `#e0915c` |
+| `primary` | Acción principal, día seleccionado, pestaña activa | `#a05428` (naranja Athlos oscuro) | `#e0915c` |
 | `primary-foreground` | Texto sobre `primary` | `#ffffff` | `#0b0b0c` |
 | `secondary` | Botones secundarios | `#f4f4f5` | `#27272a` |
 | `destructive` | Anular, dar de baja, eliminar | `#b91c1c` | `#f87171` |
-| `ring` | Anillo de foco | `#a85a2c` | `#e0915c` |
+| `ring` | Anillo de foco | `#a05428` | `#e0915c` |
 
-El naranja sale del logo de Athlos Centro Deportivo (`#c4713e`, terracota). Sobre blanco solo da 3,6:1, insuficiente para texto, así que la acción principal usa el mismo tono oscurecido: `#a85a2c` con texto blanco da 5,0:1. En oscuro se aclara a `#e0915c` con texto casi negro (7,9:1).
+El naranja sale del logo de Athlos Centro Deportivo (`#c4713e`, terracota). Sobre blanco solo da 3,6:1, insuficiente para texto, así que la acción principal usa el mismo tono oscurecido: `#a05428` con texto blanco da 5,5:1 (y 4,8:1 sobre su propio fondo al 10 %, en la pestaña activa). En oscuro se aclara a `#e0915c` con texto casi negro (7,9:1).
 
 ### 2.1.1 Logo
 
@@ -43,8 +43,8 @@ El naranja sale del logo de Athlos Centro Deportivo (`#c4713e`, terracota). Sobr
 
 | Estado | Color | Texto / icono obligatorio |
 |---|---|---|
-| Plazas libres | verde `success` (`#15803d` / `#4ade80`) | "5 plazas" |
-| Últimas plazas (≤ 20 % del aforo) | ámbar `warning` (`#b45309` / `#fbbf24`) | "2 plazas" |
+| Plazas libres | verde `success` (`#147a3a` / `#4ade80`) | "5 plazas" |
+| Últimas plazas (≤ 20 % del aforo) | ámbar `warning` (`#a14a07` / `#fbbf24`) | "2 plazas" |
 | Completa | `muted-foreground` | "Completa · lista de espera" |
 | Reservada por mí | `primary` (borde izquierdo + insignia) | ✓ "Reservada" |
 | En lista de espera | ámbar `warning` | "En espera · nº 3" |
@@ -139,6 +139,11 @@ Viven en `components/ui/` (generados con la CLI de shadcn y adaptables). Compone
 - Formularios: `label` asociado, errores anunciados (`aria-describedby`), `autocomplete` correcto (`email`, `current-password`, `tel`, `name`).
 - No bloquear el zoom (`maximum-scale` sin fijar).
 - Movimiento reducido: sin transiciones si `prefers-reduced-motion: reduce`.
+- Enlace "Saltar al contenido" como primer elemento enfocable en las pantallas con navegación (`#contenido` es el `main`).
+- Anillos de foco **opacos** (`ring-ring`, nunca `ring-ring/50`): un anillo al 50 % no llega a 3:1.
+- Todo lo que cambia con `hover:` cambia también con `active:` (respuesta al toque).
+- Los controles llevan `touch-action: manipulation` (sin retardo de doble toque) y el texto no se reescala al girar (`text-size-adjust`).
+- **Comprobación automática**: `__tests__/contrast.test.ts` lee los tokens de `app/globals.css` y exige AA en claro y oscuro (texto 4,5:1; foco, iconos y colores de clase 3:1), incluidas las insignias sobre su fondo translúcido.
 
 ## 10. Historial de cambios
 

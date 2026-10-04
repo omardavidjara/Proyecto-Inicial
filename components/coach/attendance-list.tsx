@@ -66,7 +66,7 @@ function MarkButton({ active, tone, label, onClick, children }: {
       onClick={onClick}
       className={cn(
         "flex size-11 items-center justify-center rounded-lg border outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-5",
-        !active && "text-muted-foreground hover:bg-muted",
+        !active && "text-muted-foreground hover:bg-muted active:bg-muted/70",
         active && tone === "success" && "border-success bg-success/15 text-success",
         active && tone === "destructive" && "border-destructive bg-destructive/15 text-destructive"
       )}

@@ -31,7 +31,7 @@ export default async function ClientHomePage() {
         <Link
           href="/avisos"
           aria-label={`Avisos (${ANNOUNCEMENTS.length} nuevos)`}
-          className="relative -mr-3 flex size-11 items-center justify-center rounded-lg outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+          className="relative -mr-3 flex size-11 items-center justify-center rounded-lg outline-none hover:bg-muted active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Bell className="size-6" aria-hidden="true" />
           <span aria-hidden="true" className="absolute top-2.5 right-2.5 size-2.5 rounded-full bg-primary ring-2 ring-background" />

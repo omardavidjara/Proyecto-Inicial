@@ -71,7 +71,7 @@
   --popover: #ffffff;
   --popover-foreground: #18181b;
   --brand: #c4713e;
-  --primary: #a85a2c;
+  --primary: #a05428;
   --primary-foreground: #ffffff;
   --secondary: #f4f4f5;
   --secondary-foreground: #18181b;
@@ -80,11 +80,11 @@
   --accent: #f4f4f5;
   --accent-foreground: #18181b;
   --destructive: #b91c1c;
-  --success: #15803d;
-  --warning: #b45309;
+  --success: #147a3a;
+  --warning: #a14a07;
   --border: #e4e4e7;
   --input: #e4e4e7;
-  --ring: #a85a2c;
+  --ring: #a05428;
   --class-orange: #c4713e;
   --class-red: #dc2626;
   --class-amber: #d97706;
@@ -93,19 +93,19 @@
   --class-blue: #2563eb;
   --class-violet: #7c3aed;
   --class-pink: #db2777;
-  --chart-1: #a85a2c;
+  --chart-1: #a05428;
   --chart-2: #0d9488;
   --chart-3: #2563eb;
   --chart-4: #d97706;
   --chart-5: #7c3aed;
   --sidebar: #fafafa;
   --sidebar-foreground: #18181b;
-  --sidebar-primary: #a85a2c;
+  --sidebar-primary: #a05428;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #f4f4f5;
   --sidebar-accent-foreground: #18181b;
   --sidebar-border: #e4e4e7;
-  --sidebar-ring: #a85a2c;
+  --sidebar-ring: #a05428;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -162,13 +162,27 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring;
   }
   body {
     @apply bg-background text-foreground;
   }
   html {
     @apply font-sans;
+    /* Móvil: tamaño de texto estable al girar y sin el destello gris al tocar (hay estados :active propios) */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* Sin el retardo del doble toque para hacer zoom en los controles (el zoom con dos dedos sigue activo) */
+  a,
+  button,
+  input,
+  label,
+  select,
+  textarea,
+  [role="button"] {
+    touch-action: manipulation;
   }
 }
 /* Safe areas (muesca de iPhone, barra de gestos de Android): docs/DESIGN.md §5 */

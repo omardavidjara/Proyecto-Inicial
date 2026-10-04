@@ -22,3 +22,12 @@ test('el campo de texto tiene 44 px de alto y texto de 16 px', () => {
   expect(input.className).toContain('h-11')
   expect(input.className).toContain('text-base')
 })
+
+test('los anillos de foco son opacos (contraste ≥ 3:1, ver contrast.test.ts)', async () => {
+  const { readFileSync, readdirSync } = await import('node:fs')
+  const dir = 'components/ui'
+  for (const file of readdirSync(dir)) {
+    const source = readFileSync(`${dir}/${file}`, 'utf8')
+    expect(source, file).not.toMatch(/focus-visible:ring-(ring|destructive)\/\d+/)
+  }
+})

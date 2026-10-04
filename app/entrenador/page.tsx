@@ -60,7 +60,7 @@ export default async function CoachWeekPage({
                 href={`/entrenador/dia/${day}`}
                 aria-label={`${formatDayLong(day)}: ${sessions.length === 0 ? "sin clases" : `${sessions.length} clases`}`}
                 className={cn(
-                  "flex min-h-16 min-w-0 gap-4 rounded-xl border bg-card p-3 outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:h-full lg:min-h-48 lg:flex-col lg:gap-3",
+                  "flex min-h-16 min-w-0 gap-4 rounded-xl border bg-card p-3 outline-none transition-colors hover:bg-muted/50 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 lg:h-full lg:min-h-48 lg:flex-col lg:gap-3",
                   isToday && "border-primary",
                   past && "opacity-60"
                 )}
@@ -105,7 +105,7 @@ function WeekLink({ monday, label, icon }: { monday: string; label: string; icon
     <Link
       href={`/entrenador?semana=${monday}`}
       aria-label={label}
-      className="flex size-11 items-center justify-center rounded-lg border bg-card outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-5"
+      className="flex size-11 items-center justify-center rounded-lg border bg-card outline-none hover:bg-muted active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-5"
     >
       <span aria-hidden="true">{icon}</span>
     </Link>

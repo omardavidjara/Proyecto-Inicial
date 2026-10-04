@@ -21,7 +21,7 @@ export function DayPicker({ days, selected, hrefFor }: {
                 aria-label={formatDayLong(day)}
                 className={cn(
                   "flex h-16 min-w-12 flex-col items-center justify-center rounded-xl outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  active ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70"
+                  active ? "bg-primary text-primary-foreground" : "bg-muted hover:bg-muted/70 active:bg-muted/50"
                 )}
               >
                 <span className={cn("text-xs capitalize", !active && "text-muted-foreground")}>

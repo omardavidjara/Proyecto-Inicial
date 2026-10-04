@@ -22,7 +22,7 @@ export function SessionCard({ session }: { session: SessionCardData }) {
     <Link
       href={session.href}
       className={cn(
-        "relative flex min-h-20 items-center gap-4 overflow-hidden rounded-xl border bg-card py-3 pr-3 pl-5 outline-none transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        "relative flex min-h-20 items-center gap-4 overflow-hidden rounded-xl border bg-card py-3 pr-3 pl-5 outline-none transition-colors hover:bg-muted/50 active:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
         mine && "border-primary",
         (session.closed || cancelled) && "opacity-60"
       )}

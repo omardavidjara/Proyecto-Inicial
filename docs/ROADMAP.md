@@ -41,7 +41,7 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [x] [C] PWA: manifest, iconos, service worker básico y página sin conexión
 - [x] [C] Prototipo de las 2 o 3 pantallas clave
 - [x] 🛑 [T] Revisar el prototipo (también en un móvil)
-- [ ] [C] Contraste, foco de teclado y comportamiento en móvil
+- [x] [C] Contraste, foco de teclado y comportamiento en móvil
 
 ## Fase 3 · Datos y seguridad base
 - [ ] [T] Crear la cuenta y el proyecto en Neon (región AWS Frankfurt, `aws-eu-central-1`; autoescalado 0,25–1 CU, ver LIMITS D3) y dar a Claude `DATABASE_URL` (con pooling) y `DATABASE_URL_UNPOOLED` (directa, para migraciones) para `.env.local`

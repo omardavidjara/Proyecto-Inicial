@@ -47,7 +47,7 @@ export function BottomNav({ items, label }: { items: NavItem[]; label: string })
                   "lg:h-11 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:text-sm lg:[&_svg]:size-5",
                   active
                     ? "text-primary lg:bg-primary/10"
-                    : "hover:text-foreground lg:hover:bg-muted"
+                    : "hover:text-foreground active:text-foreground lg:hover:bg-muted"
                 )}
               >
                 <span aria-hidden="true">{item.icon}</span>

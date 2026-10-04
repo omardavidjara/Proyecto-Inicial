@@ -17,6 +17,12 @@ export function AppShell({
 }) {
   return (
     <div className="flex min-h-dvh flex-col pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0 lg:pl-60">
+      <a
+        href="#contenido"
+        className="sr-only z-[60] rounded-lg bg-primary px-4 py-3 font-medium text-primary-foreground focus:not-sr-only focus:fixed focus:top-[calc(env(safe-area-inset-top)+0.5rem)] focus:left-2 focus:ring-2 focus:ring-ring focus:ring-offset-2"
+      >
+        Saltar al contenido
+      </a>
       <Link
         href="/"
         className="fixed top-0 left-0 z-50 hidden h-20 w-60 items-center gap-3 px-6 pt-safe font-semibold tracking-tight lg:flex"
@@ -55,7 +61,7 @@ export function Page({
             <Link
               href={backHref}
               aria-label="Volver"
-              className="-ml-3 flex size-11 items-center justify-center rounded-lg outline-none hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring"
+              className="-ml-3 flex size-11 items-center justify-center rounded-lg outline-none hover:bg-muted active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring"
             >
               <ChevronLeft className="size-6" aria-hidden="true" />
             </Link>
@@ -64,7 +70,7 @@ export function Page({
           {actions}
         </div>
       </header>
-      <main className={cn("mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-4", width)}>
+      <main id="contenido" tabIndex={-1} className={cn("mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-4 outline-none", width)}>
         {children}
       </main>
     </>
