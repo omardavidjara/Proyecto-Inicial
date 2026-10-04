@@ -47,6 +47,8 @@ const WEEKDAY: Slot[] = [
   ["20:00", "21:00", "cross", "Marta", 12],
 ]
 
+const COACHES = ["Laura", "Dani", "Marta"]
+
 const SATURDAY: Slot[] = [
   ["10:00", "11:00", "cross", "Laura", 16],
   ["11:30", "12:30", "hyrox", "Dani", 14],
@@ -66,7 +68,9 @@ export function prototypeSessions(date: string, today = prototypeToday()): Proto
   const slots = weekday === 6 ? [] : weekday === 5 ? SATURDAY : WEEKDAY
   const offset = daysBetween(today, date)
 
-  return slots.map(([start, end, type, coach, capacity], index) => {
+  return slots.map(([start, end, type, baseCoach, capacity], index) => {
+    // Los entrenadores rotan según el día para que cada semana sea variada
+    const coach = COACHES[(COACHES.indexOf(baseCoach) + weekday) % COACHES.length]
     const seed = hash(`${date}${start}`)
     const fullness = offset <= 0 ? 0.9 : offset >= 5 ? 0.3 : 0.75
     const booked = Math.min(capacity, Math.round(capacity * fullness + (seed % 5) - 2))
@@ -115,4 +119,53 @@ function hash(text: string): number {
 // Para que la lista de días del calendario tenga siempre una semana
 export function prototypeWeek(today = prototypeToday()): string[] {
   return Array.from({ length: 7 }, (_, i) => addDays(today, i))
+}
+
+// --- Entrenador ---
+
+/** Entrenador que "ve" el prototipo */
+export const PROTOTYPE_COACH = "Laura"
+
+export function prototypeCoachSessions(date: string, coach = PROTOTYPE_COACH, today = prototypeToday()): ProtoSession[] {
+  return prototypeSessions(date, today).filter((s) => s.coach === coach)
+}
+
+export type ProtoAttendee = {
+  id: string
+  name: string
+  attendance: "pending" | "attended" | "no_show"
+}
+
+const FIRST_NAMES = ["Ana", "Carlos", "Lucía", "Javier", "Elena", "Pablo", "Sara", "Diego", "Marina", "Hugo", "Irene", "Álvaro", "Nuria", "Raúl", "Clara", "Iván"]
+const INITIALS = "GMRLSPTVBCF"
+
+/** Asistentes ficticios de una sesión */
+export function prototypeAttendees(session: ProtoSession): ProtoAttendee[] {
+  const seed = hash(session.id)
+  return Array.from({ length: session.booked }, (_, i) => ({
+    id: `${session.id}-${i}`,
+    name: `${FIRST_NAMES[(seed + i * 7) % FIRST_NAMES.length]} ${INITIALS[(seed + i) % INITIALS.length]}.`,
+    attendance: "pending" as const,
+  })).sort((a, b) => a.name.localeCompare(b.name, "es"))
+}
+
+// --- Cliente ---
+
+export const PROTOTYPE_CLIENT = "Alex"
+
+export const ANNOUNCEMENTS = [
+  { id: "a1", title: "Horario especial el 12 de octubre", body: "Por el festivo solo habrá clases de 10:00 a 13:00.", date: "Hace 2 días" },
+  { id: "a2", title: "Nueva clase de Movilidad", body: "Desde el lunes, martes y jueves a las 08:30.", date: "Hace 1 semana" },
+]
+
+/** Próxima reserva confirmada del cliente desde ahora */
+export function prototypeNextBooking(today: string, now: string): ProtoSession | undefined {
+  for (let i = 0; i < 7; i++) {
+    const date = addDays(today, i)
+    const next = prototypeSessions(date, today).find(
+      (s) => s.myBooking?.status === "confirmed" && s.status === "scheduled" && (date > today || s.start > now)
+    )
+    if (next) return next
+  }
+  return undefined
 }

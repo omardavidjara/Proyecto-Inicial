@@ -80,7 +80,7 @@ Reglas (configurables por el administrador; los periodos de las tarifas se cuent
 - **Anulaciones tardías pendientes**: lista con las anulaciones tardías sin decidir; por cada una, "Descontar clase" o "No descontar".
 
 ### F7. Entrenadores
-- "Mis clases": sesiones que imparte hoy y próximas.
+- **Inicio del entrenador = su semana**: calendario semanal (lunes a domingo) con las sesiones que imparte; se puede pasar a la semana anterior o siguiente. Al tocar un día se ven las clases de ese día, con hora, tipo y ocupación.
 - Lista de asistentes de cada sesión y marcar asistencia / falta.
 - Crear una **sesión individual** que imparte él mismo y apuntar en ella a un cliente.
 - Abrir incidencias.
@@ -111,18 +111,23 @@ Reglas (configurables por el administrador; los periodos de las tarifas se cuent
 
 **Comunes**: Inicio de sesión · Registro · Alta pendiente · Perfil.
 
-**Cliente** (navegación inferior: Calendario · Mis reservas · Avisos · Perfil)
+Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada usuario entra en **su pantalla de inicio** (cliente → Inicio, entrenador → Mi semana, administrador → Hoy).
+
+**Cliente** (navegación inferior: Inicio · Calendario · Mis reservas · Perfil)
+- **Inicio**: saludo, próxima clase reservada, clases que le quedan en el periodo, últimos avisos y botón "Reservar clase"
 - Calendario (selector de día + lista de sesiones)
 - Detalle de sesión (reservar / anular / lista de espera)
 - Mis reservas (próximas, historial, clases restantes)
-- Avisos
+- Avisos (desde Inicio y el icono de campana de la cabecera)
 
-**Entrenador**
-- Mis clases · Detalle de sesión con asistentes
+**Entrenador** (navegación inferior: Mi semana · Incidencias · Perfil)
+- **Mi semana** (inicio): calendario semanal de sus clases
+- Día: clases que imparte ese día
+- Detalle de sesión con asistentes y asistencia
 
 **Administrador** (navegación: Hoy · Agenda · Clientes · Incidencias · Más)
 - Hoy (sesiones del día con ocupación y anulaciones tardías pendientes)
-- Mis clases (si también es entrenador)
+- Mi semana (si también es entrenador; enlace desde "Hoy" y "Más")
 - Agenda (día / semana / mes) · Detalle de sesión
 - Horario (plantilla semanal) · Tipos de clase
 - Clientes · Ficha de cliente · Altas pendientes
@@ -175,5 +180,7 @@ Reglas (configurables por el administrador; los periodos de las tarifas se cuent
 6. **Administradores entrenadores**: un administrador puede ser también entrenador; también hay entrenadores que no son administradores.
 
 ## 9. Historial de cambios
+
+- 2026-10-04 · Revisión del prototipo (Fase 2): pantalla de **inicio por rol**. El cliente tiene "Inicio" (Avisos pasa a estar dentro de Inicio y en la cabecera) y el entrenador entra en "Mi semana" (calendario semanal → día → sesión).
 
 - 2026-10-02 · Versión inicial aprobada. Revisión final: entrenadores con y sin rol de administrador, sesiones individuales creadas por el entrenador, rechazo de alta = baja, eliminación de cuenta (App Store / RGPD), caducidad de la lista de espera, reglas de reserva para el administrador y ajustes técnicos para el desarrollador.

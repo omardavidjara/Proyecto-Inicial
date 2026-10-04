@@ -173,13 +173,17 @@ app/
   (auth)/login                     Inicio de sesión
   (auth)/registro                  Registro
   (auth)/pendiente                 Alta pendiente de aprobación
-  (client)/calendario              Calendario (inicio del cliente)
+  (client)/inicio                  Inicio del cliente
+  (client)/calendario              Calendario
   (client)/calendario/[sessionId]  Detalle de sesión
   (client)/reservas                Mis reservas
   (client)/avisos                  Avisos
   (client)/perfil                  Perfil
-  entrenador/                      Mis clases (cualquier perfil con is_coach)
+  entrenador/                      Mi semana (cualquier perfil con is_coach) ?semana=AAAA-MM-DD (lunes)
+  entrenador/dia/[date]            Clases que imparte ese día (AAAA-MM-DD)
   entrenador/sesiones/[sessionId]  Asistentes + marcar asistencia
+  entrenador/incidencias           Incidencias que ha abierto (F9)
+  entrenador/perfil                Perfil (mismo componente que /perfil, con la navegación del entrenador)
   admin/                           Hoy
   admin/agenda                     ?vista=dia|semana|mes&fecha=AAAA-MM-DD
   admin/sesiones/[sessionId]       Detalle de sesión
@@ -201,7 +205,7 @@ app/
   api/cron/reminders               Cada 15 min: recordatorios de clase (ver §11: requiere plan Pro o programador externo)
 ```
 
-- `/` redirige según rol: cliente → `/calendario`, entrenador → `/entrenador`, admin/desarrollador → `/admin` (si además es entrenador, el layout de admin enlaza a "Mis clases").
+- `/` redirige: sin sesión → `/login`; cliente → `/inicio`, entrenador → `/entrenador`, admin/desarrollador → `/admin` (si además es entrenador, "Hoy" y "Más" enlazan a "Mi semana"). Hasta la Fase 3, `/` es el índice del prototipo.
 - **Vista cliente** para admins: simplemente pueden abrir las rutas de `(client)`; el layout de admin tiene un enlace "Vista cliente" y viceversa.
 - Mutaciones: **Server Actions** (en `app/**/actions.ts`), cada una valida con Zod y llama a la capa de datos.
 - `api/cron/*` exige la cabecera `Authorization: Bearer $CRON_SECRET`.
@@ -306,4 +310,5 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 12. Historial de cambios
 
+- 2026-10-04 · Inicio por rol: `(client)/inicio`, `entrenador/` como "Mi semana" (`?semana=`), `entrenador/dia/[date]`, `entrenador/incidencias` y `entrenador/perfil`; `/` lleva a `/login` sin sesión.
 - 2026-10-02 · Versión inicial aprobada. Revisión final: sin FK a `neon_auth` y perfiles anonimizados (eliminación de cuenta), `slot_date` + `is_customized` para que mover sesiones no las duplique, `check` de rol/entrenador, tarifas sin solapes, reglas de baja / ampliar aforo / lista de espera caducada, permisos del entrenador en sesiones individuales, reparto de ajustes admin/desarrollador y límite de cron de Vercel Hobby.

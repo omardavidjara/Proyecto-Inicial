@@ -26,6 +26,19 @@ export function weekdayIndex(key: string): number {
   return (toUtcNoon(key).getUTCDay() + 6) % 7
 }
 
+/** Lunes de la semana de ese día (las semanas van de lunes a domingo, docs/SPEC.md §8) */
+export function startOfWeek(key: string): string {
+  return addDays(key, -weekdayIndex(key))
+}
+
+/** "5 – 11 oct" o "29 sept – 5 oct" */
+export function formatWeekRange(monday: string): string {
+  const sunday = addDays(monday, 6)
+  const month = (key: string) => format(key, { month: "short" }).replace(".", "")
+  const start = monday.slice(5, 7) === sunday.slice(5, 7) ? formatDayNumber(monday) : `${formatDayNumber(monday)} ${month(monday)}`
+  return `${start} – ${formatDayNumber(sunday)} ${month(sunday)}`
+}
+
 /** "lun" */
 export function formatWeekdayShort(key: string): string {
   return format(key, { weekday: "short" }).replace(".", "")

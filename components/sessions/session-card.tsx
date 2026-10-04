@@ -10,7 +10,8 @@ export type SessionCardData = SessionStatusInput & {
   end: string
   className: string
   color: ClassColor
-  coach: string
+  /** Debajo del nombre: el entrenador (cliente) o la ocupación (entrenador) */
+  subtitle: string
 }
 
 /** Tarjeta de sesión del calendario: toda la tarjeta es el objetivo táctil */
@@ -34,7 +35,7 @@ export function SessionCard({ session }: { session: SessionCardData }) {
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
         <span className={cn("truncate font-medium", cancelled && "line-through")}>{session.className}</span>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-sm text-muted-foreground">{session.coach}</span>
+          <span className="text-sm text-muted-foreground">{session.subtitle}</span>
           <SessionStatusBadge session={session} />
         </div>
       </div>

@@ -9,13 +9,16 @@ export type NavItem = {
   href: string
   label: string
   icon: ReactNode
-  /** Solo activo en la ruta exacta (p. ej. "/admin", que es prefijo de las demás) */
-  exact?: boolean
 }
 
-export function isActive(pathname: string, item: Pick<NavItem, "href" | "exact">) {
-  if (pathname === item.href) return true
-  return !item.exact && pathname.startsWith(item.href + "/")
+/**
+ * Elemento activo: el de ruta más larga que coincide con la actual
+ * ("/entrenador/incidencias" gana a "/entrenador", que es prefijo de todas).
+ */
+export function activeHref(pathname: string, hrefs: string[]): string | undefined {
+  return hrefs
+    .filter((href) => pathname === href || pathname.startsWith(href + "/"))
+    .sort((a, b) => b.length - a.length)[0]
 }
 
 /**
@@ -24,6 +27,7 @@ export function isActive(pathname: string, item: Pick<NavItem, "href" | "exact">
  */
 export function BottomNav({ items, label }: { items: NavItem[]; label: string }) {
   const pathname = usePathname()
+  const current = activeHref(pathname, items.map((item) => item.href))
 
   return (
     <nav
@@ -32,7 +36,7 @@ export function BottomNav({ items, label }: { items: NavItem[]; label: string })
     >
       <ul className="mx-auto flex h-16 max-w-2xl lg:mt-20 lg:h-auto lg:flex-col lg:gap-1 lg:px-3">
         {items.map((item) => {
-          const active = isActive(pathname, item)
+          const active = item.href === current
           return (
             <li key={item.href} className="flex-1 lg:flex-none">
               <Link

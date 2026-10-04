@@ -5,7 +5,9 @@ import { ChevronRight } from "lucide-react"
 // PROTOTIPO (Fase 2): índice de pantallas. En la Fase 3, "/" redirigirá según el rol (docs/ARCHITECTURE.md §5).
 const SCREENS = [
   { href: "/login", title: "Inicio de sesión", description: "Común a todos los usuarios" },
+  { href: "/inicio", title: "Inicio del cliente", description: "Próxima clase, clases restantes y avisos" },
   { href: "/calendario", title: "Calendario", description: "Cliente: elegir día y ver las sesiones" },
+  { href: "/entrenador", title: "Mi semana (entrenador)", description: "Semana → día → clase con asistentes" },
   { href: "/admin", title: "Hoy", description: "Administrador: sesiones del día y anulaciones tardías" },
   { href: "/offline", title: "Sin conexión", description: "Lo que se ve al abrir la app sin red" },
 ]
@@ -37,7 +39,7 @@ export default function Home() {
         ))}
       </ul>
       <p className="text-center text-sm text-muted-foreground">
-        El detalle de sesión se abre tocando una clase del calendario.
+        En la app real se entra por el inicio de sesión y cada usuario llega a su inicio. El detalle de sesión se abre tocando una clase.
       </p>
     </main>
   )

@@ -4,8 +4,10 @@ import {
   formatDayLabel,
   formatDayLong,
   formatDayNumber,
+  formatWeekRange,
   formatWeekdayShort,
   isDateKey,
+  startOfWeek,
   toDateKey,
   weekdayIndex,
 } from '@/lib/dates'
@@ -42,5 +44,18 @@ describe('fechas del gimnasio', () => {
     expect(formatWeekdayShort('2026-10-06')).toBe('mar')
     expect(formatDayNumber('2026-10-06')).toBe('6')
     expect(formatDayLong('2026-10-06')).toBe('martes, 6 de octubre')
+  })
+})
+
+describe('semanas', () => {
+  test('startOfWeek devuelve el lunes', () => {
+    expect(startOfWeek('2026-10-05')).toBe('2026-10-05')
+    expect(startOfWeek('2026-10-11')).toBe('2026-10-05')
+    expect(startOfWeek('2026-10-01')).toBe('2026-09-28')
+  })
+
+  test('formatWeekRange abrevia el mes si no cambia', () => {
+    expect(formatWeekRange('2026-10-05')).toBe('5 – 11 oct')
+    expect(formatWeekRange('2026-09-28')).toBe('28 sept – 4 oct')
   })
 })

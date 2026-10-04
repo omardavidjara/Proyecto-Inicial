@@ -57,6 +57,7 @@ export default async function CalendarPage({
                     href: `/calendario/${s.id}`,
                     className: s.classType.name,
                     color: s.classType.color,
+                    subtitle: s.coach,
                     closed: isClosed(s.date, s.start, today, now),
                   }}
                 />
