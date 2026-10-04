@@ -40,7 +40,7 @@ Arquitectura de datos: **todo en Neon**. Postgres para los datos (con Drizzle OR
 - [x] [C] Diseño pensado primero para móvil: zonas táctiles de 44px o más, navegación inferior, safe areas
 - [x] [C] PWA: manifest, iconos, service worker básico y página sin conexión
 - [x] [C] Prototipo de las 2 o 3 pantallas clave
-- [ ] 🛑 [T] Revisar el prototipo (también en un móvil)
+- [x] 🛑 [T] Revisar el prototipo (también en un móvil)
 - [ ] [C] Contraste, foco de teclado y comportamiento en móvil
 
 ## Fase 3 · Datos y seguridad base
