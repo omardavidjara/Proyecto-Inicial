@@ -249,8 +249,8 @@ Usuario `pending` o `inactive`: solo `/pendiente` y `/perfil`.
 app/            rutas (ver §5)
 components/     UI (components/ui = shadcn)
 db/schema.ts    esquema Drizzle
-db/index.ts     cliente Drizzle (solo servidor: import 'server-only')
-drizzle/        migraciones generadas
+db/index.ts     cliente Drizzle (solo servidor: import 'server-only'): getDb() HTTP, getTxDb() Pool para transacciones
+drizzle/        migraciones generadas (0000 extensiones y 0002 exclusión de memberships + fila de gym_settings son SQL a mano con --custom)
 lib/auth.ts     Neon Auth (servidor)
 lib/dal.ts      sesión, rol y consultas autorizadas
 lib/booking.ts  reglas de reserva (puras)
@@ -311,6 +311,8 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 - **Textos legales**: `/privacidad` (RGPD arts. 13-14, LOPDGDD) y `/aviso-legal` (LSSI art. 10) ya existen, públicas y enlazadas desde login, registro, perfil y "Más". Los datos del titular viven en `lib/legal.ts` y están **pendientes hasta la Fase 7** (entre corchetes; las páginas muestran "Borrador" mientras falten). `proxy.ts` (Fase 3) debe dejarlas fuera de la protección por sesión. Si se añade un proveedor que trate datos personales (Sentry, Blob, push…), actualizar la lista de encargados de `/privacidad`. Las incidencias no deben contener datos de salud (RGPD art. 9). `/privacidad` afirma que los datos están en Fráncfort: depende de aplicar LIMITS D3 (Neon `aws-eu-central-1` y Vercel `fra1`) en la Fase 3; si cambia la región, cambiar el texto. Cualquier cambio de los textos legales actualiza `LEGAL.updatedAt`.
 
 ## 12. Historial de cambios
+
+- 2026-10-04 · Esquema en `db/schema.ts` y migraciones iniciales. Restricciones `check` añadidas además de las de §3: valores positivos (aforos, duraciones, ventana de reserva), rangos de fechas válidos, `weekday` 0–6, `ends_at > starts_at`, `slot_id` y `slot_date` juntos, `waitlisted_at` obligatorio en lista de espera, decisión de anulación tardía solo en `late_cancelled` y cupo de tarifa coherente con el periodo. `notifications` único con `NULLS NOT DISTINCT` (los avisos sin `ref_id` tampoco se duplican). Índices extra en FK sin índice (`class_type_id`, `coach_id` de la plantilla, `plan_id`).
 
 - 2026-10-04 · Rutas públicas `privacidad` y `aviso-legal`; datos del titular en `lib/legal.ts`.
 - 2026-10-04 · Inicio por rol: `(client)/inicio`, `entrenador/` como "Mi semana" (`?semana=`), `entrenador/dia/[date]`, `entrenador/incidencias` y `entrenador/perfil`; `/` lleva a `/login` sin sesión.
