@@ -1,0 +1,32 @@
+# Borra la rama de Neon de la preview al cerrar una PR (LIMITS D4: Neon Free admite 10 ramas).
+# Respaldo de la integración de Neon en Vercel, que nombra sus ramas "preview/<rama de git>".
+# Necesita en GitHub (Settings → Secrets and variables → Actions):
+#   secreto NEON_API_KEY y variable NEON_PROJECT_ID. Sin ellos, el job no hace nada.
+name: Limpieza de ramas de Neon
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  delete-neon-branch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID }}
+      BRANCH: preview/${{ github.head_ref }}
+    steps:
+      - name: Borrar la rama de la preview
+        run: |
+          if [ -z "$NEON_API_KEY" ] || [ -z "$NEON_PROJECT_ID" ]; then
+            echo "Sin NEON_API_KEY o NEON_PROJECT_ID: nada que hacer."
+            exit 0
+          fi
+          if npx --yes neonctl@8 branches get "$BRANCH" --project-id "$NEON_PROJECT_ID" --api-key "$NEON_API_KEY" > /dev/null 2>&1; then
+            npx --yes neonctl@8 branches delete "$BRANCH" --project-id "$NEON_PROJECT_ID" --api-key "$NEON_API_KEY"
+          else
+            echo "La rama $BRANCH no existe (ya borrada por la integración): nada que hacer."
+          fi
