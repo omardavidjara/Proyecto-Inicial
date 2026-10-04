@@ -2,8 +2,8 @@
  * Datos del titular de la app y responsable del tratamiento (RGPD art. 13 y LSSI art. 10).
  * Se muestran en /privacidad, /aviso-legal y en la información básica del registro.
  *
- * PENDIENTE [T]: el gimnasio debe dar sus datos reales antes de publicar la app (docs/ROADMAP.md).
- * Mientras `isComplete` sea false, las páginas legales avisan de que son un borrador.
+ * PENDIENTE [T]: el gimnasio debe dar sus datos reales antes de abrir la app al gimnasio real (docs/ROADMAP.md, Fase 7).
+ * Mientras `isLegalComplete` sea false, las páginas legales avisan de que son un borrador.
  */
 export const LEGAL = {
   /** Razón social o nombre del titular (persona física o jurídica) */
