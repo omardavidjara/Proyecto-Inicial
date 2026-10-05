@@ -7,9 +7,19 @@ Decisión: LIMITS D5. Neon Free solo permite restaurar las últimas 6 h, así qu
 El cifrado usa una **clave pública** guardada en GitHub; la **clave privada solo la tiene el responsable**,
 fuera del repositorio y de GitHub. Sin ella, las copias no se pueden leer (ni restaurar: no la pierdas).
 
+## Estado
+
+- 2026-10-05 · Claves creadas. Pública (va en GitHub, no es secreta):
+  `age1mmljcpglweashwpugya6d7e4ydsj6e6hzf6q3et772j9y945sf7s8fhd7w`.
+  La privada se generó en el PC del responsable (`Documentsthlos-backup.key`): pasarla a un gestor de
+  contraseñas o USB. Si se pierde, generar otro par y cambiar `BACKUP_AGE_PUBLIC_KEY`; las copias anteriores
+  quedarán ilegibles.
+- Pendiente: *bucket* de R2, secretos de GitHub, primera ejecución y prueba de restauración.
+- El workflow solo se ejecuta (programado o a mano) cuando está en la rama por defecto (`main`).
+
 ## Puesta en marcha (una vez)
 
-1. **Claves de cifrado** (en tu equipo; `age` está en winget, Homebrew y apt):
+1. **Claves de cifrado** (hecho el 2026-10-05, ver Estado; `age` está en winget —`winget install FiloSottile.age`—, Homebrew y apt):
    ```bash
    age-keygen -o athlos-backup.key   # muestra la clave pública: "age1…"
    ```
