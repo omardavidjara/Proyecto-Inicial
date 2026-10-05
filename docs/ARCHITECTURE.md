@@ -303,7 +303,7 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 > Límites de los planes gratuitos y decisiones derivadas (región, ramas de Neon, copias, uso comercial): `docs/LIMITS.md`.
 
-- **Tareas programadas**: el plan gratuito (Hobby) de Vercel solo permite cron **una vez al día** (±59 min). `generate-sessions` cabe; `reminders` (cada 15 min) necesita **Vercel Pro** o un programador externo que llame a la ruta con `CRON_SECRET`. Propuesta (LIMITS D2): programador externo solo en horario del gimnasio (para no mantener despierto el cómputo de Neon) y ruta idempotente por ventana de tiempo. Se confirma en la Fase 3; hasta entonces los recordatorios se pueden enviar con el cron diario como "tus clases de hoy".
+- **Tareas programadas**: el plan gratuito (Hobby) de Vercel solo permite cron **una vez al día** (±59 min). `generate-sessions` cabe; `reminders` (cada 15 min) necesita **Vercel Pro** o un programador externo que llame a la ruta con `CRON_SECRET`. Propuesta (LIMITS D2): programador externo solo en horario del gimnasio (para no mantener despierto el cómputo de Neon) y ruta idempotente por ventana de tiempo. **Confirmado el 2026-10-05: cron-job.org** (más GitHub Actions de respaldo).
 
 - **Fotos de perfil**: almacenamiento (Vercel Blob propuesto, R2 como alternativa) → Fase 5, al implementar F1. El límite de 4,5 MB por petición de Vercel y el cupo de Blob obligan a redimensionar en el cliente y subir directamente a Blob (LIMITS D7).
 - **Push**: Web Push (PWA) y FCM/APNs vía Capacitor → Fase 8; la tabla `push_devices` sirve para ambos.

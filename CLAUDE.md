@@ -23,6 +23,7 @@ Next.js 16 (App Router) + TypeScript · Tailwind v4 + shadcn/ui · Neon (Postgre
 - `docs/ARCHITECTURE.md`: tablas, rutas, permisos
 - `docs/DESIGN.md`: sistema de diseño
 - `docs/LIMITS.md`: límites de Vercel, Neon, GitHub y Sentry, y alternativas
+- `docs/BACKUPS.md`: copias de seguridad (R2 cifradas) y cómo restaurar
 - `docs/reviews/`: informes de revisión al cerrar cada fase (pendientes que heredan las siguientes)
 
 ## Reglas

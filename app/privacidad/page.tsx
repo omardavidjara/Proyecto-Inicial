@@ -115,6 +115,11 @@ export default function PrivacyPage() {
             cualquier momento.
           </li>
           <li>
+            Hacemos una copia de seguridad cifrada de la base de datos cada día. Cada copia se borra automáticamente a
+            los 30 días, así que tus datos pueden seguir en ellas hasta 30 días después de eliminarlos, sin usarse para
+            nada más que recuperar la app ante un fallo.
+          </li>
+          <li>
             Los registros técnicos (accesos y errores) se borran automáticamente en pocos días o semanas, según el
             proveedor.
           </li>
@@ -139,6 +144,7 @@ export default function PrivacyPage() {
         <ul>
           <li>Vercel Inc.: alojamiento de la app (servidores en Fráncfort, Alemania).</li>
           <li>Neon: base de datos e inicio de sesión (servidores en Fráncfort, Alemania).</li>
+          <li>Cloudflare: copias de seguridad cifradas de la base de datos (servidores en la Unión Europea).</li>
           <li>Apple y Google: entrega de notificaciones push en la app móvil, si las activas.</li>
           <li>Servicio de registro de errores, que puede recibir datos técnicos cuando la app falla.</li>
         </ul>

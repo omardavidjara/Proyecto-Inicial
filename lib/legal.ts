@@ -21,7 +21,7 @@ export const LEGAL = {
   /** Delegado de Protección de Datos (no obligatorio para un gimnasio pequeño). Vacío si no hay */
   dpoEmail: "",
   /** Fecha de la última actualización de los textos legales */
-  updatedAt: "4 de octubre de 2026",
+  updatedAt: "5 de octubre de 2026",
 } as const
 
 /** true cuando no queda ningún dato entre corchetes por rellenar */

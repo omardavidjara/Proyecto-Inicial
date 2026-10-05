@@ -36,6 +36,7 @@ docs/                Documentación del proyecto
 - Arquitectura: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 - Sistema de diseño: [docs/DESIGN.md](docs/DESIGN.md)
 - Límites de los servicios: [docs/LIMITS.md](docs/LIMITS.md)
+- Copias de seguridad: [docs/BACKUPS.md](docs/BACKUPS.md)
 - Revisiones de cierre de fase: [docs/reviews/](docs/reviews/)
 
 ## Textos legales

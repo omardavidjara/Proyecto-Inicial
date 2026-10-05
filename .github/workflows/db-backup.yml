@@ -1,0 +1,64 @@
+# Copia diaria de la base de datos de producción (LIMITS D5: Neon Free solo guarda 6 h de historial).
+# pg_dump → cifrado con age (clave pública) → Cloudflare R2. El repo es público: nada sin cifrar
+# sale del runner, ni como artefacto ni en los logs. Restaurar: docs/BACKUPS.md.
+# Necesita en GitHub (Settings → Secrets and variables → Actions):
+#   secretos  DATABASE_URL_UNPOOLED, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY
+#   variables R2_ACCOUNT_ID, R2_BUCKET, BACKUP_AGE_PUBLIC_KEY
+# Sin ellos, el job no hace nada.
+name: Copia de seguridad
+
+on:
+  schedule:
+    - cron: "17 3 * * *" # 03:17 UTC: fuera del horario del gimnasio y lejos de la hora en punto
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: db-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      DATABASE_URL_UNPOOLED: ${{ secrets.DATABASE_URL_UNPOOLED }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
+      R2_BUCKET: ${{ vars.R2_BUCKET }}
+      BACKUP_AGE_PUBLIC_KEY: ${{ vars.BACKUP_AGE_PUBLIC_KEY }}
+    steps:
+      - name: Comprobar configuración
+        id: config
+        run: |
+          for name in DATABASE_URL_UNPOOLED AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ACCOUNT_ID R2_BUCKET BACKUP_AGE_PUBLIC_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "Falta $name: copia omitida."
+              echo "ready=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo "ready=true" >> "$GITHUB_OUTPUT"
+
+      - name: Volcar, cifrar y subir
+        if: steps.config.outputs.ready == 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get install -y -qq age > /dev/null
+          file="athlos-$(date -u +%Y-%m-%dT%H%MZ).dump.age"
+          # pg_dump de la misma versión mayor que Neon (18); formato custom (comprimido, pg_restore)
+          docker run --rm -e DATABASE_URL_UNPOOLED postgres:18 \
+            sh -c 'pg_dump --format=custom --no-owner --no-acl "$DATABASE_URL_UNPOOLED"' \
+            | age --recipient "$BACKUP_AGE_PUBLIC_KEY" > "$file"
+          size=$(stat -c %s "$file")
+          if [ "$size" -lt 1024 ]; then
+            echo "La copia ocupa $size bytes: algo ha fallado."
+            exit 1
+          fi
+          aws s3 cp "$file" "s3://$R2_BUCKET/daily/$file" \
+            --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --only-show-errors
+          echo "Subida $file ($size bytes)."
+          rm -f "$file"
