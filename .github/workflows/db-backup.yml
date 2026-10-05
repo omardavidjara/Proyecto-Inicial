@@ -34,13 +34,20 @@ jobs:
       - name: Comprobar configuración
         id: config
         run: |
-          for name in DATABASE_URL_UNPOOLED AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY R2_ACCOUNT_ID R2_BUCKET BACKUP_AGE_PUBLIC_KEY; do
-            if [ -z "${!name}" ]; then
-              echo "Falta $name: copia omitida."
-              echo "ready=false" >> "$GITHUB_OUTPUT"
-              exit 0
-            fi
-          done
+          # Nombre en GitHub de cada valor (los AWS_* se leen de los secretos R2_*)
+          missing=()
+          [ -n "$DATABASE_URL_UNPOOLED" ] || missing+=("secreto DATABASE_URL_UNPOOLED")
+          [ -n "$AWS_ACCESS_KEY_ID" ] || missing+=("secreto R2_ACCESS_KEY_ID")
+          [ -n "$AWS_SECRET_ACCESS_KEY" ] || missing+=("secreto R2_SECRET_ACCESS_KEY")
+          [ -n "$R2_ACCOUNT_ID" ] || missing+=("variable R2_ACCOUNT_ID")
+          [ -n "$R2_BUCKET" ] || missing+=("variable R2_BUCKET")
+          [ -n "$BACKUP_AGE_PUBLIC_KEY" ] || missing+=("variable BACKUP_AGE_PUBLIC_KEY")
+          if [ ${#missing[@]} -gt 0 ]; then
+            echo "Copia omitida. Faltan en Settings → Secrets and variables → Actions (apartado Repository):"
+            for item in "${missing[@]}"; do echo "- $item"; done
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           echo "ready=true" >> "$GITHUB_OUTPUT"
 
       - name: Volcar, cifrar y subir
