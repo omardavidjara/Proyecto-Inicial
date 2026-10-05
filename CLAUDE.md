@@ -17,6 +17,7 @@ Next.js 16 (App Router) + TypeScript · Tailwind v4 + shadcn/ui · Neon (Postgre
 - `npm test`: solo los tests (los de base de datos usan PGlite en memoria, sin Neon)
 - `npm run db:generate`: genera la migración tras cambiar `db/schema.ts` (`-- --custom --name=x` para SQL a mano: extensiones, restricciones de exclusión, datos)
 - `npm run db:migrate`: aplica las migraciones en la base de `DATABASE_URL_UNPOOLED`
+- `npm run db:set-role -- <correo> <developer|admin|coach|client>`: asigna rol y activa una cuenta (debe haber entrado una vez)
 
 ## Documentos (lee solo el que necesites)
 - `docs/SPEC.md`: funcionalidades, usuarios, pantallas

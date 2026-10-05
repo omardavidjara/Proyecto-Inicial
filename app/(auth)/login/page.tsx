@@ -1,12 +1,17 @@
 import type { Metadata } from "next"
 import Image from "next/image"
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { LegalLinks } from "@/components/legal/legal-links"
+import { getSessionUser } from "@/lib/dal"
 import { LoginForm } from "./login-form"
 
 export const metadata: Metadata = { title: "Iniciar sesión" }
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  // Con la sesión ya iniciada, "/" lleva a su inicio
+  if (await getSessionUser()) redirect("/")
+
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-8 px-4 pt-[calc(env(safe-area-inset-top)+2rem)] pb-[calc(env(safe-area-inset-bottom)+2rem)]">
       <div className="flex flex-col items-center gap-4 text-center">

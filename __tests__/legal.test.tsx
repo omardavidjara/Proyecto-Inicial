@@ -1,4 +1,4 @@
-import { afterEach, expect, test } from 'vitest'
+import { afterEach, expect, test, vi } from 'vitest'
 import { cleanup, render, screen } from '@testing-library/react'
 import PrivacyPage from '../app/privacidad/page'
 import LegalNoticePage from '../app/aviso-legal/page'
@@ -8,6 +8,11 @@ import PerfilPage from '../app/(client)/perfil/page'
 import CoachPerfilPage from '../app/entrenador/perfil/page'
 import MasOpcionesPage from '../app/admin/mas/page'
 import { LEGAL, isLegalComplete } from '../lib/legal'
+
+// Sin sesión: el inicio de sesión se muestra (con sesión redirigiría a "/")
+vi.mock('@/lib/dal', () => ({ getSessionUser: vi.fn(async () => null) }))
+vi.mock('@/lib/auth-client', () => ({ authClient: { signIn: { social: vi.fn() } } }))
+vi.mock('../app/(auth)/actions', () => ({ signInWithEmail: vi.fn(), signOut: vi.fn() }))
 
 afterEach(cleanup)
 
@@ -43,8 +48,8 @@ test('mientras falten los datos del titular, las páginas legales avisan de que 
   expect(hrefs().some((href) => href?.startsWith('mailto:'))).toBe(isLegalComplete)
 })
 
-test('el inicio de sesión enlaza la privacidad y el aviso legal', () => {
-  render(<LoginPage />)
+test('el inicio de sesión enlaza la privacidad y el aviso legal', async () => {
+  render(await LoginPage())
   expect(hrefs()).toEqual(expect.arrayContaining(['/privacidad', '/aviso-legal']))
 })
 

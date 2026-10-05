@@ -3,7 +3,7 @@
 Reserva y gestión de clases y sesiones de Athlos Centro Deportivo, un gimnasio de entrenamiento funcional.
 Aplicación web y móvil: Next.js + Neon (Postgres + Neon Auth), publicada en Vercel y empaquetada para móvil con Capacitor.
 
-> Estado: prototipo navegable con datos de ejemplo (Fase 2 cerrada). Los datos reales y el inicio de sesión llegan en la Fase 3.
+> Estado: Fase 3 en curso. Inicio de sesión real (Neon Auth) y rutas protegidas por rol; las pantallas siguen mostrando datos de ejemplo hasta la Fase 5.
 
 ## Desarrollo
 
@@ -13,9 +13,15 @@ npm run dev                  # http://localhost:3000
 npm run dev -- -H 0.0.0.0    # también desde un móvil en la misma Wi-Fi: http://<IP-del-PC>:3000
 npm run check                # lint + tipos + tests
 npm run build                # compilación de producción
+npm run db:migrate           # aplica las migraciones (drizzle/) en Neon
+npm run db:set-role -- correo@ejemplo.com developer   # rol y alta de una cuenta
 ```
 
+Variables: copia `.env.example` como `.env.local` y rellénalo.
+
 El service worker (modo sin conexión) solo se registra en producción: `npm run build && npm start`.
+
+Las cookies de sesión exigen HTTPS (salvo en `localhost`): para probar el inicio de sesión en el móvil, usa una *preview* de Vercel, no la IP de la red local.
 
 ## Estructura
 

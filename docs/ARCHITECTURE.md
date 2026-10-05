@@ -215,8 +215,15 @@ app/
 ## 6. Permisos
 
 Dos capas (según la guía de autenticación de Next 16):
-1. **`proxy.ts`** — comprobación optimista: sin cookie de sesión → `/login`. No consulta la base de datos.
-2. **Capa de datos `lib/dal.ts`** (la que de verdad protege): `getCurrentUser()` (memorizada con `cache`) verifica la sesión de Neon Auth y carga `profiles`; `requireRole(...roles)`, `requireCoach()` y `requireActive()` lanzan/redirigen. Toda consulta usa el `user_id` de esa sesión. Un `user_id` que llegue del navegador solo se acepta en acciones de administrador, o de entrenador sobre una sesión que imparte, y siempre se comprueba ese permiso en el servidor.
+1. **`proxy.ts`** — comprobación optimista con el middleware del SDK de Neon Auth (`@neondatabase/auth`): sin sesión → `/login`. Valida la cookie de sesión firmada con `NEON_AUTH_COOKIE_SECRET` **en local** (caché de 5 min, sin red); al caducar, pregunta una vez a Neon Auth y la renueva. También completa el regreso del login con Google (`neon_auth_session_verifier`). No consulta nuestras tablas. Las páginas públicas (`PUBLIC_PATHS` de `lib/roles.ts`) no pasan por él.
+2. **Capa de datos `lib/dal.ts`** (la que de verdad protege): `getSessionUser()` y `getViewer()` (memorizadas con `cache`) verifican la sesión de Neon Auth, validan el usuario con Zod y cargan o crean el perfil; `requireViewer()` exige sesión y `requireArea("client" | "coach" | "admin")` exige además cuenta activa y permiso para la zona, y redirigen (`/login`, `/pendiente` o el inicio del rol). Las reglas son funciones puras en `lib/roles.ts`. Las consultas viven en `lib/data/*` y reciben el perfil de quien consulta (`Viewer`): toda consulta usa su `user_id`, nunca uno que llegue del navegador. Un `user_id` ajeno solo se acepta en acciones de administrador, o de entrenador sobre una sesión que imparte, y siempre se comprueba ese permiso en el servidor. Pedir un recurso ajeno devuelve lo mismo que si no existiera.
+
+Los layouts de `(client)`, `entrenador/` y `admin/` llaman a `requireArea`; como un layout no se vuelve a ejecutar al navegar entre sus páginas, cada función de datos de la DAL vuelve a comprobar.
+
+Sesión y cookies (decidido en la Fase 3):
+- Cookies `__Secure-neon-auth.*`, `httpOnly`, `SameSite=Lax`, solo por HTTPS. Funcionan en `localhost` y en Vercel; **no** al probar desde el móvil por la IP de la red local (usar una *preview* de Vercel).
+- Tras cerrar sesión, una copia robada de las cookies sigue valiendo hasta que caduca la caché (5 min). La baja o el cambio de rol se aplican al instante (la DAL lee `profiles` en cada petición). Revisar en la Fase 6 si se acorta `sessionDataTtl`.
+- El rol `developer` (o cualquiera, en pruebas) se asigna con `npm run db:set-role -- <correo> <rol>` (`scripts/set-role.mts`), que también activa la cuenta.
 
 | Acción | client | coach | admin | developer |
 |---|:-:|:-:|:-:|:-:|
@@ -251,8 +258,12 @@ components/     UI (components/ui = shadcn)
 db/schema.ts    esquema Drizzle
 db/index.ts     cliente Drizzle (solo servidor: import 'server-only'): getDb() HTTP, getTxDb() Pool para transacciones
 drizzle/        migraciones generadas (0000 extensiones y 0002 exclusión de memberships + fila de gym_settings son SQL a mano con --custom)
-lib/auth.ts     Neon Auth (servidor)
-lib/dal.ts      sesión, rol y consultas autorizadas
+proxy.ts        comprobación optimista de sesión (Neon Auth)
+lib/auth.ts     Neon Auth (servidor); lib/auth-client.ts en el navegador (solo login con Google)
+lib/dal.ts      sesión, perfil, rol y consultas autorizadas
+lib/roles.ts    reglas de acceso por rol y estado, rutas públicas (puras)
+lib/data/       consultas que reciben el perfil de quien consulta (probadas con PGlite)
+scripts/        set-role.mts (asignar rol) y vercel-ignore-build.sh
 lib/booking.ts  reglas de reserva (puras)
 lib/validation/ esquemas Zod
 __tests__/      tests
@@ -311,6 +322,8 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 - **Textos legales**: `/privacidad` (RGPD arts. 13-14, LOPDGDD) y `/aviso-legal` (LSSI art. 10) ya existen, públicas y enlazadas desde login, registro, perfil y "Más". Los datos del titular viven en `lib/legal.ts` y están **pendientes hasta la Fase 7** (entre corchetes; las páginas muestran "Borrador" mientras falten). `proxy.ts` (Fase 3) debe dejarlas fuera de la protección por sesión. Si se añade un proveedor que trate datos personales (Sentry, Blob, push…), actualizar la lista de encargados de `/privacidad`. Las incidencias no deben contener datos de salud (RGPD art. 9). `/privacidad` afirma que los datos están en Fráncfort: depende de aplicar LIMITS D3 (Neon `aws-eu-central-1` y Vercel `fra1`) en la Fase 3; si cambia la región, cambiar el texto. Cualquier cambio de los textos legales actualiza `LEGAL.updatedAt`.
 
 ## 12. Historial de cambios
+
+- 2026-10-05 · Inicio de sesión con Neon Auth (correo y contraseña, Google), `proxy.ts` con el middleware del SDK, `lib/dal.ts` con `requireViewer`/`requireArea`, reglas en `lib/roles.ts`, consultas en `lib/data/`, página `/pendiente` y script `set-role`. §6 actualizado.
 
 - 2026-10-04 · `profiles.user_id` y sus referencias pasan de `text` a `uuid`, el tipo real de `neon_auth.user.id`.
 - 2026-10-04 · Esquema en `db/schema.ts` y migraciones iniciales. Restricciones `check` añadidas además de las de §3: valores positivos (aforos, duraciones, ventana de reserva), rangos de fechas válidos, `weekday` 0–6, `ends_at > starts_at`, `slot_id` y `slot_date` juntos, `waitlisted_at` obligatorio en lista de espera, decisión de anulación tardía solo en `late_cancelled` y cupo de tarifa coherente con el periodo. `notifications` único con `NULLS NOT DISTINCT` (los avisos sin `ref_id` tampoco se duplican). Índices extra en FK sin índice (`class_type_id`, `coach_id` de la plantilla, `plan_id`).
