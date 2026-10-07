@@ -11,7 +11,7 @@ Etiquetas: **[C]** lo hace Claude solo · **[T]** requiere al usuario (cuentas, 
 2. Hacer seguidas las tareas [C] de la fase activa, en orden. Por cada tarea: implementar → `npm run check` → commit → marcar `[x]` aquí.
 3. Parar en la primera tarea [T], [J] o 🛑: decir al usuario exactamente qué necesita hacer o decidir.
 4. No empezar una fase hasta cerrar todas las casillas de la anterior.
-5. Al cerrar una fase: hacer push y recomendar `/clear`.
+5. Al cerrar una fase: hacer push y recomendar `/clear`. Desde la Fase 4, `main` está protegida: todo cambio va por rama y PR, y la fusiona el usuario con la CI en verde.
 6. Nunca: subir secretos, exponer `DATABASE_URL` o claves de servidor al cliente, fusionar en `main` con la CI en rojo o tocar la base de datos de producción sin migración.
 
 Límites de los planes gratuitos (Vercel Hobby, Neon Free, GitHub, Sentry) y sus alternativas: `docs/LIMITS.md`. Revisarlo antes de cada plan de tarea.
@@ -59,12 +59,13 @@ Revisión de cierre: `docs/reviews/FASE-3.md` (pendientes heredados por otras fa
 - [x] [C] Capa de datos solo en servidor: cada consulta filtra por el `user_id` de la sesión verificada; validar toda entrada con Zod
 - [x] [C] Test con dos usuarios: ninguno ve los datos del otro
 
-## Fase 4 · Auto-auditoría automatizada
+## Fase 4 · Auto-auditoría automatizada ✅
+Revisión de cierre: `docs/reviews/FASE-4.md` (pendientes heredados por otras fases).
 - [x] [C] `.github/workflows/ci.yml`: lint, tipos, tests, migraciones coherentes con `db/schema.ts`, build y `npm audit --omit=dev --audit-level=high` bloqueante (el completo solo como aviso). Los 4 avisos moderados de `esbuild` dentro de `drizzle-kit` (vía `better-auth`) quedan fuera por gravedad; anotado en el workflow. Al crearla, `npm audit fix` subió `sharp` (0.35.5) y `source-map-js` (1.2.2), con avisos altos nuevos en producción
 - [x] [C] Hooks de Claude Code: `npm run check` tras cada edición de código (`.claude/settings.json` → `scripts/claude-check.mjs`; en segundo plano con `asyncRewake`, solo avisa si falla; no lanza comprobaciones en paralelo)
 - [x] [C] `.github/dependabot.yml`: npm y GitHub Actions cada lunes; menores y parches en una sola PR, mayores sueltas, `@neondatabase/auth` (beta) en PR propia; tope de 4 PR abiertas por las ramas de Neon (LIMITS D4)
 - [x] [J] Sentry: el usuario crea la cuenta y da el DSN; Claude lo integra. Hecho 2026-10-07: región UE, `lib/sentry.ts`, `instrumentation*.ts`, `app/global-error.tsx`, `/privacidad` al día, `NEXT_PUBLIC_SENTRY_DSN` solo en Production de Vercel; error de prueba recibido desde `/api/sentry-test` (solo rol developer). Pendiente opcional: `SENTRY_AUTH_TOKEN` para subir source maps
-- [ ] [T] Protección de rama en `main` (Settings → Branches), exigiendo la CI
+- [x] [T] Protección de rama en `main` (Settings → Branches), exigiendo la CI (hecho 2026-10-07: solo por PR, «Comprobaciones» y «Dependencias» obligatorias para todos)
 
 ## Fase 5 · Funcionalidades (una por sesión, en el orden de SPEC)
 Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → CI verde → PR → [T] el usuario fusiona.
