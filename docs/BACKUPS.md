@@ -14,7 +14,9 @@ fuera del repositorio y de GitHub. Sin ella, las copias no se pueden leer (ni re
   La privada se generó en el PC del responsable (`Documentsthlos-backup.key`): pasarla a un gestor de
   contraseñas o USB. Si se pierde, generar otro par y cambiar `BACKUP_AGE_PUBLIC_KEY`; las copias anteriores
   quedarán ilegibles.
-- Pendiente: *bucket* de R2, secretos de GitHub, primera ejecución y prueba de restauración.
+- 2026-10-07 · En marcha: *bucket* de R2 con jurisdicción UE, secretos de GitHub y primera copia
+  (`daily/athlos-2026-10-07T1208Z.dump.age`, 61 KB). Restauración probada (ver la tabla del final).
+- Si una ejecución falla, el paso que falla deja una anotación con la causa (sin datos sensibles).
 - El workflow solo se ejecuta (programado o a mano) cuando está en la rama por defecto (`main`).
 
 ## Puesta en marcha (una vez)
@@ -37,7 +39,8 @@ fuera del repositorio y de GitHub. Sin ella, las copias no se pueden leer (ni re
 
 1. Descarga el archivo `.dump.age` desde el panel de R2.
 2. Crea una **rama nueva** en Neon (nunca restaurar encima de producción a ciegas) y copia su URL directa.
-3. Descifra y restaura:
+3. Descifra y restaura (sin `age` ni Postgres instalados: descifrar con el paquete npm `age-encryption`
+   y usar `pg_restore` de los binarios portátiles de EnterpriseDB, `postgresql-18.x-1-windows-x64-binaries.zip`):
    ```bash
    age --decrypt -i athlos-backup.key athlos-AAAA-MM-DDTHHMMZ.dump.age > copia.dump
    pg_restore --no-owner --no-acl --clean --if-exists -d "postgresql://…rama-nueva…" copia.dump
@@ -53,4 +56,4 @@ Un volcado diario despierta la base de datos unos minutos: ≈ 0,5 CU-h/mes de l
 
 | Fecha | Resultado |
 |---|---|
-| — | Pendiente (tras la puesta en marcha) |
+| 2026-10-07 | ✅ Copia del 2026-10-07 12:08 UTC restaurada con `pg_restore` 18.6 en una rama de prueba de Neon en 14 s, sin errores. Las 22 tablas (`public`, `neon_auth`, `drizzle`) con el mismo número de filas que producción; un perfil borrado antes en la rama volvió con la restauración (los datos venían de la copia); restricciones, extensiones y ajustes presentes. Archivo descifrado borrado al terminar |

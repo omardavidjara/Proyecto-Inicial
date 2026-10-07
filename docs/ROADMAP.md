@@ -47,7 +47,7 @@ Revisión de cierre: `docs/reviews/FASE-2.md` (pendientes heredados por otras fa
 ## Fase 3 · Datos y seguridad base
 - [x] [T] Crear la cuenta y el proyecto en Neon (región AWS Frankfurt, `aws-eu-central-1`; autoescalado 0,25–1 CU, ver LIMITS D3) y dar a Claude `DATABASE_URL` (con pooling) y `DATABASE_URL_UNPOOLED` (directa, para migraciones) para `.env.local`
 - [x] [T] Activar Neon Auth en el proyecto (pestaña Auth de la consola), elegir los métodos de login, configurar las URL de redirección y dar a Claude sus claves
-- [ ] [T] Poner en marcha la copia diaria: claves de age, *bucket* de R2 y secretos de GitHub (`docs/BACKUPS.md`), y probar una restauración
+- [x] [T] Poner en marcha la copia diaria: claves de age, *bucket* de R2 y secretos de GitHub (`docs/BACKUPS.md`), y probar una restauración (hecho 2026-10-07)
 - [ ] [T] Conectar el repositorio a Vercel, añadir la integración de Neon (una rama de base de datos por cada preview) y copiar las variables de entorno
 - [x] [J] Tareas programadas (decidido 2026-10-05: cron-job.org solo en horario del gimnasio + GitHub Actions de respaldo; se implementa en F3 y F10): Vercel Hobby solo permite cron diario; confirmar la alternativa propuesta (programador externo en horario del gimnasio + ruta idempotente, LIMITS D2) o Vercel Pro
 - [x] [J] Copias de seguridad (decidido 2026-10-05: Cloudflare R2 con jurisdicción UE, cifrado con age; `.github/workflows/db-backup.yml`): Neon Free solo guarda 6 h de historial; decidir dónde guardar el `pg_dump` diario cifrado (LIMITS D5)
