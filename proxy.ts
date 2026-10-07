@@ -19,5 +19,7 @@ export default async function proxy(request: NextRequest) {
 export const config = {
   // Fuera: la pasarela de Neon Auth y demás API, los recursos de Next y los archivos con extensión
   // (sw.js, manifest, iconos, logo). Las páginas públicas se filtran arriba.
-  matcher: ["/((?!api/|_next/static|_next/image|.*\.[a-zA-Z0-9]+$).*)"],
+  // "\\." (doble barra): en un string de JS "\." es solo "." y la expresión dejaría fuera casi todas
+  // las rutas (__tests__/proxy.test.ts lo comprueba).
+  matcher: ["/((?!api/|_next/static|_next/image|.*\\.[a-zA-Z0-9]+$).*)"],
 }
