@@ -3,10 +3,12 @@ import Link from "next/link"
 import { LegalEmail } from "@/components/legal/legal-email"
 import { LegalPage } from "@/components/legal/legal-page"
 import { LEGAL } from "@/lib/legal"
+import { INDEXABLE } from "@/lib/seo"
 
 export const metadata: Metadata = {
   title: "Aviso legal",
   description: "Titular de la app de Athlos y condiciones de uso.",
+  robots: INDEXABLE,
 }
 
 const LINK = "font-medium text-primary underline-offset-4 hover:underline"

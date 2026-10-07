@@ -3,10 +3,12 @@ import Link from "next/link"
 import { LegalEmail } from "@/components/legal/legal-email"
 import { LegalPage } from "@/components/legal/legal-page"
 import { LEGAL, MIN_AGE } from "@/lib/legal"
+import { INDEXABLE } from "@/lib/seo"
 
 export const metadata: Metadata = {
   title: "Política de privacidad",
   description: "Cómo trata Athlos tus datos personales y cómo ejercer tus derechos.",
+  robots: INDEXABLE,
 }
 
 const MAIL = "font-medium text-primary underline-offset-4 hover:underline"
