@@ -45,9 +45,14 @@ jobs:
           [ -n "$R2_ACCOUNT_ID" ] || missing+=("variable R2_ACCOUNT_ID")
           [ -n "$R2_BUCKET" ] || missing+=("variable R2_BUCKET")
           [ -n "$BACKUP_AGE_PUBLIC_KEY" ] || missing+=("variable BACKUP_AGE_PUBLIC_KEY")
+          # El Account ID de Cloudflare son 32 caracteres hexadecimales (R2 → columna derecha), no el correo
+          if [ -n "$R2_ACCOUNT_ID" ] && ! [[ "$R2_ACCOUNT_ID" =~ ^[0-9a-f]{32}$ ]]; then
+            missing+=("variable R2_ACCOUNT_ID con el Account ID de Cloudflare (32 caracteres hexadecimales)")
+          fi
           if [ ${#missing[@]} -gt 0 ]; then
             echo "Copia omitida. Faltan en Settings → Secrets and variables → Actions (apartado Repository):"
             for item in "${missing[@]}"; do echo "- $item"; done
+            echo "::error title=Configuración incompleta::Revisa: ${missing[*]}"
             echo "ready=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -60,7 +65,7 @@ jobs:
           # Cada fallo deja una anotación (visible en la ejecución y por la API pública) sin datos sensibles:
           # se ocultan URL de conexión, hosts de Neon, contraseñas y claves.
           redact() {
-            tr '\n' ' ' | sed -E 's#postgres(ql)?://[^ ]*#postgresql://***#g; s/ep-[a-z0-9-]+/ep-***/g; s/npg_[A-Za-z0-9]+/***/g; s/[0-9a-f]{32}/***/g' | tail -c 500
+            tr '\n' ' ' | sed -E 's#postgres(ql)?://[^ ]*#postgresql://***#g; s/ep-[a-z0-9-]+/ep-***/g; s/npg_[A-Za-z0-9]+/***/g; s/[0-9a-f]{32}/***/g; s/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+/***@***/g' | tail -c 500
           }
           fail() { echo "::error title=$1::$(redact < "$2")"; exit 1; }
           err="$RUNNER_TEMP/error.txt"
@@ -84,8 +89,16 @@ jobs:
             fail "Copia vacía" "$err"
           fi
 
-          aws s3 cp "$file" "s3://$R2_BUCKET/daily/$file" \
-            --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --only-show-errors 2> "$err" \
-            || fail "Subida a R2 (revisa R2_ACCOUNT_ID, R2_BUCKET y el token)" "$err"
+          # Los buckets con jurisdicción UE (docs/BACKUPS.md) usan otro dominio: se prueba el general y luego el de la UE
+          upload() {
+            aws s3 cp "$file" "s3://$R2_BUCKET/daily/$file" \
+              --endpoint-url "https://$R2_ACCOUNT_ID$1.r2.cloudflarestorage.com" --only-show-errors
+          }
+          if ! upload "" 2> "$RUNNER_TEMP/general.txt"; then
+            if ! upload ".eu" 2> "$RUNNER_TEMP/eu.txt"; then
+              { echo "Dominio general:"; cat "$RUNNER_TEMP/general.txt"; echo " | Dominio UE:"; cat "$RUNNER_TEMP/eu.txt"; } > "$err"
+              fail "Subida a R2 - revisa R2_ACCOUNT_ID y el token y que R2_BUCKET sea el nombre exacto del bucket" "$err"
+            fi
+          fi
           rm -f "$file"
           echo "::notice title=Copia subida::daily/$file ($size bytes)"
