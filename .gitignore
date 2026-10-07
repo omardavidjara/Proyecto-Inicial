@@ -34,6 +34,9 @@ yarn-error.log*
 .env*
 !.env.example
 
+# Claude Code: ajustes personales (los del proyecto, .claude/settings.json, sí se suben)
+.claude/settings.local.json
+
 # vercel
 .vercel
 

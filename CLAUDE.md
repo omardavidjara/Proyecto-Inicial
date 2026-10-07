@@ -14,6 +14,7 @@ Next.js 16 (App Router) + TypeScript · Tailwind v4 + shadcn/ui · Neon (Postgre
 ## Comandos
 - `npm run dev`: servidor local
 - `npm run check`: lint + tipos + tests. Ejecutar antes de cada commit
+- Hook de Claude Code (`.claude/settings.json` → `scripts/claude-check.mjs`): tras editar código, `npm run check` corre en segundo plano y solo avisa si falla
 - `npm test`: solo los tests (los de base de datos usan PGlite en memoria, sin Neon)
 - `npm run db:generate`: genera la migración tras cambiar `db/schema.ts` (`-- --custom --name=x` para SQL a mano: extensiones, restricciones de exclusión, datos)
 - `npm run db:migrate`: aplica las migraciones en la base de `DATABASE_URL_UNPOOLED`
