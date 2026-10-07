@@ -101,6 +101,7 @@ La app nativa carga la web publicada en Vercel (SSR), así que las mejoras de la
 - [ ] [C] Capacitor con plataformas Android e iOS; iconos y splash
 - [ ] [C] Plugins nativos según SPEC (push, cámara, compartir, barra de estado). Apple rechaza las apps que solo envuelven una web
 - [ ] [C] Deep links para volver a la app después del login
+- [ ] [C] Ocultar "Continuar con Google" en la app de iOS (Capacitor) y dejar solo correo y contraseña: Neon Auth no admite Sign in with Apple (comprobado el 2026-10-07: solo Google, GitHub y Vercel), y la norma 4.8 de la App Store lo exige si se ofrece un login de terceros. En Android y la web se mantiene Google
 - [ ] [T] Cuentas: Google Play Console (pago único) y Apple Developer (anual)
 - [ ] [T] Compilar iOS: requiere Mac con Xcode o un servicio en la nube (Codemagic, Appflow). Android funciona en Windows con Android Studio
 - [ ] [J] Pruebas internas: TestFlight y pista interna de Play Console
