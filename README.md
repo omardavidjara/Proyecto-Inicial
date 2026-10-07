@@ -3,7 +3,7 @@
 Reserva y gestión de clases y sesiones de Athlos Centro Deportivo, un gimnasio de entrenamiento funcional.
 Aplicación web y móvil: Next.js + Neon (Postgres + Neon Auth), publicada en Vercel y empaquetada para móvil con Capacitor.
 
-> Estado: Fase 3 en curso. Inicio de sesión real (Neon Auth) y rutas protegidas por rol; las pantallas siguen mostrando datos de ejemplo hasta la Fase 5.
+> Estado: Fase 3 cerrada. Publicada en https://athlosapp.vercel.app con inicio de sesión real (Neon Auth), rutas protegidas por rol y copia de seguridad diaria; las pantallas siguen mostrando datos de ejemplo hasta la Fase 5.
 
 ## Desarrollo
 
