@@ -119,6 +119,8 @@ Fuente: [Pricing](https://sentry.io/pricing/)
 | Retención | 30 días |
 | Monitores | 1 de disponibilidad, 1 de cron |
 
+Hecho en la Fase 4 (`lib/sentry.ts`, cuenta en la región UE, Fráncfort): solo en Production de Vercel, `tracesSampleRate` 0,1, sin Replay, `dataCollection` todo apagado (el SDK v11 recoge cookies, cabeceras y cuerpos por defecto) y errores ruidosos filtrados. La prueba de 14 días del plan Business pasa sola al plan Developer gratuito.
+
 Reglas: `tracesSampleRate` bajo (0,1) en producción; Replay desactivado o solo en errores; filtrar errores ruidosos (extensiones del navegador, cancelaciones de red). Usar el **monitor de cron** para el programador de recordatorios (D2) y el de disponibilidad sobre `/api/health` (sin base de datos).
 
 ---

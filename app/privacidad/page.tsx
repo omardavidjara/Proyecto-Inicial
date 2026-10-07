@@ -120,8 +120,8 @@ export default function PrivacyPage() {
             nada más que recuperar la app ante un fallo.
           </li>
           <li>
-            Los registros técnicos (accesos y errores) se borran automáticamente en pocos días o semanas, según el
-            proveedor.
+            Los registros técnicos se borran automáticamente: los de accesos en pocos días y los de errores (Sentry) a
+            los 30 días.
           </li>
           <li>
             Los datos que deban guardarse por obligación legal se conservan bloqueados solo durante los plazos legales
@@ -146,7 +146,11 @@ export default function PrivacyPage() {
           <li>Neon: base de datos e inicio de sesión (servidores en Fráncfort, Alemania).</li>
           <li>Cloudflare: copias de seguridad cifradas de la base de datos (servidores en la Unión Europea).</li>
           <li>Apple y Google: entrega de notificaciones push en la app móvil, si las activas.</li>
-          <li>Servicio de registro de errores, que puede recibir datos técnicos cuando la app falla.</li>
+          <li>
+            Functional Software Inc. (Sentry): registro de errores (servidores en Fráncfort, Alemania). Cuando la app
+            falla recibe solo datos técnicos del fallo (pantalla, navegador y sistema operativo), nunca tu nombre,
+            correo, dirección IP ni lo que escribes. No graba tu pantalla.
+          </li>
         </ul>
         <p>
           Si eliges entrar con tu cuenta de Google, Google trata el inicio de sesión como responsable según su propia
