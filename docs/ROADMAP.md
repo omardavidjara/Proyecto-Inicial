@@ -60,7 +60,7 @@ Revisión de cierre: `docs/reviews/FASE-3.md` (pendientes heredados por otras fa
 - [x] [C] Test con dos usuarios: ninguno ve los datos del otro
 
 ## Fase 4 · Auto-auditoría automatizada
-- [ ] [C] `.github/workflows/ci.yml`: lint, tipos, tests, build, `npm audit --omit=dev` bloqueante (el completo solo como aviso, ver `docs/reviews/FASE-2.md` §5). Ojo: desde la Fase 3 aparecen 4 avisos moderados de `esbuild` dentro de `drizzle-kit`, que `better-auth` declara como dependencia opcional; no llega al código publicado. Bloquear desde `--audit-level=high` o excluir ese aviso, y anotarlo
+- [x] [C] `.github/workflows/ci.yml`: lint, tipos, tests, migraciones coherentes con `db/schema.ts`, build y `npm audit --omit=dev --audit-level=high` bloqueante (el completo solo como aviso). Los 4 avisos moderados de `esbuild` dentro de `drizzle-kit` (vía `better-auth`) quedan fuera por gravedad; anotado en el workflow. Al crearla, `npm audit fix` subió `sharp` (0.35.5) y `source-map-js` (1.2.2), con avisos altos nuevos en producción
 - [ ] [C] Hooks de Claude Code: `npm run check` tras cada edición
 - [ ] [C] `.github/dependabot.yml`
 - [ ] [J] Sentry: el usuario crea la cuenta y da el DSN; Claude lo integra

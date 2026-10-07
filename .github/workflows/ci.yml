@@ -1,0 +1,94 @@
+# CI: lo mismo que `npm run check` + migraciones al día + build + auditoría de dependencias.
+# La protección de rama de `main` exige estos dos jobs ("Comprobaciones" y "Dependencias").
+# No usa secretos: el build no los necesita (lib/auth.ts y db/index.ts se crean al primer uso).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Un push nuevo a la misma PR cancela la ejecución anterior (en main se ejecutan todas)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  check:
+    name: Comprobaciones
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: Tests
+        run: npm test
+
+      - name: Migraciones coherentes con db/schema.ts
+        run: |
+          npm run db:check
+          npx drizzle-kit generate
+          if [ -n "$(git status --porcelain drizzle/)" ]; then
+            git status --porcelain drizzle/
+            echo "::error::db/schema.ts tiene cambios sin migración: ejecuta npm run db:generate y sube la migración."
+            exit 1
+          fi
+
+      - name: Caché del build de Next.js
+        uses: actions/cache@v6
+        with:
+          path: .next/cache
+          key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('app/**', 'components/**', 'lib/**', 'db/**', '*.ts', '*.mjs') }}
+          restore-keys: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
+
+      - name: Build
+        run: npm run build
+
+  audit:
+    name: Dependencias
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      # Bloqueante: solo dependencias de producción y gravedad alta o crítica. Se excluyen así
+      # los avisos moderados de esbuild dentro de drizzle-kit, que better-auth (vía Neon Auth)
+      # declara como dependencia y que no llegan al código publicado (docs/reviews/FASE-2.md §5)
+      - name: Auditoría de producción (alta o crítica)
+        run: npm audit --omit=dev --audit-level=high
+
+      # Solo aviso: herramientas de desarrollo (p. ej., braces en la CLI de shadcn, sin versión corregida)
+      - name: Auditoría completa (aviso)
+        run: |
+          if ! npm audit; then
+            echo "::warning::npm audit encuentra avisos (incluidas dependencias de desarrollo). No bloquea: revisar con Dependabot."
+          fi
