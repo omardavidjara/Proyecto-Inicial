@@ -27,6 +27,9 @@ jobs:
       AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       AWS_DEFAULT_REGION: auto
+      # R2 no admite las sumas de comprobación que la CLI de AWS añade por defecto desde la 2.23
+      AWS_REQUEST_CHECKSUM_CALCULATION: when_required
+      AWS_RESPONSE_CHECKSUM_VALIDATION: when_required
       R2_ACCOUNT_ID: ${{ vars.R2_ACCOUNT_ID }}
       R2_BUCKET: ${{ vars.R2_BUCKET }}
       BACKUP_AGE_PUBLIC_KEY: ${{ vars.BACKUP_AGE_PUBLIC_KEY }}
@@ -53,19 +56,36 @@ jobs:
       - name: Volcar, cifrar y subir
         if: steps.config.outputs.ready == 'true'
         run: |
-          set -euo pipefail
-          sudo apt-get install -y -qq age > /dev/null
+          set -uo pipefail
+          # Cada fallo deja una anotación (visible en la ejecución y por la API pública) sin datos sensibles:
+          # se ocultan URL de conexión, hosts de Neon, contraseñas y claves.
+          redact() {
+            tr '\n' ' ' | sed -E 's#postgres(ql)?://[^ ]*#postgresql://***#g; s/ep-[a-z0-9-]+/ep-***/g; s/npg_[A-Za-z0-9]+/***/g; s/[0-9a-f]{32}/***/g' | tail -c 500
+          }
+          fail() { echo "::error title=$1::$(redact < "$2")"; exit 1; }
+          err="$RUNNER_TEMP/error.txt"
+
+          { sudo apt-get install -y -qq age || { sudo apt-get update -qq && sudo apt-get install -y -qq age; }; } > /dev/null 2> "$err" \
+            || fail "Instalar age" "$err"
+          docker pull -q postgres:18 > /dev/null 2> "$err" || fail "Descargar pg_dump (postgres:18)" "$err"
+
           file="athlos-$(date -u +%Y-%m-%dT%H%MZ).dump.age"
           # pg_dump de la misma versión mayor que Neon (18); formato custom (comprimido, pg_restore)
           docker run --rm -e DATABASE_URL_UNPOOLED postgres:18 \
-            sh -c 'pg_dump --format=custom --no-owner --no-acl "$DATABASE_URL_UNPOOLED"' \
-            | age --recipient "$BACKUP_AGE_PUBLIC_KEY" > "$file"
+            sh -c 'pg_dump --format=custom --no-owner --no-acl "$DATABASE_URL_UNPOOLED"' 2> "$err" \
+            | age --recipient "$BACKUP_AGE_PUBLIC_KEY" > "$file" 2> "$RUNNER_TEMP/age.txt"
+          codes=("${PIPESTATUS[@]}")
+          [ "${codes[0]}" -eq 0 ] || fail "pg_dump: no se pudo volcar la base de datos (revisa el secreto DATABASE_URL_UNPOOLED)" "$err"
+          [ "${codes[1]}" -eq 0 ] || fail "Cifrado: age falló (revisa la variable BACKUP_AGE_PUBLIC_KEY)" "$RUNNER_TEMP/age.txt"
+
           size=$(stat -c %s "$file")
           if [ "$size" -lt 1024 ]; then
-            echo "La copia ocupa $size bytes: algo ha fallado."
-            exit 1
+            echo "La copia ocupa $size bytes." > "$err"
+            fail "Copia vacía" "$err"
           fi
+
           aws s3 cp "$file" "s3://$R2_BUCKET/daily/$file" \
-            --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --only-show-errors
-          echo "Subida $file ($size bytes)."
+            --endpoint-url "https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com" --only-show-errors 2> "$err" \
+            || fail "Subida a R2 (revisa R2_ACCOUNT_ID, R2_BUCKET y el token)" "$err"
           rm -f "$file"
+          echo "::notice title=Copia subida::daily/$file ($size bytes)"
