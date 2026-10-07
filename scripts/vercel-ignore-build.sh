@@ -9,6 +9,11 @@ if [ -z "$base" ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
   echo "Sin despliegue previo comparable: se construye."
   exit 1
 fi
+# Mismo commit que el último despliegue = "Redeploy" pedido a mano (p. ej., tras cambiar variables): se construye
+if [ "$(git rev-parse "$base^{commit}")" = "$(git rev-parse HEAD)" ]; then
+  echo "Redeploy del mismo commit: se construye."
+  exit 1
+fi
 if git diff --quiet "$base" HEAD -- . ':(exclude)docs/**' ':(exclude)*.md'; then
   echo "Solo cambian documentos: se omite el build."
   exit 0
