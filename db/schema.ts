@@ -351,3 +351,20 @@ export const notifications = pgTable(
     unique("notifications_once_uq").on(t.userId, t.kind, t.refId).nullsNotDistinct(),
   ],
 );
+
+// ── Seguridad ─────────────────────────────────────────────────────────────────
+
+// Intentos fallidos de inicio de sesión por correo y por IP (lib/data/login-attempts.ts). La clave es un HMAC:
+// no se guarda ni el correo ni la IP. Las filas se borran a las 24 h (/privacidad §4).
+export const loginAttempts = pgTable(
+  "login_attempts",
+  {
+    key: text("key").primaryKey(),
+    failures: integer("failures").notNull(),
+    windowStartedAt: timestamptz("window_started_at").notNull().defaultNow(),
+  },
+  (t) => [
+    check("login_attempts_failures_positive", sql`${t.failures} > 0`),
+    index("login_attempts_window_started_at_idx").on(t.windowStartedAt),
+  ],
+);

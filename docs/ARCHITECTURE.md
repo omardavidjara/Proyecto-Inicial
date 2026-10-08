@@ -125,6 +125,9 @@ id, user_id → profiles, platform enum `web | android | ios`, token text único
 ### `notifications` (registro de envíos, evita duplicados)
 id, user_id, kind enum `reminder | waitlist_promoted | session_cancelled | account_approved | announcement`, ref_id uuid null (reserva, sesión o aviso), sent_at. Único `(user_id, kind, ref_id)`.
 
+### `login_attempts` (límite de intentos de inicio de sesión)
+key text PK (HMAC-SHA256 con `NEON_AUTH_COOKIE_SECRET` de `login-email:<correo>` o `login-ip:<ip>`: no guarda correos ni IP), failures int > 0, window_started_at. Índice en `window_started_at` para borrar lo caducado. Neon Auth no recibe la IP del cliente cuando el login pasa por una Server Action, así que su límite no distingue personas: este sí (`lib/data/login-attempts.ts`). 5 fallos por correo o 20 por IP en 15 min bloquean el intento sin llamar a Neon Auth; entrar bien borra los del correo; las filas se borran a las 24 h. Si la consulta falla, se deja pasar el intento y se avisa a Sentry.
+
 ### Relaciones
 ```
 neon_auth.user 1─1 profiles 1─* bookings *─1 sessions *─1 class_types
