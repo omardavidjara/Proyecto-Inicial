@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/pwa/service-worker-register";
 import { Toaster } from "@/components/ui/sonner";
+import { NOT_INDEXABLE } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -27,6 +28,8 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
   },
   formatDetection: { telephone: false },
+  // Nada se indexa salvo las páginas de lib/seo.ts, que lo reactivan en su metadata
+  robots: NOT_INDEXABLE,
 };
 
 // docs/DESIGN.md §5 y §9: contenido bajo la muesca (safe areas) y zoom permitido
