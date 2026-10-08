@@ -20,6 +20,12 @@ updates:
         exclude-patterns: ["@neondatabase/auth"]
         update-types: [minor, patch]
     # Las versiones mayores llegan en PR sueltas (pueden romper: revisar notas de la versión)
+    ignore:
+      # Los tipos de Node siguen la versión con la que se ejecuta la app (Node 24 en la CI; en Vercel, la de Settings → Node.js Version):
+      # unos tipos más nuevos dejarían usar funciones que en producción no existen. Subir la mayor a mano
+      # cuando se cambie la versión de Node
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
