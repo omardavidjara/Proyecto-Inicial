@@ -1,6 +1,16 @@
 import { withSentryConfig } from "@sentry/nextjs/config";
 import type { NextConfig } from "next";
 
+// CSP base para toda la web: solo directivas que no afectan a los scripts ni a los estilos de Next.
+// Impiden incrustar la app en otra web (clickjacking), cambiar la base de las URL relativas, enviar
+// formularios a otro dominio y cargar plugins. La parte de scripts (nonce) queda para la Fase 6.
+const BASE_CSP = [
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "object-src 'none'",
+].join("; ");
+
 const nextConfig: NextConfig = {
   poweredByHeader: false, // no anunciar la tecnología del servidor
   // Solo en desarrollo: probar desde un móvil en la misma Wi-Fi (npm run dev -- -H 0.0.0.0)
@@ -13,6 +23,7 @@ const nextConfig: NextConfig = {
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "X-Frame-Options", value: "DENY" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Content-Security-Policy", value: BASE_CSP },
         ],
       },
       {
