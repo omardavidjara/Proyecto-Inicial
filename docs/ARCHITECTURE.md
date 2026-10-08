@@ -223,6 +223,7 @@ Los layouts de `(client)`, `entrenador/` y `admin/` llaman a `requireArea`; como
 Sesión y cookies (decidido en la Fase 3):
 - Cookies `__Secure-neon-auth.*`, `httpOnly`, `SameSite=Lax`, solo por HTTPS. Funcionan en `localhost` y en Vercel; **no** al probar desde el móvil por la IP de la red local (usar una *preview* de Vercel).
 - Tras cerrar sesión, una copia robada de las cookies sigue valiendo hasta que caduca la caché (5 min). La baja o el cambio de rol se aplican al instante (la DAL lee `profiles` en cada petición). Revisar en la Fase 6 si se acorta `sessionDataTtl`.
+- La pasarela `/api/auth/*` solo deja pasar lo que pide el navegador (`lib/auth-gateway.ts`: `POST sign-in/social` y `GET get-session`); el resto responde 404. Registro, cambio de contraseña o borrado de cuenta irán por Server Actions que llaman a Neon Auth desde el servidor. La pasarela no cierra el registro por sí sola: el navegador ve la URL de Neon Auth (el login con Google pasa por ella), así que quien quiera cerrarlo de verdad debe hacerlo en la consola de Neon Auth.
 - El rol `developer` (o cualquiera, en pruebas) se asigna con `npm run db:set-role -- <correo> <rol>` (`scripts/set-role.mts`), que también activa la cuenta.
 
 | Acción | client | coach | admin | developer |
