@@ -125,6 +125,9 @@ id, user_id → profiles, platform enum `web | android | ios`, token text único
 ### `notifications` (registro de envíos, evita duplicados)
 id, user_id, kind enum `reminder | waitlist_promoted | session_cancelled | account_approved | announcement`, ref_id uuid null (reserva, sesión o aviso), sent_at. Único `(user_id, kind, ref_id)`.
 
+### `login_attempts` (límite de intentos de inicio de sesión)
+key text PK (HMAC-SHA256 con `NEON_AUTH_COOKIE_SECRET` de `login-email:<correo>` o `login-ip:<ip>`: no guarda correos ni IP), failures int > 0, window_started_at. Índice en `window_started_at` para borrar lo caducado. Neon Auth no recibe la IP del cliente cuando el login pasa por una Server Action, así que su límite no distingue personas: este sí (`lib/data/login-attempts.ts`). 5 fallos por correo o 20 por IP en 15 min bloquean el intento sin llamar a Neon Auth; entrar bien borra los del correo; las filas se borran a las 24 h. Si la consulta falla, se deja pasar el intento y se avisa a Sentry.
+
 ### Relaciones
 ```
 neon_auth.user 1─1 profiles 1─* bookings *─1 sessions *─1 class_types
@@ -223,6 +226,7 @@ Los layouts de `(client)`, `entrenador/` y `admin/` llaman a `requireArea`; como
 Sesión y cookies (decidido en la Fase 3):
 - Cookies `__Secure-neon-auth.*`, `httpOnly`, `SameSite=Lax`, solo por HTTPS. Funcionan en `localhost` y en Vercel; **no** al probar desde el móvil por la IP de la red local (usar una *preview* de Vercel).
 - Tras cerrar sesión, una copia robada de las cookies sigue valiendo hasta que caduca la caché (5 min). La baja o el cambio de rol se aplican al instante (la DAL lee `profiles` en cada petición). Revisar en la Fase 6 si se acorta `sessionDataTtl`.
+- La pasarela `/api/auth/*` solo deja pasar lo que pide el navegador (`lib/auth-gateway.ts`: `POST sign-in/social` y `GET get-session`); el resto responde 404. Registro, cambio de contraseña o borrado de cuenta irán por Server Actions que llaman a Neon Auth desde el servidor. La pasarela no cierra el registro por sí sola: el navegador ve la URL de Neon Auth (el login con Google pasa por ella), así que quien quiera cerrarlo de verdad debe hacerlo en la consola de Neon Auth.
 - El rol `developer` (o cualquiera, en pruebas) se asigna con `npm run db:set-role -- <correo> <rol>` (`scripts/set-role.mts`), que también activa la cuenta.
 
 | Acción | client | coach | admin | developer |

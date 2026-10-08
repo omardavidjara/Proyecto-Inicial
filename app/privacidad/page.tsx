@@ -3,10 +3,12 @@ import Link from "next/link"
 import { LegalEmail } from "@/components/legal/legal-email"
 import { LegalPage } from "@/components/legal/legal-page"
 import { LEGAL, MIN_AGE } from "@/lib/legal"
+import { INDEXABLE } from "@/lib/seo"
 
 export const metadata: Metadata = {
   title: "Política de privacidad",
   description: "Cómo trata Athlos tus datos personales y cómo ejercer tus derechos.",
+  robots: INDEXABLE,
 }
 
 const MAIL = "font-medium text-primary underline-offset-4 hover:underline"
@@ -55,6 +57,8 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong>Datos técnicos</strong>: registros de acceso y de errores necesarios para la seguridad y el funcionamiento.
+            Para frenar a quien intente adivinar contraseñas, contamos los intentos fallidos de inicio de sesión por correo
+            y por dirección IP, guardados cifrados de forma que no se puede saber a quién corresponden.
           </li>
         </ul>
         <p>
@@ -121,7 +125,7 @@ export default function PrivacyPage() {
           </li>
           <li>
             Los registros técnicos se borran automáticamente: los de accesos en pocos días y los de errores (Sentry) a
-            los 30 días.
+            los 30 días. Los intentos fallidos de inicio de sesión, a las 24 horas.
           </li>
           <li>
             Los datos que deban guardarse por obligación legal se conservan bloqueados solo durante los plazos legales

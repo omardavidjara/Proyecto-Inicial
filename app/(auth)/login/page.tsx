@@ -4,9 +4,10 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { LegalLinks } from "@/components/legal/legal-links"
 import { getSessionUser } from "@/lib/dal"
+import { INDEXABLE } from "@/lib/seo"
 import { LoginForm } from "./login-form"
 
-export const metadata: Metadata = { title: "Iniciar sesión" }
+export const metadata: Metadata = { title: "Iniciar sesión", robots: INDEXABLE }
 
 export default async function LoginPage() {
   // Con la sesión ya iniciada, "/" lleva a su inicio
