@@ -12,7 +12,7 @@ import { getDb } from "@/db"
 import { getAuth } from "@/lib/auth"
 import { listMyBookings } from "@/lib/data/bookings"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
-import { createSignUpProfile, ensureProfile, type Viewer } from "@/lib/data/profiles"
+import { createSignUpProfile, ensureProfile, getMyProfile as selectMyProfile, updateMyProfile, type Viewer } from "@/lib/data/profiles"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
@@ -109,4 +109,19 @@ export function noteAttempt(scope: Exclude<LimitScope, "login">, email: string) 
 /** Perfil pendiente con el teléfono del registro. `userId` viene de Neon Auth, nunca del navegador */
 export async function saveSignUpProfile(input: { userId: string; fullName: string; phone: string }) {
   await createSignUpProfile(getDb(), input)
+}
+
+// ── Perfil (F1) ─────────────────────────────────────────────────────────────────────────────────────────
+
+/** Mi perfil, con el correo de la cuenta. Vale para cualquier estado (pendiente y baja también lo ven) */
+export async function getMyProfile() {
+  const viewer = await requireViewer()
+  const [user, profile] = await Promise.all([getSessionUser(), selectMyProfile(getDb(), viewer)])
+  return { viewer, email: user?.email ?? "", fullName: profile?.fullName ?? viewer.fullName, phone: profile?.phone ?? null, avatarUrl: profile?.avatarUrl ?? null }
+}
+
+/** Guarda nombre y teléfono del usuario de la sesión */
+export async function saveMyProfile(input: { fullName: string; phone: string }) {
+  const viewer = await requireViewer()
+  await updateMyProfile(getDb(), viewer, input)
 }

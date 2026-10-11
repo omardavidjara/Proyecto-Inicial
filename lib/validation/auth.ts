@@ -57,3 +57,6 @@ export const verifyEmailSchema = z.object({
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>
 
 export const resendCodeSchema = z.object({ email: emailSchema })
+
+export const profileSchema = z.object({ fullName: fullNameSchema, phone: phoneSchema })
+export type ProfileInput = z.infer<typeof profileSchema>

@@ -1,17 +1,19 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { redirect } from "next/navigation"
-import { Clock, UserX } from "lucide-react"
+import { Clock, Phone, UserX } from "lucide-react"
 import { SignOutButton } from "@/components/auth/sign-out-button"
 import { EmptyState } from "@/components/empty-state"
 import { LegalLinks } from "@/components/legal/legal-links"
-import { requireViewer } from "@/lib/dal"
+import { Button } from "@/components/ui/button"
+import { getMyProfile } from "@/lib/dal"
 import { homePathFor } from "@/lib/roles"
 
 export const metadata: Metadata = { title: "Cuenta pendiente" }
 
-// Única pantalla (junto con el perfil, en F1) para cuentas pendientes de aprobar o dadas de baja
+// Única pantalla, junto con /perfil, para cuentas pendientes de aprobar o dadas de baja (ARCHITECTURE §6)
 export default async function PendingPage() {
-  const viewer = await requireViewer()
+  const { viewer, phone } = await getMyProfile()
   if (viewer.status === "active") redirect(homePathFor(viewer))
 
   const inactive = viewer.status === "inactive"
@@ -29,6 +31,18 @@ export default async function PendingPage() {
             : "El gimnasio tiene que aprobar tu cuenta antes de que puedas reservar. Te avisaremos cuando esté lista."
         }
       />
+      {!phone && !inactive ? (
+        // Quien entra con Google no da teléfono: el gimnasio lo necesita para contactar (SPEC F1)
+        <p role="status" className="flex gap-3 rounded-lg bg-muted px-3 py-3 text-sm">
+          <Phone className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>
+            Añade tu teléfono en el perfil para que el gimnasio pueda contactar contigo.
+          </span>
+        </p>
+      ) : null}
+      <Button asChild variant="outline" size="lg" className="w-full">
+        <Link href="/perfil">{!phone && !inactive ? "Completar mi perfil" : "Mi perfil"}</Link>
+      </Button>
       <SignOutButton />
       <LegalLinks />
     </main>
