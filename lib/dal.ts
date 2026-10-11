@@ -5,7 +5,7 @@ import "server-only"
 
 import * as Sentry from "@sentry/nextjs"
 import { cookies, headers } from "next/headers"
-import { redirect } from "next/navigation"
+import { redirect, unstable_rethrow } from "next/navigation"
 import { cache } from "react"
 
 import { getDb } from "@/db"
@@ -22,9 +22,18 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   // Marca la página como dinámica antes de llamar al SDK, que capturaría esa señal de Next y la
   // registraría como error durante el build
   await cookies()
-  const { data } = await getAuth().getSession()
-  const parsed = sessionUserSchema.safeParse(data?.user)
-  return parsed.success ? parsed.data : null
+  try {
+    const { data } = await getAuth().getSession()
+    const parsed = sessionUserSchema.safeParse(data?.user)
+    return parsed.success ? parsed.data : null
+  } catch (error) {
+    // Señales internas de Next (render dinámico, redirect…): siguen su curso
+    unstable_rethrow(error)
+    // Con cookies de una sesión que ya no vale (caducada, cerrada en otro sitio o de una cuenta eliminada), Neon
+    // Auth pide borrarlas y el SDK intenta hacerlo, pero una página no puede escribir cookies: es "sin sesión".
+    // Las páginas privadas no llegan aquí con ellas (proxy.ts las renueva o las borra); /login sí.
+    return null
+  }
 })
 
 /** Perfil de quien consulta (se crea en su primer inicio de sesión), o `null` sin sesión. */
