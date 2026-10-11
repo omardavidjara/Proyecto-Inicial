@@ -24,7 +24,7 @@ Cerradas sin fusionar: #3 (`@types/node` 26: la app corre en Node 24; regla `ign
 
 | Pendiente | Dónde | Fase |
 |---|---|---|
-| **Google con credenciales propias** (la lista de producción de Neon lo exige; las «Shared keys» son de desarrollo). En curso: ROADMAP Fase 7 | Google Cloud + Neon | 7 |
+| ~~Google con credenciales propias~~ **Hecho el 2026-10-11** (ROADMAP Fase 7). Queda: la pantalla de Google muestra «neon.tech» en lugar de «Athlos» | Google Cloud + Neon | 7 |
 | **Apagar «Allow Localhost»** en Neon Auth (lista de producción de Neon). Hoy el desarrollo local usa la base de datos de producción: antes hay que separar desarrollo y producción | Neon | 7 |
 | Al construir el registro (F1): volver a encender «Sign-up with Email» con «Verify at Sign-up», añadir la ruta a `lib/auth-gateway.ts` solo si la pide el navegador y aplicar el límite de intentos | ROADMAP F1 | 5 |
 | CSP de scripts con nonce desde el proxy (obliga a render dinámico en las páginas hoy estáticas) | `proxy.ts` | 6 |
