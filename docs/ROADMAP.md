@@ -67,6 +67,8 @@ Revisión de cierre: `docs/reviews/FASE-4.md` (pendientes heredados por otras fa
 - [x] [J] Sentry: el usuario crea la cuenta y da el DSN; Claude lo integra. Hecho 2026-10-07: región UE, `lib/sentry.ts`, `instrumentation*.ts`, `app/global-error.tsx`, `/privacidad` al día, `NEXT_PUBLIC_SENTRY_DSN` solo en Production de Vercel; error de prueba recibido desde `/api/sentry-test` (solo rol developer). Pendiente opcional: `SENTRY_AUTH_TOKEN` para subir source maps
 - [x] [T] Protección de rama en `main` (Settings → Branches), exigiendo la CI (hecho 2026-10-07: solo por PR, «Comprobaciones» y «Dependencias» obligatorias para todos)
 
+Auditoría intermedia (2026-10-08, antes de empezar la Fase 5): `docs/reviews/AUDITORIA-2026-10-08.md` (corregido y pendientes).
+
 ## Fase 5 · Funcionalidades (una por sesión, en el orden de SPEC)
 Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → CI verde → PR → [T] el usuario fusiona.
 Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/prototype/` por consultas reales, páginas "Próximamente" (`components/coming-soon.tsx`) por las pantallas reales y la franja `PrototypeNotice`. Cuando no quede nada, borrar `lib/prototype/` y esos dos componentes.
@@ -95,6 +97,8 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 - [ ] [J] Firmar o aceptar los contratos de encargado del tratamiento (DPA, RGPD art. 28) de Vercel y Neon, y registrar las actividades de tratamiento del gimnasio (RGPD art. 30)
 - [ ] [C] Antes de abrir la app al gimnasio real: `lib/legal.ts` completo (`isLegalComplete` en `true`, sin aviso de "Borrador") y fecha de `updatedAt` al día
 - [ ] [T] Dominio propio en Vercel
+- [ ] [T] Google con credenciales propias en Neon Auth (las «Shared keys» son solo para desarrollo, lista de producción de Neon). **En curso:** proyecto «Athlos App» creado en Google Cloud (2026-10-09). Falta: pantalla de consentimiento (público Externo, nombre «Athlos», **sin logo** para no exigir verificación) → cliente OAuth «Aplicación web» con URI de redirección `{NEON_AUTH_BASE_URL}/callback/google` → pegar ID y secreto en Neon (Settings → Better Auth → Google) → publicar la app («En producción») → probar el login con Google en la web. Quien ya entra con Google sigue entrando (mismo ID de Google)
+- [ ] [J] Apagar «Allow Localhost» en Neon Auth (lista de producción de Neon). Antes, separar desarrollo y producción: hoy `.env.local` apunta a la base de datos de producción y el login en `localhost` depende de ese ajuste
 - [ ] [T] Probar la web publicada en un móvil real
 
 ## Fase 8 · App móvil (Capacitor)
