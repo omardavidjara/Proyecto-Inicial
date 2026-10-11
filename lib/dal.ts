@@ -7,14 +7,16 @@ import * as Sentry from "@sentry/nextjs"
 import { cookies, headers } from "next/headers"
 import { redirect, unstable_rethrow } from "next/navigation"
 import { cache } from "react"
+import { z } from "zod"
 
-import { getDb } from "@/db"
+import { getDb, getTxDb } from "@/db"
 import { getAuth } from "@/lib/auth"
 import { listMyBookings } from "@/lib/data/bookings"
+import * as clients from "@/lib/data/clients"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
 import { createSignUpProfile, ensureProfile, getMyProfile as selectMyProfile, updateMyProfile, type Viewer } from "@/lib/data/profiles"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
-import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area } from "@/lib/roles"
+import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
 
 /** Usuario de la sesión verificada, o `null`. Una sola comprobación por render (`cache`). */
@@ -133,4 +135,39 @@ export async function getMyProfile() {
 export async function saveMyProfile(input: { fullName: string; phone: string }) {
   const viewer = await requireViewer()
   await updateMyProfile(getDb(), viewer, input)
+}
+
+// ── Altas y bajas de clientes (F1, solo administración) ─────────────────────────────────────────────────
+// El id del cliente llega del navegador: se valida y solo se acepta en estas acciones de administrador
+// (ARCHITECTURE §6). Cada una devuelve false si el cambio no encaja con el estado actual.
+
+const clientIdSchema = z.uuid()
+
+export async function listClientsForAdmin(status: ProfileStatus) {
+  await requireArea("admin")
+  return clients.listClients(getDb(), status)
+}
+
+export async function countPendingClientsForAdmin() {
+  await requireArea("admin")
+  return clients.countPendingClients(getDb())
+}
+
+export type ClientDecision = "approve" | "reject" | "deactivate" | "reactivate"
+
+export async function decideClient(decision: ClientDecision, userId: unknown) {
+  await requireArea("admin")
+  const parsed = clientIdSchema.safeParse(userId)
+  if (!parsed.success) return false
+  switch (decision) {
+    case "approve":
+      return clients.approveClient(getDb(), parsed.data)
+    case "reject":
+      return clients.rejectClient(getDb(), parsed.data)
+    case "reactivate":
+      return clients.reactivateClient(getDb(), parsed.data)
+    case "deactivate":
+      // Transacción (perfil + reservas futuras): necesita el Pool, el driver HTTP no las admite
+      return clients.deactivateClient(getTxDb(), parsed.data)
+  }
 }
