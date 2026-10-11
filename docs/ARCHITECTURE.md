@@ -175,6 +175,7 @@ Grupos de rutas para separar layouts por rol (los paréntesis no forman parte de
 app/
   (auth)/login                     Inicio de sesión
   (auth)/registro                  Registro
+  (auth)/confirmar-correo          Código de 6 cifras para confirmar el correo ?correo= (tras registrarse o al entrar sin confirmar)
   (auth)/pendiente                 Alta pendiente de aprobación
   (client)/inicio                  Inicio del cliente
   (client)/calendario              Calendario
@@ -226,7 +227,8 @@ Los layouts de `(client)`, `entrenador/` y `admin/` llaman a `requireArea`; como
 Sesión y cookies (decidido en la Fase 3):
 - Cookies `__Secure-neon-auth.*`, `httpOnly`, `SameSite=Lax`, solo por HTTPS. Funcionan en `localhost` y en Vercel; **no** al probar desde el móvil por la IP de la red local (usar una *preview* de Vercel).
 - Tras cerrar sesión, una copia robada de las cookies sigue valiendo hasta que caduca la caché (5 min). La baja o el cambio de rol se aplican al instante (la DAL lee `profiles` en cada petición). Revisar en la Fase 6 si se acorta `sessionDataTtl`.
-- La pasarela `/api/auth/*` solo deja pasar lo que pide el navegador (`lib/auth-gateway.ts`: `POST sign-in/social` y `GET get-session`); el resto responde 404. Registro, cambio de contraseña o borrado de cuenta irán por Server Actions que llaman a Neon Auth desde el servidor. La pasarela no cierra el registro por sí sola: el navegador ve la URL de Neon Auth (el login con Google pasa por ella), así que quien quiera cerrarlo de verdad debe hacerlo en la consola de Neon Auth.
+- La pasarela `/api/auth/*` solo deja pasar lo que pide el navegador (`lib/auth-gateway.ts`: `POST sign-in/social` y `GET get-session`); el resto responde 404. Registro, confirmación del correo, cambio de contraseña o borrado de cuenta van por Server Actions que llaman a Neon Auth desde el servidor. La pasarela no cierra el registro por sí sola: el navegador ve la URL de Neon Auth (el login con Google pasa por ella).
+- **Registro con correo (F1)**: Server Action `signUpWithEmail` (Zod; límite de intentos con su propio contador) → Neon Auth crea el usuario y envía un **código de 6 cifras** (con el servidor de correo compartido de Neon no se admite el enlace) → el perfil se crea en ese momento, pendiente y con el teléfono (el id viene de la respuesta de Neon Auth, no del navegador) → `/confirmar-correo` → `verifyEmailCode` confirma e **inicia la sesión** (`auto_sign_in_after_verification`) → `/` lleva a `/pendiente`. Un correo ya registrado recibe la misma respuesta que uno nuevo. Si alguien entra con la contraseña correcta sin haber confirmado, Neon Auth reenvía el código y el login lleva a `/confirmar-correo`. Configuración de Neon (Settings → Better Auth, o la API `auth/email_and_password`): registro activo, verificación obligatoria por OTP, envío al registrarse y al entrar sin confirmar.
 - El rol `developer` (o cualquiera, en pruebas) se asigna con `npm run db:set-role -- <correo> <rol>` (`scripts/set-role.mts`), que también activa la cuenta.
 
 | Acción | client | coach | admin | developer |

@@ -6,12 +6,17 @@ import type { LoginLimitKeys } from "@/lib/data/login-attempts"
 
 const hmac = (secret: string, value: string) => createHmac("sha256", secret).update(value).digest("hex")
 
-export function loginLimitKeys(email: string, ip: string, secret: string): LoginLimitKeys {
+/** Qué se limita: cada uno lleva su propio contador con las mismas reglas (lib/data/login-attempts.ts) */
+export type LimitScope = "login" | "signup" | "verify"
+
+export function limitKeys(scope: LimitScope, email: string, ip: string, secret: string): LoginLimitKeys {
   return {
-    email: hmac(secret, `login-email:${email.trim().toLowerCase()}`),
-    ip: hmac(secret, `login-ip:${ip}`),
+    email: hmac(secret, `${scope}-email:${email.trim().toLowerCase()}`),
+    ip: hmac(secret, `${scope}-ip:${ip}`),
   }
 }
+
+export const loginLimitKeys = (email: string, ip: string, secret: string) => limitKeys("login", email, ip, secret)
 
 /**
  * IP de quien hace la petición. En Vercel, `x-forwarded-for` la pone el propio Vercel (sustituye la que mande

@@ -43,3 +43,15 @@ export async function ensureProfile(db: Db, user: SessionUser): Promise<Viewer> 
   const [created] = await db.select(viewerColumns).from(profiles).where(eq(profiles.userId, user.id))
   return created
 }
+
+/**
+ * Perfil de quien se acaba de registrar con correo: aún no tiene sesión (debe confirmar el correo), así que se
+ * crea con el id que devuelve Neon Auth al registrar, de servidor a servidor. Queda pendiente (ARCHITECTURE §2).
+ * Si ya existía (correo ya registrado), no cambia nada.
+ */
+export async function createSignUpProfile(db: Db, input: { userId: string; fullName: string; phone: string }) {
+  await db
+    .insert(profiles)
+    .values({ userId: input.userId, fullName: input.fullName, phone: input.phone })
+    .onConflictDoNothing({ target: profiles.userId })
+}

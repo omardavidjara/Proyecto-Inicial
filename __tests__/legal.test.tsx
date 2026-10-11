@@ -12,7 +12,7 @@ import { LEGAL, isLegalComplete } from '../lib/legal'
 // Sin sesión: el inicio de sesión se muestra (con sesión redirigiría a "/")
 vi.mock('@/lib/dal', () => ({ getSessionUser: vi.fn(async () => null) }))
 vi.mock('@/lib/auth-client', () => ({ authClient: { signIn: { social: vi.fn() } } }))
-vi.mock('../app/(auth)/actions', () => ({ signInWithEmail: vi.fn(), signOut: vi.fn() }))
+vi.mock('../app/(auth)/actions', () => ({ signInWithEmail: vi.fn(), signUpWithEmail: vi.fn(), signOut: vi.fn() }))
 
 afterEach(cleanup)
 

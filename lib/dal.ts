@@ -12,8 +12,8 @@ import { getDb } from "@/db"
 import { getAuth } from "@/lib/auth"
 import { listMyBookings } from "@/lib/data/bookings"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
-import { ensureProfile, type Viewer } from "@/lib/data/profiles"
-import { clientIp, loginLimitKeys } from "@/lib/login-limit"
+import { createSignUpProfile, ensureProfile, type Viewer } from "@/lib/data/profiles"
+import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
 
@@ -62,11 +62,13 @@ export async function getMyBookings() {
 // Si la base de datos falla, se deja pasar el intento y se avisa a Sentry: un fallo del límite no debe impedir
 // entrar a nadie (Neon Auth sigue comprobando la contraseña).
 
-async function loginKeysFor(email: string) {
+async function limitKeysFor(scope: LimitScope, email: string) {
   const secret = process.env.NEON_AUTH_COOKIE_SECRET
   if (!secret) throw new Error("Falta NEON_AUTH_COOKIE_SECRET (ver .env.example)")
-  return loginLimitKeys(email, clientIp(await headers()), secret)
+  return limitKeys(scope, email, clientIp(await headers()), secret)
 }
+
+const loginKeysFor = (email: string) => limitKeysFor("login", email)
 
 async function failOpen<T>(fallback: T, run: () => Promise<T>): Promise<T> {
   try {
@@ -90,4 +92,21 @@ export function noteLoginFailure(email: string) {
 /** Inicio de sesión correcto: el correo vuelve a empezar de cero */
 export function noteLoginSuccess(email: string) {
   return failOpen(undefined, async () => clearLoginFailures(getDb(), await loginKeysFor(email)))
+}
+
+// ── Registro (F1) ───────────────────────────────────────────────────────────────────────────────────────
+
+/** ¿Demasiados registros o códigos de verificación recientes con este correo o desde esta IP? */
+export function isRateLimited(scope: Exclude<LimitScope, "login">, email: string) {
+  return failOpen(false, async () => isLoginBlocked(getDb(), await limitKeysFor(scope, email)))
+}
+
+/** Registro: cuenta cada intento (frena la creación masiva). Verificación: cuenta cada código incorrecto o reenvío */
+export function noteAttempt(scope: Exclude<LimitScope, "login">, email: string) {
+  return failOpen(undefined, async () => recordLoginFailure(getDb(), await limitKeysFor(scope, email)))
+}
+
+/** Perfil pendiente con el teléfono del registro. `userId` viene de Neon Auth, nunca del navegador */
+export async function saveSignUpProfile(input: { userId: string; fullName: string; phone: string }) {
+  await createSignUpProfile(getDb(), input)
 }
