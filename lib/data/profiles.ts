@@ -72,3 +72,14 @@ export async function updateMyProfile(db: Db, viewer: Viewer, input: { fullName:
     .set({ fullName: input.fullName, phone: input.phone })
     .where(and(eq(profiles.userId, viewer.userId), isNull(profiles.deletedAt)))
 }
+
+/** Cambia (o quita, con null) la foto del perfil de la sesión. Devuelve la anterior, para borrar el archivo */
+export async function setMyAvatar(db: Db, viewer: Viewer, avatarUrl: string | null) {
+  const [current] = await db.select({ avatarUrl: profiles.avatarUrl }).from(profiles).where(eq(profiles.userId, viewer.userId))
+  const changed = await db
+    .update(profiles)
+    .set({ avatarUrl })
+    .where(and(eq(profiles.userId, viewer.userId), isNull(profiles.deletedAt)))
+    .returning({ userId: profiles.userId })
+  return changed.length > 0 ? (current?.avatarUrl ?? null) : null
+}

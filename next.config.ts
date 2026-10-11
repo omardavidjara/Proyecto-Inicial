@@ -13,6 +13,8 @@ const BASE_CSP = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false, // no anunciar la tecnología del servidor
+  // Fotos de perfil en Vercel Blob (se muestran sin optimizar: ya llegan reducidas a 512 px)
+  images: { remotePatterns: [{ protocol: "https", hostname: "*.public.blob.vercel-storage.com", pathname: "/avatars/**" }] },
   // Solo en desarrollo: probar desde un móvil en la misma Wi-Fi (npm run dev -- -H 0.0.0.0)
   allowedDevOrigins: ["192.168.*.*"],
   async headers() {

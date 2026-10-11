@@ -13,6 +13,7 @@ vi.mock('@/lib/dal', () => ({ getMyProfile: async () => mocks.profile, saveMyPro
 vi.mock('next/navigation', () => ({ usePathname: () => '/perfil', redirect: mocks.redirect }))
 vi.mock('next/cache', () => ({ refresh: mocks.refresh }))
 vi.mock('../app/(auth)/actions', () => ({ signOut: vi.fn() }))
+vi.mock('@vercel/blob/client', () => ({ upload: vi.fn() }))
 
 import { updateProfile } from '../app/(cuenta)/perfil/actions'
 import PerfilPage from '../app/(cuenta)/perfil/page'
@@ -45,6 +46,8 @@ describe('/perfil según el estado de la cuenta', () => {
     expect((screen.getByLabelText('Nombre y apellidos') as HTMLInputElement).value).toBe('Ana Prueba')
     expect((screen.getByLabelText('Teléfono') as HTMLInputElement).value).toBe('600112233')
     expect((screen.getByLabelText('Correo electrónico') as HTMLInputElement).readOnly).toBe(true)
+    expect(screen.getByRole('button', { name: 'Añadir foto' })).toBeDefined()
+    expect(screen.queryByRole('button', { name: 'Quitar foto' })).toBeNull()
   })
 
   test.each(['pending', 'inactive'] as const)('cuenta %s: también puede abrirlo, sin navegación y con vuelta a /pendiente', async (status) => {

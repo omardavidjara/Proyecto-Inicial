@@ -3,7 +3,7 @@
 import { refresh } from "next/cache"
 import { z } from "zod"
 
-import { saveMyProfile } from "@/lib/dal"
+import { removeMyAvatar, saveMyAvatar, saveMyProfile } from "@/lib/dal"
 import { profileSchema, type ProfileInput } from "@/lib/validation/auth"
 
 export type ProfileState = {
@@ -22,4 +22,18 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
   await saveMyProfile(parsed.data)
   refresh()
   return { saved: true }
+}
+
+/** Guarda la foto recién subida a Blob (la DAL comprueba que es del almacén y de la carpeta del usuario) */
+export async function updateAvatar(url: unknown): Promise<{ ok: boolean }> {
+  const ok = await saveMyAvatar(url)
+  if (ok) refresh()
+  return { ok }
+}
+
+/** Quita la foto y borra el archivo */
+export async function deleteAvatar(): Promise<{ ok: boolean }> {
+  await removeMyAvatar()
+  refresh()
+  return { ok: true }
 }

@@ -83,7 +83,9 @@ export default function PrivacyPage() {
             dispositivo, y puedes retirarlo cuando quieras.
           </li>
           <li>
-            <strong>Mostrar tu foto de perfil</strong>. Base: tu consentimiento (art. 6.1.a), que retiras borrando la foto.
+            <strong>Mostrar tu foto de perfil</strong> al personal del gimnasio. Base: tu consentimiento (art. 6.1.a), que retiras
+            quitando la foto desde tu perfil. La foto se guarda en un enlace difícil de adivinar, pero quien tenga ese enlace
+            podría verla.
           </li>
           <li>
             <strong>Organizar el trabajo del personal</strong> (asistencia, incidencias, agenda) y{" "}
@@ -128,6 +130,9 @@ export default function PrivacyPage() {
             los 30 días. Los intentos fallidos de inicio de sesión, a las 24 horas.
           </li>
           <li>
+            Al cambiar o quitar tu foto de perfil, la anterior se borra en ese momento.
+          </li>
+          <li>
             Los datos que deban guardarse por obligación legal se conservan bloqueados solo durante los plazos legales
             (LOPDGDD art. 32).
           </li>
@@ -146,7 +151,7 @@ export default function PrivacyPage() {
           tratan solo siguiendo nuestras instrucciones, como encargados del tratamiento (RGPD art. 28):
         </p>
         <ul>
-          <li>Vercel Inc.: alojamiento de la app (servidores en Fráncfort, Alemania).</li>
+          <li>Vercel Inc.: alojamiento de la app y de las fotos de perfil (servidores en Fráncfort, Alemania).</li>
           <li>Neon: base de datos e inicio de sesión (servidores en Fráncfort, Alemania).</li>
           <li>Cloudflare: copias de seguridad cifradas de la base de datos (servidores en la Unión Europea).</li>
           <li>Apple y Google: entrega de notificaciones push en la app móvil, si las activas.</li>

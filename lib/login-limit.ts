@@ -7,7 +7,7 @@ import type { LoginLimitKeys } from "@/lib/data/login-attempts"
 const hmac = (secret: string, value: string) => createHmac("sha256", secret).update(value).digest("hex")
 
 /** Qué se limita: cada uno lleva su propio contador con las mismas reglas (lib/data/login-attempts.ts) */
-export type LimitScope = "login" | "signup" | "verify"
+export type LimitScope = "login" | "signup" | "verify" | "avatar"
 
 export function limitKeys(scope: LimitScope, email: string, ip: string, secret: string): LoginLimitKeys {
   return {
