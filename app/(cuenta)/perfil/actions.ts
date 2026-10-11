@@ -1,10 +1,12 @@
 "use server"
 
 import { refresh } from "next/cache"
+import { redirect } from "next/navigation"
 import { z } from "zod"
 
-import { removeMyAvatar, saveMyAvatar, saveMyProfile } from "@/lib/dal"
-import { profileSchema, type ProfileInput } from "@/lib/validation/auth"
+import { getAuth } from "@/lib/auth"
+import { deleteMyAccount, removeMyAvatar, saveMyAvatar, saveMyProfile } from "@/lib/dal"
+import { DELETE_CONFIRMATION, profileSchema, type ProfileInput } from "@/lib/validation/auth"
 
 export type ProfileState = {
   saved?: boolean
@@ -36,4 +38,27 @@ export async function deleteAvatar(): Promise<{ ok: boolean }> {
   await removeMyAvatar()
   refresh()
   return { ok: true }
+}
+
+export type DeleteAccountState = { error?: string }
+
+const DELETE_ERRORS = {
+  developer: "El rol de desarrollador no se puede eliminar desde la app.",
+  unavailable: "Eliminar la cuenta no está disponible en este entorno de pruebas.",
+  failed: "Tus datos ya se han borrado, pero no hemos podido cerrar tu acceso. Vuelve a intentarlo en unos minutos.",
+} as const
+
+/** Eliminar mi cuenta (SPEC F1, requisito del RGPD y de las tiendas). Hay que escribir ELIMINAR para confirmar */
+export async function deleteAccount(_prev: DeleteAccountState, formData: FormData): Promise<DeleteAccountState> {
+  const confirmation = z.string().trim().toUpperCase().safeParse(formData.get("confirmation"))
+  if (!confirmation.success || confirmation.data !== DELETE_CONFIRMATION) {
+    return { error: `Escribe ${DELETE_CONFIRMATION} para confirmar.` }
+  }
+  const result = await deleteMyAccount()
+  if (result !== "deleted") return { error: DELETE_ERRORS[result] }
+  // El usuario ya no existe en Neon Auth: cerrar sesión solo borra las cookies (si falla, proxy.ts lo hará)
+  await getAuth()
+    .signOut()
+    .catch(() => {})
+  redirect("/login?cuenta=eliminada")
 }

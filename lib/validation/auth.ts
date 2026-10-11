@@ -60,3 +60,6 @@ export const resendCodeSchema = z.object({ email: emailSchema })
 
 export const profileSchema = z.object({ fullName: fullNameSchema, phone: phoneSchema })
 export type ProfileInput = z.infer<typeof profileSchema>
+
+/** Palabra que hay que escribir para confirmar "Eliminar mi cuenta" */
+export const DELETE_CONFIRMATION = "ELIMINAR"
