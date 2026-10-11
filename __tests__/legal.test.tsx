@@ -12,6 +12,7 @@ import { LEGAL, isLegalComplete } from '../lib/legal'
 // Sin sesión: el inicio de sesión se muestra (con sesión redirigiría a "/")
 vi.mock('@/lib/dal', () => ({
   getSessionUser: vi.fn(async () => null),
+  accountDeletion: vi.fn(async () => 'available'),
   getMyProfile: vi.fn(async () => ({
     viewer: { userId: '0b4f2c1e-8a8e-4f7b-9a51-2f0f6d1c3a77', fullName: 'Ana', role: 'client', isCoach: false, status: 'active' },
     email: 'ana@example.test',
@@ -21,7 +22,7 @@ vi.mock('@/lib/dal', () => ({
   })),
 }))
 vi.mock('next/navigation', () => ({ usePathname: () => '/perfil', redirect: vi.fn() }))
-vi.mock('../app/(cuenta)/perfil/actions', () => ({ updateProfile: vi.fn(), updateAvatar: vi.fn(), deleteAvatar: vi.fn() }))
+vi.mock('../app/(cuenta)/perfil/actions', () => ({ updateProfile: vi.fn(), updateAvatar: vi.fn(), deleteAvatar: vi.fn(), deleteAccount: vi.fn() }))
 vi.mock('@vercel/blob/client', () => ({ upload: vi.fn() }))
 vi.mock('@/lib/auth-client', () => ({ authClient: { signIn: { social: vi.fn() } } }))
 vi.mock('../app/(auth)/actions', () => ({ signInWithEmail: vi.fn(), signUpWithEmail: vi.fn(), signOut: vi.fn() }))
@@ -61,7 +62,7 @@ test('mientras falten los datos del titular, las páginas legales avisan de que 
 })
 
 test('el inicio de sesión enlaza la privacidad y el aviso legal', async () => {
-  render(await LoginPage())
+  render(await LoginPage({ params: Promise.resolve({}), searchParams: Promise.resolve({}) }))
   expect(hrefs()).toEqual(expect.arrayContaining(['/privacidad', '/aviso-legal']))
 })
 

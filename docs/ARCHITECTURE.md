@@ -32,7 +32,7 @@ Next.js 16 en Vercel ── proxy.ts (solo redirecciones optimistas por cookie)
 - El **rol y el estado viven en `profiles`**, no en Neon Auth: así los cambia la app con sus propias reglas.
 - Todas las demás tablas que pertenecen a una persona referencian `profiles.user_id`.
 - El rol `developer` se asigna a mano una sola vez (semilla con migración/script), nunca desde la UI.
-- **Eliminar cuenta**: se borra el usuario en Neon Auth, el perfil pasa a `status = inactive`, `deleted_at = now()` y se vacían `full_name` ("Usuario eliminado"), `phone` y `avatar_url` (y el archivo de la foto). Sus reservas futuras se anulan y sus `push_devices` se borran.
+- **Eliminar cuenta** (hecho en F1): en una transacción el perfil pasa a `status = inactive`, `deleted_at = now()` y se vacían `full_name` ("Usuario eliminado"), `phone` y `avatar_url`; sus reservas futuras se anulan y sus `push_devices` se borran (`lib/data/account.ts`). Después se borra el archivo de la foto y el usuario de Neon Auth con su API (`lib/neon-admin.ts`; `NEON_API_KEY` es una clave de organización limitada al proyecto, con `NEON_PROJECT_ID` y `NEON_AUTH_BRANCH_ID`, **solo en Production** de Vercel: las previews copian la base de datos con los mismos ids). Repetible si Neon falla. El desarrollador no puede eliminarse desde la app.
 - Las FK de las tablas de la app hacia `profiles` son `on delete restrict`: un perfil nunca se borra físicamente.
 
 > Verificado en la Fase 3 (2026-10-04): `neon_auth.user.id` es `uuid`, así que `profiles.user_id` y todas las columnas que lo referencian también son `uuid`.

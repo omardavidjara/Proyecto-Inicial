@@ -3,17 +3,19 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   profile: null as unknown,
+  deletion: 'available' as string,
   saveMyProfile: vi.fn(),
   refresh: vi.fn(),
   redirect: vi.fn((url: string) => {
     throw new Error(`NEXT_REDIRECT ${url}`)
   }),
 }))
-vi.mock('@/lib/dal', () => ({ getMyProfile: async () => mocks.profile, saveMyProfile: mocks.saveMyProfile }))
+vi.mock('@/lib/dal', () => ({ getMyProfile: async () => mocks.profile, saveMyProfile: mocks.saveMyProfile, accountDeletion: async () => mocks.deletion }))
 vi.mock('next/navigation', () => ({ usePathname: () => '/perfil', redirect: mocks.redirect }))
 vi.mock('next/cache', () => ({ refresh: mocks.refresh }))
 vi.mock('../app/(auth)/actions', () => ({ signOut: vi.fn() }))
 vi.mock('@vercel/blob/client', () => ({ upload: vi.fn() }))
+vi.mock('@/lib/auth', () => ({ getAuth: vi.fn() }))
 
 import { updateProfile } from '../app/(cuenta)/perfil/actions'
 import PerfilPage from '../app/(cuenta)/perfil/page'
@@ -92,5 +94,30 @@ describe('guardar el perfil', () => {
     expect(state.fieldErrors?.fullName).toBeTruthy()
     expect(state.fieldErrors?.phone).toBeTruthy()
     expect(mocks.saveMyProfile).not.toHaveBeenCalled()
+  })
+})
+
+describe('eliminar mi cuenta en el perfil', () => {
+  test('disponible: botón para eliminar', async () => {
+    setProfile('active')
+    mocks.deletion = 'available'
+    render(await PerfilPage())
+    expect(screen.getByRole('heading', { name: 'Eliminar mi cuenta' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Eliminar mi cuenta' })).toBeDefined()
+  })
+
+  test('cuenta pendiente: también puede eliminarla', async () => {
+    setProfile('pending')
+    mocks.deletion = 'available'
+    render(await PerfilPage())
+    expect(screen.getByRole('button', { name: 'Eliminar mi cuenta' })).toBeDefined()
+  })
+
+  test('desarrollador: sin botón y con la explicación', async () => {
+    setProfile('active', 'developer')
+    mocks.deletion = 'developer'
+    render(await PerfilPage())
+    expect(screen.queryByRole('button', { name: 'Eliminar mi cuenta' })).toBeNull()
+    expect(screen.getByText(/desarrollador no se puede eliminar/)).toBeDefined()
   })
 })

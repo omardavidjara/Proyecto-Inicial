@@ -30,6 +30,8 @@ vi.mock('@/db', () => ({ getDb: () => 'db', getTxDb: () => 'tx' }))
 vi.mock('next/headers', () => ({ cookies: vi.fn(async () => ({})), headers: vi.fn(async () => new Headers()) }))
 vi.mock('next/navigation', () => ({ redirect: vi.fn((u: string) => { throw new Error(`NEXT_REDIRECT ${u}`) }), unstable_rethrow: vi.fn() }))
 
+import { removeMyAvatar, saveMyAvatar } from '@/lib/dal'
+
 describe('qué foto se acepta', () => {
   test('el dominio del almacén sale del token', () => {
     expect(blobStoreHost(TOKEN)).toBe(HOST)
@@ -64,7 +66,6 @@ describe('guardar y quitar la foto (DAL)', () => {
   })
 
   test('una URL propia se guarda y la foto anterior se borra de Blob', async () => {
-    const { saveMyAvatar } = await import('@/lib/dal')
     const url = `https://${HOST}/${avatarFolder(USER)}nueva.webp`
     mocks.setMyAvatar.mockResolvedValue(`https://${HOST}/${avatarFolder(USER)}vieja.webp`)
     expect(await saveMyAvatar(url)).toBe(true)
@@ -73,14 +74,12 @@ describe('guardar y quitar la foto (DAL)', () => {
   })
 
   test('la URL de otra persona o de otro sitio ni se guarda', async () => {
-    const { saveMyAvatar } = await import('@/lib/dal')
     expect(await saveMyAvatar(`https://${HOST}/${avatarFolder(OTHER)}foto.webp`)).toBe(false)
     expect(await saveMyAvatar('https://evil.example/foto.webp')).toBe(false)
     expect(mocks.setMyAvatar).not.toHaveBeenCalled()
   })
 
   test('quitar la foto la borra; si Blob falla, se avisa a Sentry sin romper', async () => {
-    const { removeMyAvatar } = await import('@/lib/dal')
     mocks.setMyAvatar.mockResolvedValue(`https://${HOST}/${avatarFolder(USER)}foto.webp`)
     mocks.del.mockImplementation(async () => {
       throw new Error('Blob no responde')

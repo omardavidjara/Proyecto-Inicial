@@ -11,6 +11,7 @@ import { z } from "zod"
 
 import { getDb, getTxDb } from "@/db"
 import { getAuth } from "@/lib/auth"
+import { anonymizeAccount } from "@/lib/data/account"
 import { listMyBookings } from "@/lib/data/bookings"
 import * as clients from "@/lib/data/clients"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
@@ -19,6 +20,7 @@ import { del } from "@vercel/blob"
 
 import { isOwnAvatarUrl } from "@/lib/avatar"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
+import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
 
@@ -195,4 +197,36 @@ export async function saveMyAvatar(url: unknown) {
 export async function removeMyAvatar() {
   const viewer = await requireViewer()
   await deleteBlob(await setMyAvatar(getDb(), viewer, null))
+}
+
+// ── Eliminar mi cuenta (F1) ─────────────────────────────────────────────────────────────────────────────
+
+export type DeleteAccountResult = "deleted" | "developer" | "unavailable" | "failed"
+
+/** ¿Puede quien consulta eliminar su cuenta desde la app? (el desarrollador no; en previews no está configurado) */
+export async function accountDeletion() {
+  const viewer = await requireViewer()
+  if (viewer.role === "developer") return "developer" as const
+  return canDeleteAuthUsers() ? ("available" as const) : ("unavailable" as const)
+}
+
+/**
+ * Anonimiza el perfil (y anula reservas futuras y dispositivos), borra la foto y borra el acceso en Neon Auth.
+ * Repetible: si Neon Auth falla, el perfil ya está anonimizado y se puede volver a intentar.
+ */
+export async function deleteMyAccount(): Promise<DeleteAccountResult> {
+  const viewer = await requireViewer()
+  if (viewer.role === "developer") return "developer"
+  if (!canDeleteAuthUsers()) return "unavailable"
+
+  // Transacción: necesita el Pool (el driver HTTP no las admite)
+  const anonymized = await anonymizeAccount(getTxDb(), viewer.userId)
+  await deleteBlob(anonymized?.avatarUrl ?? null)
+  try {
+    await deleteAuthUser(viewer.userId)
+  } catch (error) {
+    Sentry.captureException(error)
+    return "failed"
+  }
+  return "deleted"
 }

@@ -9,9 +9,10 @@ import { LoginForm } from "./login-form"
 
 export const metadata: Metadata = { title: "Iniciar sesión", robots: INDEXABLE }
 
-export default async function LoginPage() {
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   // Con la sesión ya iniciada, "/" lleva a su inicio
   if (await getSessionUser()) redirect("/")
+  const { cuenta } = await searchParams
 
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-8 px-4 pt-[calc(env(safe-area-inset-top)+2rem)] pb-[calc(env(safe-area-inset-bottom)+2rem)]">
@@ -22,6 +23,11 @@ export default async function LoginPage() {
           <p className="text-muted-foreground">Reserva tus clases en Athlos</p>
         </div>
       </div>
+      {cuenta === "eliminada" ? (
+        <p role="status" className="rounded-lg bg-muted px-3 py-2 text-center text-sm">
+          Tu cuenta se ha eliminado. Gracias por haber entrenado con nosotros.
+        </p>
+      ) : null}
       <LoginForm />
       <p className="text-center text-sm text-muted-foreground">
         ¿No tienes cuenta?{" "}
