@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import Link from "next/link"
 import { connection } from "next/server"
 import { Page } from "@/components/app-shell/app-shell"
 import { LateCancellations } from "@/components/admin/late-cancellations"
@@ -6,6 +7,7 @@ import { PrototypeNotice } from "@/components/prototype-notice"
 import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatDayLong } from "@/lib/dates"
+import { countPendingClientsForAdmin } from "@/lib/dal"
 import { LATE_CANCELLATIONS, prototypeSessions, prototypeToday } from "@/lib/prototype/data"
 import { gymTimeNow, isClosed } from "@/lib/prototype/now"
 import { CLASS_COLOR_BG } from "@/lib/sessions"
@@ -20,6 +22,7 @@ export default async function AdminTodayPage() {
   const sessions = prototypeSessions(today, today).filter((s) => s.status === "scheduled")
   const bookings = sessions.reduce((sum, s) => sum + s.booked, 0)
   const waitlist = sessions.reduce((sum, s) => sum + s.waitlist, 0)
+  const pendingClients = await countPendingClientsForAdmin() // dato real (F1); el resto, prototipo hasta F6
 
   return (
     <Page title="Hoy" wide>
@@ -30,7 +33,7 @@ export default async function AdminTodayPage() {
         <Stat label="Sesiones" value={sessions.length} />
         <Stat label="Reservas" value={bookings} />
         <Stat label="En lista de espera" value={waitlist} />
-        <Stat label="Altas pendientes" value={2} highlight />
+        <Stat label="Altas pendientes" value={pendingClients} highlight={pendingClients > 0} href="/admin/clientes?estado=pendiente" />
       </dl>
 
       <section aria-labelledby="late-title" className="flex flex-col gap-3">
@@ -93,10 +96,24 @@ export default async function AdminTodayPage() {
   )
 }
 
-function Stat({ label, value, highlight = false }: { label: string; value: number; highlight?: boolean }) {
+function Stat({ label, value, highlight = false, href }: { label: string; value: number; highlight?: boolean; href?: string }) {
   return (
-    <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
-      <dt className="text-sm text-muted-foreground">{label}</dt>
+    <div
+      className={cn(
+        "relative flex flex-col gap-1 rounded-xl border bg-card p-4",
+        href && "transition-colors focus-within:ring-2 focus-within:ring-ring hover:bg-muted/50",
+      )}
+    >
+      <dt className="text-sm text-muted-foreground">
+        {href ? (
+          // El enlace cubre toda la tarjeta (after:absolute) sin meter dt/dd dentro de un <a>
+          <Link href={href} className="outline-none after:absolute after:inset-0 after:rounded-xl">
+            {label}
+          </Link>
+        ) : (
+          label
+        )}
+      </dt>
       <dd className={cn("text-2xl font-semibold tabular-nums", highlight && "text-primary")}>{value}</dd>
     </div>
   )
