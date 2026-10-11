@@ -21,7 +21,8 @@ vi.mock('@/lib/dal', () => ({
   })),
 }))
 vi.mock('next/navigation', () => ({ usePathname: () => '/perfil', redirect: vi.fn() }))
-vi.mock('../app/(cuenta)/perfil/actions', () => ({ updateProfile: vi.fn() }))
+vi.mock('../app/(cuenta)/perfil/actions', () => ({ updateProfile: vi.fn(), updateAvatar: vi.fn(), deleteAvatar: vi.fn() }))
+vi.mock('@vercel/blob/client', () => ({ upload: vi.fn() }))
 vi.mock('@/lib/auth-client', () => ({ authClient: { signIn: { social: vi.fn() } } }))
 vi.mock('../app/(auth)/actions', () => ({ signInWithEmail: vi.fn(), signUpWithEmail: vi.fn(), signOut: vi.fn() }))
 

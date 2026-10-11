@@ -14,7 +14,10 @@ import { getAuth } from "@/lib/auth"
 import { listMyBookings } from "@/lib/data/bookings"
 import * as clients from "@/lib/data/clients"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
-import { createSignUpProfile, ensureProfile, getMyProfile as selectMyProfile, updateMyProfile, type Viewer } from "@/lib/data/profiles"
+import { createSignUpProfile, ensureProfile, getMyProfile as selectMyProfile, setMyAvatar, updateMyProfile, type Viewer } from "@/lib/data/profiles"
+import { del } from "@vercel/blob"
+
+import { isOwnAvatarUrl } from "@/lib/avatar"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
@@ -170,4 +173,26 @@ export async function decideClient(decision: ClientDecision, userId: unknown) {
       // Transacción (perfil + reservas futuras): necesita el Pool, el driver HTTP no las admite
       return clients.deactivateClient(getTxDb(), parsed.data)
   }
+}
+
+// ── Foto de perfil (F1) ─────────────────────────────────────────────────────────────────────────────────
+
+/** Borra el archivo anterior de Blob (gratis). Si falla, solo queda un archivo huérfano: se avisa a Sentry */
+async function deleteBlob(url: string | null) {
+  if (url) await del(url).catch((error) => Sentry.captureException(error))
+}
+
+/** Guarda la foto recién subida. Solo se acepta una URL de nuestro almacén y de la carpeta del usuario */
+export async function saveMyAvatar(url: unknown) {
+  const viewer = await requireViewer()
+  if (!isOwnAvatarUrl(url, viewer.userId, process.env.BLOB_READ_WRITE_TOKEN)) return false
+  const previous = await setMyAvatar(getDb(), viewer, url as string)
+  if (previous !== url) await deleteBlob(previous)
+  return true
+}
+
+/** Quita la foto (retirar el consentimiento, /privacidad §3) y borra el archivo */
+export async function removeMyAvatar() {
+  const viewer = await requireViewer()
+  await deleteBlob(await setMyAvatar(getDb(), viewer, null))
 }

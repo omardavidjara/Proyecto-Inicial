@@ -8,7 +8,7 @@ import { eq } from 'drizzle-orm'
 
 import { bookings, classTypes, profiles, sessions } from '@/db/schema'
 import { getBookingForViewer, listMyBookings } from '@/lib/data/bookings'
-import { createSignUpProfile, ensureProfile, getMyProfile, initialFullName, updateMyProfile, type Viewer } from '@/lib/data/profiles'
+import { createSignUpProfile, ensureProfile, getMyProfile, initialFullName, setMyAvatar, updateMyProfile, type Viewer } from '@/lib/data/profiles'
 
 import { createTestDb, type TestDb } from './helpers/test-db'
 
@@ -116,5 +116,14 @@ describe('editar el propio perfil (F1)', () => {
     const ghost = { userId, fullName: 'Usuario eliminado', role: 'client', isCoach: false, status: 'inactive' } as const
     await updateMyProfile(db, ghost, { fullName: 'Vuelvo', phone: '622222222' })
     expect(await getMyProfile(db, ghost)).toMatchObject({ fullName: 'Usuario eliminado', phone: null })
+  })
+})
+
+describe('foto de perfil (F1)', () => {
+  test('cambiarla devuelve la anterior (para borrar el archivo) y quitarla la deja vacía', async () => {
+    expect(await setMyAvatar(db, bruno, 'https://x/avatars/bruno/1.webp')).toBeNull()
+    expect(await setMyAvatar(db, bruno, 'https://x/avatars/bruno/2.webp')).toBe('https://x/avatars/bruno/1.webp')
+    expect(await setMyAvatar(db, bruno, null)).toBe('https://x/avatars/bruno/2.webp')
+    expect((await getMyProfile(db, bruno))?.avatarUrl).toBeNull()
   })
 })
