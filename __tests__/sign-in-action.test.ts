@@ -47,8 +47,14 @@ describe('inicio de sesión con correo: límite de intentos', () => {
     expect(mocks.noteLoginFailure).toHaveBeenCalledWith('ana@example.test')
   })
 
+  test('correo sin confirmar: lleva a escribir el código (Neon Auth lo acaba de enviar) sin contar fallo', async () => {
+    mocks.signInEmail.mockResolvedValue({ error: { status: 403, code: 'EMAIL_NOT_VERIFIED' } })
+    await expect(signInWithEmail({}, form('Ana@Example.test', 'buena'))).rejects.toThrow('NEXT_REDIRECT')
+    expect(mocks.redirect).toHaveBeenCalledWith('/confirmar-correo?correo=ana%40example.test')
+    expect(mocks.noteLoginFailure).not.toHaveBeenCalled()
+  })
+
   test.each([
-    ['correo sin confirmar', { status: 403, code: 'EMAIL_NOT_VERIFIED' }],
     ['límite de Neon Auth', { status: 429 }],
     ['error del servicio', { status: 502 }],
   ])('%s: no cuenta como fallo', async (_name, error) => {

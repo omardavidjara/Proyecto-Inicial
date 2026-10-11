@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 import { bookings, classTypes, sessions } from '@/db/schema'
 import { getBookingForViewer, listMyBookings } from '@/lib/data/bookings'
-import { ensureProfile, initialFullName, type Viewer } from '@/lib/data/profiles'
+import { createSignUpProfile, ensureProfile, initialFullName, type Viewer } from '@/lib/data/profiles'
 
 import { createTestDb, type TestDb } from './helpers/test-db'
 
@@ -82,5 +82,20 @@ describe('dos usuarios: ninguno ve los datos del otro', () => {
     const admin: Viewer = { ...ana, role: 'admin' }
     expect(await getBookingForViewer(db, admin, brunoBookingId)).toMatchObject({ id: brunoBookingId })
     expect(await getBookingForViewer(db, { ...admin, status: 'inactive' }, brunoBookingId)).toBeNull()
+  })
+})
+
+describe('perfil del registro con correo (F1)', () => {
+  test('queda pendiente, como cliente y con el teléfono; el primer inicio de sesión no lo duplica', async () => {
+    const userId = randomUUID()
+    await createSignUpProfile(db, { userId, fullName: 'Carla Prueba', phone: '600112233' })
+    const viewer = await ensureProfile(db, { id: userId, name: 'Otro Nombre', email: 'carla@example.test' })
+    expect(viewer).toMatchObject({ userId, fullName: 'Carla Prueba', role: 'client', status: 'pending', isCoach: false })
+  })
+
+  test('si el perfil ya existía, el registro no lo cambia', async () => {
+    await createSignUpProfile(db, { userId: ana.userId, fullName: 'Suplantación', phone: '699999999' })
+    const viewer = await ensureProfile(db, { id: ana.userId, name: null, email: 'ana@example.test' })
+    expect(viewer.fullName).toBe('Ana Prueba')
   })
 })

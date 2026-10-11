@@ -20,8 +20,11 @@ export type Area = "client" | "coach" | "admin"
 export const LOGIN_PATH = "/login"
 export const PENDING_PATH = "/pendiente"
 
+/** Página donde se escribe el código que llega por correo (registro e inicio de sesión sin confirmar, F1) */
+export const confirmEmailPath = (email: string) => `/confirmar-correo?correo=${encodeURIComponent(email)}`
+
 /** Páginas que se abren sin sesión (ARCHITECTURE §5). El resto exige sesión (proxy.ts) */
-export const PUBLIC_PATHS = [LOGIN_PATH, "/registro", "/privacidad", "/aviso-legal", "/offline"] as const
+export const PUBLIC_PATHS = [LOGIN_PATH, "/registro", "/confirmar-correo", "/privacidad", "/aviso-legal", "/offline"] as const
 
 export function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`))
