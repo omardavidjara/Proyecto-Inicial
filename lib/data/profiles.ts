@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm"
+import { and, eq, isNull } from "drizzle-orm"
 
 import { profiles } from "@/db/schema"
 import type { SessionUser } from "@/lib/validation/auth"
@@ -54,4 +54,21 @@ export async function createSignUpProfile(db: Db, input: { userId: string; fullN
     .insert(profiles)
     .values({ userId: input.userId, fullName: input.fullName, phone: input.phone })
     .onConflictDoNothing({ target: profiles.userId })
+}
+
+/** Datos del propio perfil que se ven y editan en /perfil */
+export async function getMyProfile(db: Db, viewer: Viewer) {
+  const [row] = await db
+    .select({ fullName: profiles.fullName, phone: profiles.phone, avatarUrl: profiles.avatarUrl })
+    .from(profiles)
+    .where(eq(profiles.userId, viewer.userId))
+  return row ?? null
+}
+
+/** Cada uno edita solo su perfil (el de la sesión) y nunca uno ya eliminado */
+export async function updateMyProfile(db: Db, viewer: Viewer, input: { fullName: string; phone: string }) {
+  await db
+    .update(profiles)
+    .set({ fullName: input.fullName, phone: input.phone })
+    .where(and(eq(profiles.userId, viewer.userId), isNull(profiles.deletedAt)))
 }

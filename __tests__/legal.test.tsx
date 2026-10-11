@@ -4,13 +4,24 @@ import PrivacyPage from '../app/privacidad/page'
 import LegalNoticePage from '../app/aviso-legal/page'
 import LoginPage from '../app/(auth)/login/page'
 import RegisterPage from '../app/(auth)/registro/page'
-import PerfilPage from '../app/(client)/perfil/page'
+import PerfilPage from '../app/(cuenta)/perfil/page'
 import CoachPerfilPage from '../app/entrenador/perfil/page'
 import MasOpcionesPage from '../app/admin/mas/page'
 import { LEGAL, isLegalComplete } from '../lib/legal'
 
 // Sin sesión: el inicio de sesión se muestra (con sesión redirigiría a "/")
-vi.mock('@/lib/dal', () => ({ getSessionUser: vi.fn(async () => null) }))
+vi.mock('@/lib/dal', () => ({
+  getSessionUser: vi.fn(async () => null),
+  getMyProfile: vi.fn(async () => ({
+    viewer: { userId: '0b4f2c1e-8a8e-4f7b-9a51-2f0f6d1c3a77', fullName: 'Ana', role: 'client', isCoach: false, status: 'active' },
+    email: 'ana@example.test',
+    fullName: 'Ana',
+    phone: '600112233',
+    avatarUrl: null,
+  })),
+}))
+vi.mock('next/navigation', () => ({ usePathname: () => '/perfil', redirect: vi.fn() }))
+vi.mock('../app/(cuenta)/perfil/actions', () => ({ updateProfile: vi.fn() }))
 vi.mock('@/lib/auth-client', () => ({ authClient: { signIn: { social: vi.fn() } } }))
 vi.mock('../app/(auth)/actions', () => ({ signInWithEmail: vi.fn(), signUpWithEmail: vi.fn(), signOut: vi.fn() }))
 
@@ -63,8 +74,8 @@ test.each([
   ['perfil del cliente', PerfilPage],
   ['perfil del entrenador', CoachPerfilPage],
   ['"Más" del administrador', MasOpcionesPage],
-])('el %s enlaza los textos legales (requisito de las tiendas)', (_, Page) => {
-  render(<Page />)
+])('el %s enlaza los textos legales (requisito de las tiendas)', async (_, Page) => {
+  render(await Page())
   expect(screen.getByRole('navigation', { name: 'Información legal' })).toBeDefined()
   expect(hrefs()).toEqual(expect.arrayContaining(['/privacidad', '/aviso-legal']))
 })

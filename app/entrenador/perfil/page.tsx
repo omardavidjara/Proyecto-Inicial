@@ -1,15 +1,15 @@
 import type { Metadata } from "next"
-import { SignOutButton } from "@/components/auth/sign-out-button"
-import { ComingSoon } from "@/components/coming-soon"
-import { LegalLinks } from "@/components/legal/legal-links"
+import { Page } from "@/components/app-shell/app-shell"
+import { ProfileView } from "@/components/profile/profile-view"
+import { getMyProfile } from "@/lib/dal"
 
 export const metadata: Metadata = { title: "Perfil" }
 
-export default function PerfilPage() {
+// Mismo perfil que /perfil, con la navegación del entrenador (layout de entrenador/)
+export default async function CoachPerfilPage() {
   return (
-    <ComingSoon title="Perfil" feature="F1 · Registro, alta y perfil">
-      <SignOutButton className="w-full max-w-sm" />
-      <LegalLinks />
-    </ComingSoon>
+    <Page title="Perfil">
+      <ProfileView profile={await getMyProfile()} />
+    </Page>
   )
 }

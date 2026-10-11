@@ -182,7 +182,8 @@ app/
   (client)/calendario/[sessionId]  Detalle de sesión
   (client)/reservas                Mis reservas
   (client)/avisos                  Avisos
-  (client)/perfil                  Perfil
+  (cuenta)/perfil                  Perfil (fuera de (client): también para cuentas pendientes y de baja; con cuenta activa
+                                   lleva la navegación del cliente y un entrenador va a entrenador/perfil)
   entrenador/                      Mi semana (cualquier perfil con is_coach) ?semana=AAAA-MM-DD (lunes)
   entrenador/dia/[date]            Clases que imparte ese día (AAAA-MM-DD)
   entrenador/sesiones/[sessionId]  Asistentes + marcar asistencia

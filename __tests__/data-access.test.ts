@@ -4,9 +4,11 @@
 import { randomUUID } from 'node:crypto'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
-import { bookings, classTypes, sessions } from '@/db/schema'
+import { eq } from 'drizzle-orm'
+
+import { bookings, classTypes, profiles, sessions } from '@/db/schema'
 import { getBookingForViewer, listMyBookings } from '@/lib/data/bookings'
-import { createSignUpProfile, ensureProfile, initialFullName, type Viewer } from '@/lib/data/profiles'
+import { createSignUpProfile, ensureProfile, getMyProfile, initialFullName, updateMyProfile, type Viewer } from '@/lib/data/profiles'
 
 import { createTestDb, type TestDb } from './helpers/test-db'
 
@@ -97,5 +99,22 @@ describe('perfil del registro con correo (F1)', () => {
     await createSignUpProfile(db, { userId: ana.userId, fullName: 'Suplantación', phone: '699999999' })
     const viewer = await ensureProfile(db, { id: ana.userId, name: null, email: 'ana@example.test' })
     expect(viewer.fullName).toBe('Ana Prueba')
+  })
+})
+
+describe('editar el propio perfil (F1)', () => {
+  test('cada uno cambia solo el suyo', async () => {
+    await updateMyProfile(db, ana, { fullName: 'Ana Editada', phone: '611111111' })
+    expect(await getMyProfile(db, ana)).toMatchObject({ fullName: 'Ana Editada', phone: '611111111' })
+    expect((await getMyProfile(db, bruno))?.fullName).toBe('Bruno Prueba')
+  })
+
+  test('un perfil eliminado (anonimizado) no se puede volver a editar', async () => {
+    const userId = randomUUID()
+    await createSignUpProfile(db, { userId, fullName: 'Usuario eliminado', phone: '600000000' })
+    await db.update(profiles).set({ deletedAt: new Date(), phone: null }).where(eq(profiles.userId, userId))
+    const ghost = { userId, fullName: 'Usuario eliminado', role: 'client', isCoach: false, status: 'inactive' } as const
+    await updateMyProfile(db, ghost, { fullName: 'Vuelvo', phone: '622222222' })
+    expect(await getMyProfile(db, ghost)).toMatchObject({ fullName: 'Usuario eliminado', phone: null })
   })
 })
