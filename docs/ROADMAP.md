@@ -69,6 +69,8 @@ Revisión de cierre: `docs/reviews/FASE-4.md` (pendientes heredados por otras fa
 
 Auditoría intermedia (2026-10-08, antes de empezar la Fase 5): `docs/reviews/AUDITORIA-2026-10-08.md` (corregido y pendientes).
 
+Auditoría rápida (2026-10-12, F1 terminada): `docs/reviews/AUDITORIA-2026-10-12.md` (sin críticos; pendientes repartidos abajo).
+
 ## Fase 5 · Funcionalidades (una por sesión, en el orden de SPEC)
 Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → CI verde → PR → [T] el usuario fusiona.
 Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/prototype/` por consultas reales, páginas "Próximamente" (`components/coming-soon.tsx`) por las pantallas reales y la franja `PrototypeNotice`. Cuando no quede nada, borrar `lib/prototype/` y esos dos componentes.
@@ -87,6 +89,8 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 
 ## Fase 6 · Auditoría de seguridad
 - [ ] [C] `docs/AUDIT.md` por gravedad: filtrado por usuario en cada consulta a Neon, sesión de Neon Auth, autorización, validación, secretos, cabeceras/CSP, límite de peticiones, dependencias, subida de archivos y protección de datos (lo que dice `/privacidad` coincide con lo que hace la app: datos que se guardan, proveedores, conservación, eliminación de cuenta y vaciado de la caché al cerrar sesión)
+- [ ] [C] Separar desarrollo y producción antes de tener clientes reales: rama de desarrollo de Neon para `.env.local` y sin `NEON_API_KEY`/`NEON_PROJECT_ID`/`NEON_AUTH_BRANCH_ID` en local (hoy «Eliminar mi cuenta» en local borra usuarios reales). Desbloquea apagar «Allow Localhost» (Fase 7). AUDITORIA-2026-10-12 #2
+- [ ] [C] `npm audit`: revisar los avisos altos de herramientas de desarrollo (`braces`/`fast-glob` vía `eslint-config-next` y `shadcn`; `esbuild` vía `drizzle-kit`) y actualizarlos o justificarlos en `docs/AUDIT.md`. AUDITORIA-2026-10-12 #3
 - [ ] 🛑 [T] Revisar la auditoría
 - [ ] [C] Corregir los puntos críticos, un commit por punto
 
@@ -117,7 +121,7 @@ La app nativa carga la web publicada en Vercel (SSR), así que las mejoras de la
 - [ ] 🛑 [T] Enviar a revisión en las tiendas
 
 ## Fase 9 · Mantenimiento
-- Semanal: errores de Sentry y PR de Dependabot
+- Semanal: errores de Sentry y PR de Dependabot. `@neondatabase/auth` (beta) va en PR propia: leer el changelog y probar login, registro, Google y eliminar cuenta antes de fusionar (AUDITORIA-2026-10-12 #4)
 - Mensual: consumo en Neon (CU-h, almacenamiento, ramas), Vercel (uso y Blob) y Sentry frente a `docs/LIMITS.md`; volver a comprobar las cifras del documento
 - Mensual: repetir la Fase 6
 - Tras cada funcionalidad: actualizar SPEC y ARCHITECTURE
