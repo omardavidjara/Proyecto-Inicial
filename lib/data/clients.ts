@@ -1,10 +1,11 @@
-import { and, asc, count, desc, eq, gt, gte, inArray, isNull, lte, or, sql } from "drizzle-orm"
+import { and, asc, count, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm"
 import type { PgUpdateSetSource } from "drizzle-orm/pg-core"
 
-import { bookings, memberships, plans, profiles, sessions } from "@/db/schema"
+import { memberships, plans, profiles } from "@/db/schema"
 import { addDays, toDateKey } from "@/lib/dates"
 import type { ProfileStatus } from "@/lib/roles"
 
+import { cancelFutureBookingsOf, lockFutureSessionsOf } from "./bookings"
 import type { Db } from "./db"
 import { assignPlan, endMembershipsFrom, isActivePlan } from "./memberships"
 
@@ -111,22 +112,16 @@ export function reactivateClient(db: Db, userId: string, planId: string | null =
 
 /**
  * Dar de baja: activo → baja, su tarifa termina hoy (las programadas se quitan) y se anulan sus reservas
- * futuras, sin descontar (ARCHITECTURE §4). Todo o nada.
- * Pendiente para F5: al liberar una plaza, promover la lista de espera de cada sesión afectada.
+ * futuras, sin descontar, promoviendo la lista de espera de esas sesiones (ARCHITECTURE §4). Todo o nada.
  */
-export async function deactivateClient(db: Db, userId: string, today = toDateKey(new Date())) {
+export async function deactivateClient(db: Db, userId: string, today = toDateKey(new Date()), now = new Date()) {
   return db.transaction(async (tx) => {
+    // Las sesiones antes que el perfil, como al reservar (lib/data/bookings.ts)
+    const locked = await lockFutureSessionsOf(tx, userId, now)
     const changed = await transition(tx, userId, "active", { status: "inactive", deactivatedAt: sql`now()` })
     if (!changed) return false
     await endMembershipsFrom(tx, userId, addDays(today, 1))
-    const future = tx
-      .select({ id: sessions.id })
-      .from(sessions)
-      .where(gt(sessions.startsAt, sql`now()`))
-    await tx
-      .update(bookings)
-      .set({ status: "cancelled", cancelledAt: sql`now()` })
-      .where(and(eq(bookings.userId, userId), inArray(bookings.status, ["confirmed", "waitlisted"]), inArray(bookings.sessionId, future)))
+    await cancelFutureBookingsOf(tx, userId, locked, now)
     return true
   })
 }

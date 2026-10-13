@@ -6,6 +6,7 @@ import type { ClassColor } from "@/lib/sessions"
 import type { ClassKind } from "@/lib/validation/class-types"
 import type { OneOffSessionInput, ScheduleSlotInput, SessionInput } from "@/lib/validation/schedule"
 
+import { promoteWaitlist } from "./bookings"
 import type { Db } from "./db"
 
 // Plantilla semanal y generación de sesiones (SPEC F3). Solo administración y el cron: quien llama (lib/dal.ts)
@@ -299,7 +300,7 @@ export async function createOneOffSession(db: Db, input: OneOffSessionInput, now
 /**
  * Mover o cambiar entrenador o aforo de una sesión programada que aún no ha empezado. Queda marcada como
  * cambiada a mano (`is_customized`): los cambios de la plantilla ya no la tocan. El aforo no puede bajar de
- * las reservas confirmadas. Pendiente para F5: al subir el aforo, promover la lista de espera.
+ * las reservas confirmadas. Al subir el aforo se promueve la lista de espera (ARCHITECTURE §4).
  */
 export async function updateSession(db: Db, id: string, input: SessionInput, now = new Date()): Promise<SessionSaveResult> {
   return db.transaction(async (tx) => {
@@ -328,6 +329,7 @@ export async function updateSession(db: Db, id: string, input: SessionInput, now
     // Guardar sin cambios no la aparta de la plantilla
     if (!unchanged) {
       await tx.update(sessions).set({ ...times, capacity, coachId: input.coachId, isCustomized: true }).where(eq(sessions.id, id))
+      if (capacity > current.capacity) await promoteWaitlist(tx, id, now)
     }
     return "saved"
   })
