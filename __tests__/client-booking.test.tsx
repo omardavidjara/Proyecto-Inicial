@@ -23,7 +23,6 @@ vi.mock('@/lib/data/bookings', () => ({
   bookSession: mocks.bookSession,
   cancelBooking: mocks.cancelBooking,
   changeBooking: mocks.changeBooking,
-  listMyBookings: vi.fn(),
   getBookingSettings: vi.fn(),
 }))
 vi.mock('@/db', () => ({ getDb: () => 'http-db', getTxDb: () => 'tx-db' }))
