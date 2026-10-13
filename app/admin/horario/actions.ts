@@ -3,10 +3,17 @@
 import { refresh } from "next/cache"
 import { z } from "zod"
 
-import { deleteScheduleSlot, saveScheduleSlot, setScheduleSlotActive } from "@/lib/dal"
-import { scheduleSlotSchema, type ScheduleSlotInput } from "@/lib/validation/schedule"
+import { cancelSession, deleteScheduleSlot, saveScheduleSlot, saveSession, setScheduleSlotActive } from "@/lib/dal"
+import {
+  cancelReasonSchema,
+  oneOffSessionSchema,
+  scheduleSlotSchema,
+  sessionSchema,
+  type OneOffSessionInput,
+  type ScheduleSlotInput,
+} from "@/lib/validation/schedule"
 
-// Plantilla semanal (SPEC F3). La DAL exige el rol de administración y valida el id
+// Plantilla semanal y próximas sesiones (SPEC F3). La DAL exige el rol de administración y valida el id
 
 export type ScheduleSlotFormState = {
   saved?: boolean
@@ -69,4 +76,73 @@ export async function deleteScheduleSlotAction(id: unknown): Promise<ScheduleSlo
   if (result === "not_found") return { ok: false, message: NOT_FOUND }
   refresh()
   return { ok: true, message: "Clase eliminada del horario" }
+}
+
+// ── Próximas sesiones ─────────────────────────────────────────────────────────────────────────────────
+
+export type SessionFormState = {
+  saved?: boolean
+  error?: string
+  fieldErrors?: Partial<Record<keyof OneOffSessionInput, string>>
+}
+
+const SESSION_NOT_FOUND = "Esa sesión ya no existe. Recarga la página."
+const SESSION_NOT_EDITABLE = "Esa sesión ya ha empezado o está cancelada: no se puede cambiar."
+
+/** Sesión suelta (sin `id`, con tipo) o editar una sesión (con `id`; el tipo no cambia) */
+export async function saveSessionAction(_prev: SessionFormState, formData: FormData): Promise<SessionFormState> {
+  const id = formData.get("id") || null
+  const fields = {
+    date: formData.get("date"),
+    startTime: formData.get("startTime"),
+    durationMinutes: formData.get("durationMinutes"),
+    capacity: formData.get("capacity") ?? 1,
+    coachId: formData.get("coachId") ?? "",
+  }
+  const parsed = id
+    ? sessionSchema.safeParse(fields)
+    : oneOffSessionSchema.safeParse({ ...fields, classTypeId: formData.get("classTypeId") })
+  if (!parsed.success) {
+    const errors = z.flattenError(parsed.error).fieldErrors as Partial<Record<keyof OneOffSessionInput, string[]>>
+    return {
+      fieldErrors: {
+        classTypeId: errors.classTypeId?.[0],
+        date: errors.date?.[0],
+        startTime: errors.startTime?.[0],
+        durationMinutes: errors.durationMinutes?.[0],
+        capacity: errors.capacity?.[0],
+        coachId: errors.coachId?.[0],
+      },
+    }
+  }
+  const result = await saveSession(id, parsed.data)
+  switch (result) {
+    case "invalid_class_type":
+      return { fieldErrors: { classTypeId: "Elige un tipo de clase activo" } }
+    case "invalid_coach":
+      return { fieldErrors: { coachId: "Elige un entrenador activo" } }
+    case "past":
+      return { fieldErrors: { startTime: "Elige un día y una hora que aún no hayan pasado" } }
+    case "capacity_below_booked":
+      return { fieldErrors: { capacity: "No puede ser menor que las reservas confirmadas" } }
+    case "not_found":
+      return { error: SESSION_NOT_FOUND }
+    case "not_editable":
+      return { error: SESSION_NOT_EDITABLE }
+  }
+  refresh()
+  return { saved: true }
+}
+
+export async function cancelSessionAction(id: unknown, reason: unknown): Promise<ScheduleSlotActionResult> {
+  const parsedReason = cancelReasonSchema.safeParse(reason ?? "")
+  if (!parsedReason.success) return { ok: false, message: parsedReason.error.issues[0].message }
+  const cancelled = await cancelSession(id, parsedReason.data)
+  if (cancelled.result !== "cancelled") {
+    return { ok: false, message: cancelled.result === "not_found" ? SESSION_NOT_FOUND : SESSION_NOT_EDITABLE }
+  }
+  refresh()
+  const n = cancelled.cancelledBookings
+  const bookingsNote = n === 0 ? "" : n === 1 ? " y 1 reserva anulada" : ` y ${n} reservas anuladas`
+  return { ok: true, message: `Sesión cancelada${bookingsNote}` }
 }

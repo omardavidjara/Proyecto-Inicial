@@ -28,7 +28,7 @@ import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
 import type { ClassTypeInput } from "@/lib/validation/class-types"
-import type { ScheduleSlotInput } from "@/lib/validation/schedule"
+import type { OneOffSessionInput, ScheduleSlotInput, SessionInput } from "@/lib/validation/schedule"
 
 /** Usuario de la sesión verificada, o `null`. Una sola comprobación por render (`cache`). */
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
@@ -219,7 +219,8 @@ export async function deleteClassType(id: unknown): Promise<classTypes.DeleteRes
 // ── Horario (F3, solo administración) ───────────────────────────────────────────────────────────────────
 // Las escrituras tocan la franja y sus sesiones a la vez: transacción, con el Pool (getTxDb).
 
-const scheduleSlotIdSchema = z.uuid()
+// Id de una franja o de una sesión
+const scheduleIdSchema = z.uuid()
 
 export async function getScheduleForAdmin() {
   await requireArea("admin")
@@ -236,23 +237,50 @@ export async function getScheduleForAdmin() {
 export async function saveScheduleSlot(id: unknown, input: ScheduleSlotInput): Promise<schedule.SaveResult> {
   await requireArea("admin")
   if (id == null) return schedule.createScheduleSlot(getTxDb(), input)
-  const parsed = scheduleSlotIdSchema.safeParse(id)
+  const parsed = scheduleIdSchema.safeParse(id)
   if (!parsed.success) return "not_found"
   return schedule.updateScheduleSlot(getTxDb(), parsed.data, input)
 }
 
 export async function setScheduleSlotActive(id: unknown, isActive: boolean) {
   await requireArea("admin")
-  const parsed = scheduleSlotIdSchema.safeParse(id)
+  const parsed = scheduleIdSchema.safeParse(id)
   if (!parsed.success) return false
   return schedule.setScheduleSlotActive(getTxDb(), parsed.data, isActive)
 }
 
 export async function deleteScheduleSlot(id: unknown): Promise<schedule.DeleteResult> {
   await requireArea("admin")
-  const parsed = scheduleSlotIdSchema.safeParse(id)
+  const parsed = scheduleIdSchema.safeParse(id)
   if (!parsed.success) return "not_found"
   return schedule.deleteScheduleSlot(getTxDb(), parsed.data)
+}
+
+export async function getUpcomingSessionsForAdmin() {
+  await requireArea("admin")
+  const db = getDb()
+  const [sessionRows, types, coaches] = await Promise.all([
+    schedule.listUpcomingSessions(db),
+    classTypes.listClassTypes(db),
+    schedule.listCoaches(db),
+  ])
+  return { sessions: sessionRows, classTypes: types, coaches }
+}
+
+/** Crea una sesión suelta (sin id) o edita una sesión */
+export async function saveSession(id: unknown, input: SessionInput | OneOffSessionInput): Promise<schedule.SessionSaveResult> {
+  await requireArea("admin")
+  if (id == null) return "classTypeId" in input ? schedule.createOneOffSession(getTxDb(), input) : "invalid_class_type"
+  const parsed = scheduleIdSchema.safeParse(id)
+  if (!parsed.success) return "not_found"
+  return schedule.updateSession(getTxDb(), parsed.data, input)
+}
+
+export async function cancelSession(id: unknown, reason: string | null): Promise<schedule.CancelSessionResult> {
+  await requireArea("admin")
+  const parsed = scheduleIdSchema.safeParse(id)
+  if (!parsed.success) return { result: "not_found" }
+  return schedule.cancelSession(getTxDb(), parsed.data, reason)
 }
 
 /**

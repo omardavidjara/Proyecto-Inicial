@@ -1,6 +1,7 @@
 import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
+const SESSION_ID = '3d1e3f0a-6f0c-4d8e-9c1a-0d7e2a4b9c44'
 const SLOT_ID = '7c1e3f0a-6f0c-4d8e-9c1a-0d7e2a4b9c22'
 const TYPE_ID = '5b0e3f0a-6f0c-4d8e-9c1a-0d7e2a4b9c11'
 const INDIVIDUAL_ID = '5b0e3f0a-6f0c-4d8e-9c1a-0d7e2a4b9c12'
@@ -16,6 +17,10 @@ const mocks = vi.hoisted(() => ({
   setScheduleSlotActive: vi.fn(),
   deleteScheduleSlot: vi.fn(),
   generateSessions: vi.fn(),
+  listUpcomingSessions: vi.fn(),
+  createOneOffSession: vi.fn(),
+  updateSession: vi.fn(),
+  cancelSession: vi.fn(),
   refresh: vi.fn(),
   redirect: vi.fn((url: string) => {
     throw new Error(`NEXT_REDIRECT ${url}`)
@@ -34,13 +39,23 @@ vi.mock('@/lib/data/schedule', () => ({
   setScheduleSlotActive: mocks.setScheduleSlotActive,
   deleteScheduleSlot: mocks.deleteScheduleSlot,
   generateSessions: mocks.generateSessions,
+  listUpcomingSessions: mocks.listUpcomingSessions,
+  createOneOffSession: mocks.createOneOffSession,
+  updateSession: mocks.updateSession,
+  cancelSession: mocks.cancelSession,
 }))
 vi.mock('@/db', () => ({ getDb: () => 'http-db', getTxDb: () => 'tx-db' }))
 vi.mock('next/headers', () => ({ cookies: vi.fn(async () => ({})), headers: vi.fn(async () => new Headers()) }))
 vi.mock('next/navigation', () => ({ redirect: mocks.redirect, unstable_rethrow: vi.fn(), usePathname: () => '/admin/horario' }))
 vi.mock('next/cache', () => ({ refresh: mocks.refresh }))
 
-import { deleteScheduleSlotAction, saveScheduleSlotAction, setScheduleSlotActiveAction } from '../app/admin/horario/actions'
+import {
+  cancelSessionAction,
+  deleteScheduleSlotAction,
+  saveScheduleSlotAction,
+  saveSessionAction,
+  setScheduleSlotActiveAction,
+} from '../app/admin/horario/actions'
 import HorarioPage from '../app/admin/horario/page'
 import { GET as generateSessionsRoute } from '../app/api/cron/generate-sessions/route'
 
@@ -55,6 +70,9 @@ function form(fields: Record<string, string>) {
 }
 const valid = { classTypeId: TYPE_ID, weekday: '0', startTime: '09:00', durationMinutes: '60', capacity: '12', coachId: '' }
 const parsed = { classTypeId: TYPE_ID, weekday: 0, startTime: '09:00', durationMinutes: 60, capacity: 12, coachId: null }
+
+const validSession = { date: '2030-03-26', startTime: '18:30', durationMinutes: '60', capacity: '10', coachId: '' }
+const parsedSession = { date: '2030-03-26', startTime: '18:30', durationMinutes: 60, capacity: 10, coachId: null }
 
 const classType = (extra = {}) => ({
   id: TYPE_ID,
@@ -82,6 +100,8 @@ const slot = (extra = {}) => ({
   isActive: true,
   ...extra,
 })
+
+const page = (vista?: string) => HorarioPage({ searchParams: Promise.resolve(vista ? { vista } : {}) } as never)
 
 afterEach(cleanup)
 beforeEach(() => {
@@ -155,7 +175,13 @@ describe('activar, desactivar y eliminar', () => {
     await expect(saveScheduleSlotAction({}, form(valid))).rejects.toThrow('NEXT_REDIRECT')
     await expect(setScheduleSlotActiveAction(SLOT_ID, false)).rejects.toThrow('NEXT_REDIRECT')
     await expect(deleteScheduleSlotAction(SLOT_ID)).rejects.toThrow('NEXT_REDIRECT')
-    await expect(HorarioPage()).rejects.toThrow('NEXT_REDIRECT')
+    await expect(page()).rejects.toThrow('NEXT_REDIRECT')
+    await expect(page('sesiones')).rejects.toThrow('NEXT_REDIRECT')
+    await expect(saveSessionAction({}, form({ ...validSession, id: SESSION_ID }))).rejects.toThrow('NEXT_REDIRECT')
+    await expect(cancelSessionAction(SESSION_ID, '')).rejects.toThrow('NEXT_REDIRECT')
+    expect(mocks.updateSession).not.toHaveBeenCalled()
+    expect(mocks.cancelSession).not.toHaveBeenCalled()
+    expect(mocks.listUpcomingSessions).not.toHaveBeenCalled()
     expect(mocks.createScheduleSlot).not.toHaveBeenCalled()
     expect(mocks.setScheduleSlotActive).not.toHaveBeenCalled()
     expect(mocks.deleteScheduleSlot).not.toHaveBeenCalled()
@@ -169,7 +195,7 @@ describe('/admin/horario', () => {
       slot(),
       slot({ id: 'b', weekday: 3, startTime: '18:30', coachId: null, coachName: null, isActive: false }),
     ])
-    render(await HorarioPage())
+    render(await page())
     expect(screen.getByRole('heading', { name: 'Lunes' })).toBeDefined()
     expect(screen.getByRole('heading', { name: 'Jueves' })).toBeDefined()
     expect(screen.queryByRole('heading', { name: 'Martes' })).toBeNull()
@@ -183,21 +209,21 @@ describe('/admin/horario', () => {
 
   test('sin franjas: estado vacío', async () => {
     mocks.listScheduleSlots.mockResolvedValue([])
-    render(await HorarioPage())
+    render(await page())
     expect(screen.getByText('El horario está vacío')).toBeDefined()
   })
 
   test('sin tipos activos: lleva a crearlos y no ofrece «Nueva clase»', async () => {
     mocks.listScheduleSlots.mockResolvedValue([])
     mocks.listClassTypes.mockResolvedValue([classType({ isActive: false })])
-    render(await HorarioPage())
+    render(await page())
     expect(screen.getByRole('link', { name: 'Ir a tipos de clase' }).getAttribute('href')).toBe('/admin/tipos-clase')
     expect(screen.queryByRole('button', { name: 'Nueva clase' })).toBeNull()
   })
 
   test('el formulario propone duración y aforo del tipo y fija 1 en las individuales', async () => {
     mocks.listScheduleSlots.mockResolvedValue([])
-    render(await HorarioPage())
+    render(await page())
     fireEvent.click(screen.getByRole('button', { name: 'Nueva clase' }))
     const dialog = screen.getByRole('dialog')
     expect((within(dialog).getByLabelText('Aforo') as HTMLInputElement).value).toBe('12')
@@ -207,6 +233,135 @@ describe('/admin/horario', () => {
     expect(capacity.disabled).toBe(true)
     expect(capacity.value).toBe('1')
     expect(within(dialog).getByRole('option', { name: 'Laura Coach' })).toBeDefined()
+  })
+})
+
+describe('próximas sesiones: guardar', () => {
+  test('sin id crea una suelta (con tipo); con id edita (sin tipo); en transacción y refresca', async () => {
+    mocks.createOneOffSession.mockResolvedValue('saved')
+    mocks.updateSession.mockResolvedValue('saved')
+
+    expect(await saveSessionAction({}, form({ ...validSession, classTypeId: TYPE_ID }))).toEqual({ saved: true })
+    expect(mocks.createOneOffSession).toHaveBeenCalledWith('tx-db', { ...parsedSession, classTypeId: TYPE_ID })
+
+    expect(await saveSessionAction({}, form({ ...validSession, id: SESSION_ID, classTypeId: INDIVIDUAL_ID }))).toEqual({ saved: true })
+    expect(mocks.updateSession).toHaveBeenCalledWith('tx-db', SESSION_ID, parsedSession)
+    expect(mocks.refresh).toHaveBeenCalledTimes(2)
+  })
+
+  test('una suelta sin tipo o con fecha imposible: errores por campo', async () => {
+    const state = await saveSessionAction({}, form({ ...validSession, date: '2030-02-30' }))
+    expect(state.fieldErrors).toMatchObject({ classTypeId: expect.any(String), date: expect.any(String) })
+    expect(mocks.updateSession).not.toHaveBeenCalled()
+  })
+
+  test.each([
+    ['past', 'startTime', 'no hayan pasado'],
+    ['capacity_below_booked', 'capacity', 'reservas confirmadas'],
+    ['invalid_coach', 'coachId', 'activo'],
+  ])('%s: error en su campo y sin refrescar', async (result, field, text) => {
+    mocks.updateSession.mockResolvedValue(result)
+    const state = await saveSessionAction({}, form({ ...validSession, id: SESSION_ID }))
+    expect(state.fieldErrors?.[field as 'capacity']).toContain(text)
+    expect(mocks.refresh).not.toHaveBeenCalled()
+  })
+
+  test('una sesión ya empezada o cancelada no se edita', async () => {
+    mocks.updateSession.mockResolvedValue('not_editable')
+    expect((await saveSessionAction({}, form({ ...validSession, id: SESSION_ID }))).error).toContain('no se puede cambiar')
+  })
+})
+
+describe('próximas sesiones: cancelar', () => {
+  test('con motivo; dice cuántas reservas se han anulado', async () => {
+    mocks.cancelSession.mockResolvedValue({ result: 'cancelled', cancelledBookings: 3 })
+    expect(await cancelSessionAction(SESSION_ID, '  Festivo ')).toEqual({ ok: true, message: 'Sesión cancelada y 3 reservas anuladas' })
+    expect(mocks.cancelSession).toHaveBeenCalledWith('tx-db', SESSION_ID, 'Festivo')
+    expect(mocks.refresh).toHaveBeenCalled()
+  })
+
+  test('sin motivo guarda null; un motivo demasiado largo no cancela', async () => {
+    mocks.cancelSession.mockResolvedValue({ result: 'cancelled', cancelledBookings: 0 })
+    expect((await cancelSessionAction(SESSION_ID, '')).message).toBe('Sesión cancelada')
+    expect(mocks.cancelSession).toHaveBeenCalledWith('tx-db', SESSION_ID, null)
+    expect((await cancelSessionAction(SESSION_ID, 'x'.repeat(201))).ok).toBe(false)
+    expect(mocks.cancelSession).toHaveBeenCalledTimes(1)
+  })
+
+  test('un id que no es un uuid no cancela nada', async () => {
+    expect((await cancelSessionAction('1; drop table sessions', '')).ok).toBe(false)
+    expect(mocks.cancelSession).not.toHaveBeenCalled()
+  })
+})
+
+describe('/admin/horario?vista=sesiones', () => {
+  const inDays = (days: number, hour: number) => {
+    const date = new Date(Date.now() + days * 86_400_000)
+    date.setUTCHours(hour, 0, 0, 0)
+    return date
+  }
+  const session = (extra = {}) => ({
+    id: SESSION_ID,
+    classTypeId: TYPE_ID,
+    className: 'CrossTraining',
+    kind: 'group',
+    color: 'orange',
+    startsAt: inDays(3, 16),
+    endsAt: inDays(3, 17),
+    capacity: 12,
+    coachId: COACH_ID,
+    coachName: 'Laura Coach',
+    status: 'scheduled',
+    cancelReason: null,
+    isCustomized: false,
+    isOneOff: false,
+    booked: 5,
+    waitlisted: 0,
+    ...extra,
+  })
+
+  test('agrupa por día, con reservas, entrenador y marcas', async () => {
+    mocks.listUpcomingSessions.mockResolvedValue([
+      session(),
+      session({ id: 'b', startsAt: inDays(3, 18), endsAt: inDays(3, 19), isOneOff: true, booked: 12, waitlisted: 2, coachName: null, coachId: null }),
+      session({ id: 'c', startsAt: inDays(5, 16), endsAt: inDays(5, 17), status: 'cancelled', cancelReason: 'Festivo', isCustomized: true }),
+    ])
+    render(await page('sesiones'))
+    expect(screen.getByRole('link', { name: 'Próximas sesiones' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(2)
+    expect(screen.getByText('5/12 reservas · Laura Coach')).toBeDefined()
+    expect(screen.getByText('12/12 reservas · 2 en espera · Sin entrenador')).toBeDefined()
+    expect(screen.getByText('Suelta')).toBeDefined()
+    expect(screen.getByText('Cancelada')).toBeDefined()
+    expect(screen.getByText('Festivo')).toBeDefined()
+    // La cancelada no se puede editar ni volver a cancelar
+    expect(screen.getAllByRole('button', { name: /^Editar CrossTraining/ })).toHaveLength(2)
+    expect(screen.getAllByRole('button', { name: /^Cancelar CrossTraining/ })).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Sesión suelta' })).toBeDefined()
+  })
+
+  test('al cancelar avisa de las reservas que se anulan', async () => {
+    mocks.listUpcomingSessions.mockResolvedValue([session({ booked: 3, waitlisted: 1 })])
+    render(await page('sesiones'))
+    fireEvent.click(screen.getByRole('button', { name: /^Cancelar CrossTraining/ }))
+    expect(within(screen.getByRole('dialog')).getByText(/3 reservas y 1 en lista de espera/)).toBeDefined()
+  })
+
+  test('al editar, el aforo no baja de las reservas y se conserva un entrenador ya no disponible', async () => {
+    mocks.listUpcomingSessions.mockResolvedValue([session({ coachId: 'old-coach', coachName: 'Antiguo' })])
+    render(await page('sesiones'))
+    fireEvent.click(screen.getByRole('button', { name: /^Editar CrossTraining/ }))
+    const dialog = screen.getByRole('dialog')
+    expect((within(dialog).getByLabelText('Aforo') as HTMLInputElement).min).toBe('5')
+    expect((within(dialog).getByLabelText('Entrenador') as HTMLSelectElement).value).toBe('old-coach')
+    expect(within(dialog).queryByLabelText('Tipo de clase')).toBeNull()
+  })
+
+  test('sin sesiones: estado vacío', async () => {
+    mocks.listUpcomingSessions.mockResolvedValue([])
+    render(await page('sesiones'))
+    expect(screen.getByText('No hay sesiones próximas')).toBeDefined()
+    expect(mocks.listScheduleSlots).not.toHaveBeenCalled()
   })
 })
 
