@@ -89,6 +89,8 @@ id, class_type_id → class_types, weekday (0 = lunes … 6), start_time (`time`
 
 Único `(slot_id, slot_date)` para que generar sesiones desde la plantilla sea idempotente, aunque una sesión se haya movido de hora o cancelado (si se usara `starts_at`, mover una sesión haría que el generador la volviera a crear).
 
+Generación (F3, `lib/data/schedule.ts`): al guardar una franja y cada día con el cron se crean las sesiones de hoy a 27 días después, solo las que aún no han empezado. La hora local se pasa a UTC en Postgres con la zona de `gym_settings` (Europe/Madrid si no hay fila), así que los cambios de hora salen bien. Una sesión **intacta** es futura, de la plantilla, programada, sin `is_customized` y sin ninguna reserva: al editar, desactivar o eliminar una franja, sus sesiones intactas se borran y se vuelven a generar; las demás no se tocan y se ajustan desde la agenda. Una franja solo se elimina si no le queda ninguna otra sesión (la FK `restrict` lo impide); si no, se desactiva.
+
 `coach_id` (aquí y en `schedule_slots`) debe ser un perfil con `is_coach = true`: lo valida la capa de datos (no se puede expresar con una FK).
 
 ### `bookings`
@@ -193,7 +195,7 @@ app/
   admin/agenda                     ?vista=dia|semana|mes&fecha=AAAA-MM-DD
   admin/sesiones/[sessionId]       Detalle de sesión
   admin/anulaciones                Anulaciones tardías pendientes de decidir
-  admin/horario                    Plantilla semanal
+  admin/horario                    Plantilla semanal (F3): crear, editar, activar/desactivar y eliminar franjas
   admin/tipos-clase                Crear, editar, activar/desactivar y eliminar tipos de clase
   admin/perfil                     Perfil (mismo componente que /perfil, con la navegación de administración)
   admin/clientes                   ?estado=pendiente|activo|baja&q=
@@ -209,14 +211,14 @@ app/
   privacidad                       Política de privacidad (pública, sin sesión; RGPD y tiendas)
   aviso-legal                      Aviso legal y condiciones de uso (pública, sin sesión; LSSI)
   api/auth/[...path]               Neon Auth
-  api/cron/generate-sessions       Diario: crea sesiones de la plantilla (próximas 4 semanas)
+  api/cron/generate-sessions       Diario (Vercel Cron, 3:00 UTC, vercel.json): crea sesiones de la plantilla (próximas 4 semanas)
   api/cron/reminders               Cada 15 min: recordatorios de clase (ver §11: requiere plan Pro o programador externo)
 ```
 
 - `/` redirige: sin sesión → `/login`; cliente → `/inicio`, entrenador → `/entrenador`, admin/desarrollador → `/admin` (si además es entrenador, "Hoy" y "Más" enlazan a "Mi semana"). Hasta la Fase 3, `/` es el índice del prototipo.
 - **Vista cliente** para admins: simplemente pueden abrir las rutas de `(client)`; el layout de admin tiene un enlace "Vista cliente" y viceversa.
 - Mutaciones: **Server Actions** (en `app/**/actions.ts`), cada una valida con Zod y llama a la capa de datos.
-- `api/cron/*` exige la cabecera `Authorization: Bearer $CRON_SECRET`.
+- `api/cron/*` exige la cabecera `Authorization: Bearer $CRON_SECRET` (comparación en tiempo constante en `lib/dal.ts`; sin `CRON_SECRET` configurado responde 401).
 
 ## 6. Permisos
 

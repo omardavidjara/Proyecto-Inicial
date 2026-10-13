@@ -3,6 +3,8 @@
 // nunca leen la base de datos ni la sesión por su cuenta.
 import "server-only"
 
+import { timingSafeEqual } from "node:crypto"
+
 import * as Sentry from "@sentry/nextjs"
 import { cookies, headers } from "next/headers"
 import { redirect, unstable_rethrow } from "next/navigation"
@@ -15,6 +17,7 @@ import { anonymizeAccount } from "@/lib/data/account"
 import { listMyBookings } from "@/lib/data/bookings"
 import * as classTypes from "@/lib/data/class-types"
 import * as clients from "@/lib/data/clients"
+import * as schedule from "@/lib/data/schedule"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
 import { createSignUpProfile, ensureProfile, getMyProfile as selectMyProfile, setMyAvatar, updateMyProfile, type Viewer } from "@/lib/data/profiles"
 import { del } from "@vercel/blob"
@@ -25,6 +28,7 @@ import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
 import type { ClassTypeInput } from "@/lib/validation/class-types"
+import type { ScheduleSlotInput } from "@/lib/validation/schedule"
 
 /** Usuario de la sesión verificada, o `null`. Una sola comprobación por render (`cache`). */
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
@@ -210,6 +214,62 @@ export async function deleteClassType(id: unknown): Promise<classTypes.DeleteRes
   const parsed = classTypeIdSchema.safeParse(id)
   if (!parsed.success) return "not_found"
   return classTypes.deleteClassType(getDb(), parsed.data)
+}
+
+// ── Horario (F3, solo administración) ───────────────────────────────────────────────────────────────────
+// Las escrituras tocan la franja y sus sesiones a la vez: transacción, con el Pool (getTxDb).
+
+const scheduleSlotIdSchema = z.uuid()
+
+export async function getScheduleForAdmin() {
+  await requireArea("admin")
+  const db = getDb()
+  const [slots, types, coaches] = await Promise.all([
+    schedule.listScheduleSlots(db),
+    classTypes.listClassTypes(db),
+    schedule.listCoaches(db),
+  ])
+  return { slots, classTypes: types, coaches }
+}
+
+/** Crea (sin id) o edita una franja de la plantilla */
+export async function saveScheduleSlot(id: unknown, input: ScheduleSlotInput): Promise<schedule.SaveResult> {
+  await requireArea("admin")
+  if (id == null) return schedule.createScheduleSlot(getTxDb(), input)
+  const parsed = scheduleSlotIdSchema.safeParse(id)
+  if (!parsed.success) return "not_found"
+  return schedule.updateScheduleSlot(getTxDb(), parsed.data, input)
+}
+
+export async function setScheduleSlotActive(id: unknown, isActive: boolean) {
+  await requireArea("admin")
+  const parsed = scheduleSlotIdSchema.safeParse(id)
+  if (!parsed.success) return false
+  return schedule.setScheduleSlotActive(getTxDb(), parsed.data, isActive)
+}
+
+export async function deleteScheduleSlot(id: unknown): Promise<schedule.DeleteResult> {
+  await requireArea("admin")
+  const parsed = scheduleSlotIdSchema.safeParse(id)
+  if (!parsed.success) return "not_found"
+  return schedule.deleteScheduleSlot(getTxDb(), parsed.data)
+}
+
+/**
+ * Generación diaria de sesiones (api/cron/generate-sessions). Sin sesión de usuario: la protege CRON_SECRET,
+ * que Vercel Cron envía como `Authorization: Bearer …`. Devuelve null si la cabecera no es válida.
+ */
+export async function generateSessionsFromCron(authorization: string | null) {
+  if (!isCronAuthorized(authorization)) return null
+  return schedule.generateSessions(getDb())
+}
+
+function isCronAuthorized(authorization: string | null) {
+  const secret = process.env.CRON_SECRET
+  if (!secret || !authorization) return false
+  const expected = Buffer.from(`Bearer ${secret}`)
+  const received = Buffer.from(authorization)
+  return expected.length === received.length && timingSafeEqual(expected, received)
 }
 
 // ── Foto de perfil (F1) ─────────────────────────────────────────────────────────────────────────────────
