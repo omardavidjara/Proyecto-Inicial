@@ -91,7 +91,7 @@ id, class_type_id → class_types, weekday (0 = lunes … 6), start_time (`time`
 
 Generación (F3, `lib/data/schedule.ts`): al guardar una franja y cada día con el cron se crean las sesiones de hoy a 27 días después, solo las que aún no han empezado. La hora local se pasa a UTC en Postgres con la zona de `gym_settings` (Europe/Madrid si no hay fila), así que los cambios de hora salen bien. Una sesión **intacta** es futura, de la plantilla, programada, sin `is_customized` y sin ninguna reserva: al editar, desactivar o eliminar una franja, sus sesiones intactas se borran y se vuelven a generar; las demás no se tocan y se ajustan desde la agenda. Una franja solo se elimina si no le queda ninguna otra sesión (la FK `restrict` lo impide); si no, se desactiva.
 
-Próximas sesiones (F3, `/admin/horario?vista=sesiones`): sesiones sueltas (`slot_id` null), mover y cambiar entrenador o aforo, y cancelar. Solo se cambian sesiones programadas que aún no han empezado, y nunca a una hora pasada. Editar bloquea la sesión (`FOR UPDATE`), no deja bajar el aforo de las reservas confirmadas (una individual sigue con 1), conserva el tipo y marca `is_customized` si algo cambia. Cancelar es definitivo: guarda `cancel_reason` y anula las reservas vivas (confirmadas y en espera) sin descontar; la ocurrencia no se regenera. Pendiente para F5: promover la lista de espera al subir el aforo; para F10: avisar por push de la cancelación (hoy el diálogo pide avisar a mano).
+Próximas sesiones (F3, `/admin/horario?vista=sesiones`): sesiones sueltas (`slot_id` null), mover y cambiar entrenador o aforo, y cancelar. Solo se cambian sesiones programadas que aún no han empezado, y nunca a una hora pasada. Editar bloquea la sesión (`FOR UPDATE`), no deja bajar el aforo de las reservas confirmadas (una individual sigue con 1), conserva el tipo y marca `is_customized` si algo cambia. Cancelar es definitivo: guarda `cancel_reason` y anula las reservas vivas (confirmadas y en espera) sin descontar; la ocurrencia no se regenera. Al subir el aforo se promueve la lista de espera (F5). Pendiente para F10: avisar por push de la cancelación (hoy el diálogo pide avisar a mano).
 
 `coach_id` (aquí y en `schedule_slots`) debe ser un perfil con `is_coach = true`: lo valida la capa de datos (no se puede expresar con una FK).
 
@@ -144,6 +144,8 @@ neon_auth.user 1─1 profiles 1─* bookings *─1 sessions *─1 class_types
 ## 4. Reglas de negocio en el servidor
 
 Todas en `lib/booking.ts` (funciones puras testeables) + una transacción en la capa de datos.
+
+Hecho en F5 (PR 1): reglas en `lib/booking.ts` y transacciones en `lib/data/bookings.ts` (`bookSession`, `cancelBooking`, `changeBooking`, `promoteWaitlist`). Orden de bloqueos siempre **sesiones (por id) → perfil**, también en la baja y al eliminar la cuenta (`lockFutureSessionsOf` antes de tocar el perfil), para que dos operaciones no se bloqueen entre sí. El perfil se bloquea al comprobar la tarifa: dos reservas a la vez del mismo cliente no superan su cupo. Cambiar de sesión solo a una con plaza libre (no se cambia una plaza por la lista de espera). Entrar en la lista de espera exige tarifa y clases libres, aunque no gaste clase. El aviso de «plaza conseguida» llega con F10.
 
 **Reservar** (transacción):
 1. `SELECT … FROM sessions WHERE id = $1 FOR UPDATE` (bloquea la sesión → no hay sobreventa con reservas simultáneas).
