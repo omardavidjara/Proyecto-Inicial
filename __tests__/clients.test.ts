@@ -55,7 +55,7 @@ const bookingStatus = async (id: string) => (await db.select().from(bookings).wh
 describe('aprobar y rechazar altas', () => {
   test('aprobar: pendiente → activo con fecha de aprobación', async () => {
     const id = await client()
-    expect(await approveClient(db, id)).toBe(true)
+    expect(await approveClient(db, id)).toBe('done')
     const row = await statusOf(id)
     expect(row.status).toBe('active')
     expect(row.approvedAt).toBeInstanceOf(Date)
@@ -71,15 +71,15 @@ describe('aprobar y rechazar altas', () => {
 
   test('solo desde pendiente: aprobar a alguien de baja no cambia nada', async () => {
     const id = await client({ status: 'inactive' })
-    expect(await approveClient(db, id)).toBe(false)
+    expect(await approveClient(db, id)).toBe('conflict')
     expect((await statusOf(id)).status).toBe('inactive')
   })
 
   test('nunca a quien no es cliente (equipo) ni a un id inexistente', async () => {
     const coach = await client({ role: 'coach', isCoach: true })
-    expect(await approveClient(db, coach)).toBe(false)
+    expect(await approveClient(db, coach)).toBe('conflict')
     expect((await statusOf(coach)).status).toBe('pending')
-    expect(await approveClient(db, randomUUID())).toBe(false)
+    expect(await approveClient(db, randomUUID())).toBe('conflict')
   })
 })
 
@@ -110,7 +110,7 @@ describe('dar de baja y reactivar', () => {
   test('reactivar: baja → activo, conserva la fecha de aprobación original', async () => {
     const id = await client({ status: 'active', approvedAt: new Date('2026-01-01T10:00:00Z') })
     await deactivateClient(db, id)
-    expect(await reactivateClient(db, id)).toBe(true)
+    expect(await reactivateClient(db, id)).toBe('done')
     const row = await statusOf(id)
     expect(row.status).toBe('active')
     expect(row.deactivatedAt).toBeNull()
@@ -119,7 +119,7 @@ describe('dar de baja y reactivar', () => {
 
   test('una cuenta eliminada (anonimizada) no se reactiva ni aparece en las listas', async () => {
     const id = await client({ status: 'inactive', deletedAt: new Date(), fullName: 'Usuario eliminado' })
-    expect(await reactivateClient(db, id)).toBe(false)
+    expect(await reactivateClient(db, id)).toBe('conflict')
     expect((await listClients(db, 'inactive')).map((c) => c.userId)).not.toContain(id)
   })
 })
