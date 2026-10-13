@@ -1,5 +1,5 @@
 // @vitest-environment node
-// Plantilla semanal y generación de sesiones (F3): validación y capa de datos sobre Postgres real (PGlite).
+// Plantilla semanal, generación y próximas sesiones (F3): validación y capa de datos sobre Postgres real (PGlite).
 import { randomUUID } from 'node:crypto'
 
 import { eq } from 'drizzle-orm'
@@ -7,15 +7,26 @@ import { afterAll, beforeAll, beforeEach, describe, expect, test } from 'vitest'
 
 import { bookings, classTypes, profiles, scheduleSlots, sessions } from '@/db/schema'
 import {
+  cancelSession,
+  createOneOffSession,
   createScheduleSlot,
   deleteScheduleSlot,
   generateSessions,
   listCoaches,
   listScheduleSlots,
+  listUpcomingSessions,
   setScheduleSlotActive,
   updateScheduleSlot,
+  updateSession,
 } from '@/lib/data/schedule'
-import { scheduleSlotSchema, type ScheduleSlotInput } from '@/lib/validation/schedule'
+import {
+  cancelReasonSchema,
+  oneOffSessionSchema,
+  scheduleSlotSchema,
+  sessionSchema,
+  type OneOffSessionInput,
+  type ScheduleSlotInput,
+} from '@/lib/validation/schedule'
 
 import { createTestDb, type TestDb } from './helpers/test-db'
 
@@ -231,5 +242,151 @@ describe('franjas', () => {
 describe('entrenadores', () => {
   test('solo perfiles de entrenador activos', async () => {
     expect(await listCoaches(db)).toEqual([{ userId: coachId, fullName: 'Laura Coach' }])
+  })
+})
+
+describe('próximas sesiones', () => {
+  const otherClient = randomUUID()
+  const session = (overrides: Partial<OneOffSessionInput> = {}): OneOffSessionInput => ({
+    classTypeId: groupType,
+    date: '2030-03-27',
+    startTime: '18:30',
+    durationMinutes: 60,
+    capacity: 10,
+    coachId: null,
+    ...overrides,
+  })
+  const book = (sessionId: string, userId: string, status: 'confirmed' | 'waitlisted' = 'confirmed') =>
+    db.insert(bookings).values({ sessionId, userId, status, createdBy: userId, waitlistedAt: status === 'waitlisted' ? NOW : null })
+  const byId = async (id: string) => (await db.select().from(sessions).where(eq(sessions.id, id)))[0]
+
+  beforeAll(async () => {
+    await db.insert(profiles).values({ userId: otherClient, fullName: 'Otra', role: 'client', status: 'active' })
+  })
+
+  test('validación: fecha real y motivo recortado', () => {
+    expect(sessionSchema.safeParse({ ...session(), date: '2030-02-30' }).success).toBe(false)
+    expect(oneOffSessionSchema.parse({ ...session(), durationMinutes: '45', capacity: '8', coachId: '' })).toMatchObject({
+      durationMinutes: 45,
+      capacity: 8,
+      coachId: null,
+    })
+    expect(cancelReasonSchema.parse('  ')).toBeNull()
+  })
+
+  test('crear una suelta: hora de Madrid, sin franja; individual con aforo 1', async () => {
+    expect(await createOneOffSession(db, session({ coachId }), NOW)).toBe('saved')
+    expect(await createOneOffSession(db, session({ classTypeId: individualType, date: '2030-04-02', startTime: '10:00' }), NOW)).toBe('saved')
+    const [group, individual] = await slotSessions()
+    expect(group).toMatchObject({ startsAt: '2030-03-27T17:30:00.000Z', slotId: null, slotDate: null, capacity: 10, coachId })
+    expect(group.endsAt.toISOString()).toBe('2030-03-27T18:30:00.000Z')
+    // Tras el cambio de hora (UTC+2)
+    expect(individual).toMatchObject({ startsAt: '2030-04-02T08:00:00.000Z', capacity: 1 })
+  })
+
+  test('no crea una suelta en el pasado, con un tipo inactivo o con alguien que no es entrenador', async () => {
+    expect(await createOneOffSession(db, session({ date: '2030-03-25', startTime: '07:30' }), NOW)).toBe('past')
+    expect(await createOneOffSession(db, session({ classTypeId: inactiveType }), NOW)).toBe('invalid_class_type')
+    expect(await createOneOffSession(db, session({ coachId: clientId }), NOW)).toBe('invalid_coach')
+    expect(await slotSessions()).toHaveLength(0)
+  })
+
+  test('listar: solo las que no han empezado, con reservas confirmadas y en espera', async () => {
+    await createScheduleSlot(db, input({ capacity: 1 }), NOW)
+    const [first] = await slotSessions()
+    await book(first.id, clientId)
+    await book(first.id, otherClient, 'waitlisted')
+    await createOneOffSession(db, session(), NOW)
+
+    // A las 10:00 ya ha empezado la de las 9:00
+    expect((await listUpcomingSessions(db, new Date('2030-03-25T09:00:00Z'))).map((s) => s.id)).not.toContain(first.id)
+    const rows = await listUpcomingSessions(db, NOW)
+    expect(rows).toHaveLength(5)
+    expect(rows[0]).toMatchObject({ id: first.id, booked: 1, waitlisted: 1, isOneOff: false, className: 'CrossTraining' })
+    expect(rows.find((s) => s.isOneOff)).toMatchObject({ booked: 0, startsAt: new Date('2030-03-27T17:30:00Z') })
+  })
+
+  test('mover y cambiar entrenador o aforo la marca como cambiada: la plantilla ya no la toca', async () => {
+    await createScheduleSlot(db, input(), NOW)
+    const id = await onlySlotId()
+    const [first] = await slotSessions()
+    const edit = { date: '2030-03-26', startTime: '19:00', durationMinutes: 45, capacity: 8, coachId }
+    expect(await updateSession(db, first.id, edit, NOW)).toBe('saved')
+    const moved = await byId(first.id)
+    expect(moved).toMatchObject({ isCustomized: true, capacity: 8, coachId, slotDate: '2030-03-25' })
+    expect(moved.startsAt.toISOString()).toBe('2030-03-26T18:00:00.000Z')
+    expect(moved.endsAt.toISOString()).toBe('2030-03-26T18:45:00.000Z')
+
+    await updateScheduleSlot(db, id, input({ startTime: '10:00' }), NOW)
+    expect((await byId(first.id)).startsAt.toISOString()).toBe('2030-03-26T18:00:00.000Z')
+  })
+
+  test('guardar sin cambios no la aparta de la plantilla', async () => {
+    await createScheduleSlot(db, input(), NOW)
+    const [first] = await slotSessions()
+    const same = { date: '2030-03-25', startTime: '09:00', durationMinutes: 60, capacity: 12, coachId: null }
+    expect(await updateSession(db, first.id, same, NOW)).toBe('saved')
+    expect((await byId(first.id)).isCustomized).toBe(false)
+  })
+
+  test('el aforo no baja de las reservas confirmadas; una individual sigue con 1', async () => {
+    await createOneOffSession(db, session(), NOW)
+    await createOneOffSession(db, session({ classTypeId: individualType, startTime: '20:00' }), NOW)
+    const [group, individual] = await slotSessions()
+    await book(group.id, clientId)
+    await book(group.id, otherClient)
+    const edit = { date: '2030-03-27', startTime: '18:30', durationMinutes: 60, coachId: null }
+    expect(await updateSession(db, group.id, { ...edit, capacity: 1 }, NOW)).toBe('capacity_below_booked')
+    expect(await updateSession(db, group.id, { ...edit, capacity: 2 }, NOW)).toBe('saved')
+    expect(await updateSession(db, individual.id, { ...edit, startTime: '20:00', capacity: 5 }, NOW)).toBe('saved')
+    expect((await byId(individual.id)).capacity).toBe(1)
+  })
+
+  test('no se edita una sesión empezada, cancelada o que no existe, ni se mueve al pasado', async () => {
+    await createOneOffSession(db, session(), NOW)
+    const [one] = await slotSessions()
+    const edit = { date: '2030-03-27', startTime: '18:30', durationMinutes: 60, capacity: 10, coachId: null }
+    expect(await updateSession(db, one.id, { ...edit, date: '2030-03-24' }, NOW)).toBe('past')
+    expect(await updateSession(db, one.id, edit, new Date('2030-03-27T17:31:00Z'))).toBe('not_editable')
+    expect(await updateSession(db, randomUUID(), edit, NOW)).toBe('not_found')
+    await cancelSession(db, one.id, null, NOW)
+    expect(await updateSession(db, one.id, edit, NOW)).toBe('not_editable')
+  })
+
+  test('se puede dejar un entrenador que ya no está disponible, pero no poner a otro que no lo es', async () => {
+    const formerCoach = randomUUID()
+    await db.insert(profiles).values({ userId: formerCoach, fullName: 'Ex', role: 'client', status: 'inactive' })
+    await createOneOffSession(db, session(), NOW)
+    const [one] = await slotSessions()
+    await db.update(sessions).set({ coachId: formerCoach }).where(eq(sessions.id, one.id))
+    const edit = { date: '2030-03-27', startTime: '19:00', durationMinutes: 60, capacity: 10 }
+    expect(await updateSession(db, one.id, { ...edit, coachId: formerCoach }, NOW)).toBe('saved')
+    expect(await updateSession(db, one.id, { ...edit, coachId: clientId }, NOW)).toBe('invalid_coach')
+  })
+
+  test('cancelar anula las reservas vivas, guarda el motivo y la plantilla no la recrea', async () => {
+    await createScheduleSlot(db, input(), NOW)
+    const id = await onlySlotId()
+    const [first] = await slotSessions()
+    await book(first.id, clientId)
+    await book(first.id, otherClient, 'waitlisted')
+
+    expect(await cancelSession(db, first.id, 'Festivo', NOW)).toEqual({ result: 'cancelled', cancelledBookings: 2 })
+    expect(await byId(first.id)).toMatchObject({ status: 'cancelled', cancelReason: 'Festivo' })
+    const states = await db.select().from(bookings).where(eq(bookings.sessionId, first.id))
+    expect(states.map((b) => b.status)).toEqual(['cancelled', 'cancelled'])
+    expect(states.every((b) => b.cancelledAt?.getTime() === NOW.getTime())).toBe(true)
+
+    expect(await generateSessions(db, NOW)).toBe(0)
+    await updateScheduleSlot(db, id, input({ startTime: '10:00' }), NOW)
+    expect((await byId(first.id)).status).toBe('cancelled')
+    expect(await cancelSession(db, first.id, null, NOW)).toEqual({ result: 'not_editable' })
+    expect(await cancelSession(db, randomUUID(), null, NOW)).toEqual({ result: 'not_found' })
+  })
+
+  test('no se cancela una sesión que ya ha empezado', async () => {
+    await createOneOffSession(db, session(), NOW)
+    const [one] = await slotSessions()
+    expect(await cancelSession(db, one.id, null, new Date('2030-03-27T17:30:00Z'))).toEqual({ result: 'not_editable' })
   })
 })

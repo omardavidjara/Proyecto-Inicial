@@ -1,10 +1,10 @@
-import { and, asc, eq, gt, isNull, notExists, sql } from "drizzle-orm"
+import { and, asc, eq, gt, inArray, isNull, notExists, sql } from "drizzle-orm"
 
 import { bookings, classTypes, profiles, scheduleSlots, sessions } from "@/db/schema"
 import { addDays, GYM_TIME_ZONE, toDateKey } from "@/lib/dates"
 import type { ClassColor } from "@/lib/sessions"
 import type { ClassKind } from "@/lib/validation/class-types"
-import type { ScheduleSlotInput } from "@/lib/validation/schedule"
+import type { OneOffSessionInput, ScheduleSlotInput, SessionInput } from "@/lib/validation/schedule"
 
 import type { Db } from "./db"
 
@@ -91,14 +91,18 @@ async function resolveInput(db: Db, input: ScheduleSlotInput, currentClassTypeId
     .from(classTypes)
     .where(eq(classTypes.id, input.classTypeId))
   if (!type || (!type.isActive && input.classTypeId !== currentClassTypeId)) return "invalid_class_type" as const
-  if (input.coachId) {
-    const [coach] = await db
-      .select({ userId: profiles.userId })
-      .from(profiles)
-      .where(and(eq(profiles.userId, input.coachId), eq(profiles.isCoach, true), eq(profiles.status, "active"), isNull(profiles.deletedAt)))
-    if (!coach) return "invalid_coach" as const
-  }
+  if (!(await isAssignableCoach(db, input.coachId))) return "invalid_coach" as const
   return { ...input, capacity: type.kind === "individual" ? 1 : input.capacity }
+}
+
+/** Sin entrenador, o uno de `listCoaches` */
+async function isAssignableCoach(db: Db, coachId: string | null) {
+  if (!coachId) return true
+  const [coach] = await db
+    .select({ userId: profiles.userId })
+    .from(profiles)
+    .where(and(eq(profiles.userId, coachId), eq(profiles.isCoach, true), eq(profiles.status, "active"), isNull(profiles.deletedAt)))
+  return Boolean(coach)
 }
 
 /** Crea la franja (vale desde hoy) y sus sesiones de las próximas semanas */
@@ -155,6 +159,9 @@ export async function deleteScheduleSlot(db: Db, id: string, now = new Date()): 
   }
 }
 
+/** Zona horaria del gimnasio (ajustes; por defecto, la de lib/dates) */
+const tz = sql`coalesce((select timezone from gym_settings where id = 1), ${GYM_TIME_ZONE})`
+
 async function resyncSlot(db: Db, slotId: string, now: Date) {
   await deleteUntouchedSessions(db, slotId, now)
   await generateSessions(db, now, slotId)
@@ -182,7 +189,6 @@ function deleteUntouchedSessions(db: Db, slotId: string, now: Date) {
  */
 export async function generateSessions(db: Db, now = new Date(), slotId?: string): Promise<number> {
   const today = toDateKey(now)
-  const tz = sql`coalesce((select timezone from gym_settings where id = 1), ${GYM_TIME_ZONE})`
   const startsAt = sql`((d.day::date + s.start_time) at time zone ${tz}::text)`
   const result = await db.execute(sql`
     insert into sessions (class_type_id, slot_id, slot_date, starts_at, ends_at, capacity, coach_id)
@@ -200,4 +206,152 @@ export async function generateSessions(db: Db, now = new Date(), slotId?: string
     returning id
   `)
   return (result as unknown as { rows: unknown[] }).rows.length
+}
+
+// ── Próximas sesiones (sueltas, mover, cambiar entrenador o aforo y cancelar) ────────────────────────────
+
+export type SessionRow = {
+  id: string
+  classTypeId: string
+  className: string
+  kind: ClassKind
+  color: ClassColor
+  startsAt: Date
+  endsAt: Date
+  capacity: number
+  coachId: string | null
+  coachName: string | null
+  status: "scheduled" | "cancelled"
+  cancelReason: string | null
+  isCustomized: boolean
+  isOneOff: boolean
+  /** Reservas confirmadas */
+  booked: number
+  waitlisted: number
+}
+
+export type SessionSaveResult = SaveResult | "not_editable" | "past" | "capacity_below_booked"
+export type CancelSessionResult =
+  | { result: "cancelled"; cancelledBookings: number }
+  | { result: "not_found" | "not_editable" }
+
+// Con el nombre de la tabla: sin join, Drizzle escribiría solo "id" y el subselect lo leería como bookings.id
+const countBookings = (status: "confirmed" | "waitlisted") =>
+  sql<number>`(select count(*)::int from bookings b where b.session_id = "sessions"."id" and b.status = ${status})`
+
+/** Las que aún no han empezado (también las canceladas), por hora */
+export async function listUpcomingSessions(db: Db, now = new Date()): Promise<SessionRow[]> {
+  const rows = await db
+    .select({
+      id: sessions.id,
+      classTypeId: sessions.classTypeId,
+      className: classTypes.name,
+      kind: classTypes.kind,
+      color: classTypes.color,
+      startsAt: sessions.startsAt,
+      endsAt: sessions.endsAt,
+      capacity: sessions.capacity,
+      coachId: sessions.coachId,
+      coachName: profiles.fullName,
+      status: sessions.status,
+      cancelReason: sessions.cancelReason,
+      isCustomized: sessions.isCustomized,
+      isOneOff: sql<boolean>`${sessions.slotId} is null`,
+      booked: countBookings("confirmed"),
+      waitlisted: countBookings("waitlisted"),
+    })
+    .from(sessions)
+    .innerJoin(classTypes, eq(classTypes.id, sessions.classTypeId))
+    .leftJoin(profiles, eq(profiles.userId, sessions.coachId))
+    .where(gt(sessions.startsAt, now))
+    .orderBy(asc(sessions.startsAt), asc(classTypes.name))
+  return rows as SessionRow[]
+}
+
+/** Inicio y fin de una sesión a partir del día y la hora locales del gimnasio */
+async function sessionTimes(db: Db, input: SessionInput) {
+  const result = await db.execute(sql`select ((${input.date}::date + ${input.startTime}::time) at time zone ${tz}::text) as starts_at`)
+  const startsAt = new Date((result as unknown as { rows: { starts_at: Date | string }[] }).rows[0].starts_at)
+  return { startsAt, endsAt: new Date(startsAt.getTime() + input.durationMinutes * 60_000) }
+}
+
+/** Sesión suelta: sin franja de la plantilla */
+export async function createOneOffSession(db: Db, input: OneOffSessionInput, now = new Date()): Promise<SessionSaveResult> {
+  return db.transaction(async (tx) => {
+    const [type] = await tx
+      .select({ kind: classTypes.kind, isActive: classTypes.isActive })
+      .from(classTypes)
+      .where(eq(classTypes.id, input.classTypeId))
+    if (!type?.isActive) return "invalid_class_type"
+    if (!(await isAssignableCoach(tx, input.coachId))) return "invalid_coach"
+    const times = await sessionTimes(tx, input)
+    if (times.startsAt <= now) return "past"
+    await tx.insert(sessions).values({
+      classTypeId: input.classTypeId,
+      ...times,
+      capacity: type.kind === "individual" ? 1 : input.capacity,
+      coachId: input.coachId,
+    })
+    return "saved"
+  })
+}
+
+/**
+ * Mover o cambiar entrenador o aforo de una sesión programada que aún no ha empezado. Queda marcada como
+ * cambiada a mano (`is_customized`): los cambios de la plantilla ya no la tocan. El aforo no puede bajar de
+ * las reservas confirmadas. Pendiente para F5: al subir el aforo, promover la lista de espera.
+ */
+export async function updateSession(db: Db, id: string, input: SessionInput, now = new Date()): Promise<SessionSaveResult> {
+  return db.transaction(async (tx) => {
+    // Bloquea la sesión, como al reservar (ARCHITECTURE §4): el recuento de reservas no cambia mientras tanto
+    const [current] = await tx
+      .select({ status: sessions.status, startsAt: sessions.startsAt, endsAt: sessions.endsAt, capacity: sessions.capacity, coachId: sessions.coachId, kind: classTypes.kind })
+      .from(sessions)
+      .innerJoin(classTypes, eq(classTypes.id, sessions.classTypeId))
+      .where(eq(sessions.id, id))
+      .for("update", { of: sessions })
+    if (!current) return "not_found"
+    if (current.status !== "scheduled" || current.startsAt <= now) return "not_editable"
+    // Se puede dejar el entrenador que ya tiene aunque ya no esté disponible
+    if (input.coachId !== current.coachId && !(await isAssignableCoach(tx, input.coachId))) return "invalid_coach"
+    const times = await sessionTimes(tx, input)
+    if (times.startsAt <= now) return "past"
+    const capacity = current.kind === "individual" ? 1 : input.capacity
+    const booked = await tx.$count(bookings, and(eq(bookings.sessionId, id), eq(bookings.status, "confirmed")))
+    if (capacity < booked) return "capacity_below_booked"
+
+    const unchanged =
+      times.startsAt.getTime() === current.startsAt.getTime() &&
+      times.endsAt.getTime() === current.endsAt.getTime() &&
+      capacity === current.capacity &&
+      input.coachId === current.coachId
+    // Guardar sin cambios no la aparta de la plantilla
+    if (!unchanged) {
+      await tx.update(sessions).set({ ...times, capacity, coachId: input.coachId, isCustomized: true }).where(eq(sessions.id, id))
+    }
+    return "saved"
+  })
+}
+
+/**
+ * Cancela una sesión programada que aún no ha empezado y anula sus reservas vivas, sin descontarlas de la tarifa
+ * (ARCHITECTURE §4). La ocurrencia de la plantilla no se vuelve a generar. Pendiente para F10: avisar por push.
+ */
+export async function cancelSession(db: Db, id: string, reason: string | null, now = new Date()): Promise<CancelSessionResult> {
+  return db.transaction(async (tx) => {
+    const [current] = await tx
+      .select({ status: sessions.status, startsAt: sessions.startsAt })
+      .from(sessions)
+      .where(eq(sessions.id, id))
+      .for("update")
+    if (!current) return { result: "not_found" }
+    if (current.status !== "scheduled" || current.startsAt <= now) return { result: "not_editable" }
+    await tx.update(sessions).set({ status: "cancelled", cancelReason: reason }).where(eq(sessions.id, id))
+    const cancelled = await tx
+      .update(bookings)
+      .set({ status: "cancelled", cancelledAt: now })
+      .where(and(eq(bookings.sessionId, id), inArray(bookings.status, ["confirmed", "waitlisted"])))
+      .returning({ id: bookings.id })
+    return { result: "cancelled", cancelledBookings: cancelled.length }
+  })
 }

@@ -29,8 +29,8 @@ import { WEEKDAYS } from "@/lib/validation/schedule"
 
 const initialState: ScheduleSlotFormState = {}
 
-// Desplegable nativo con el aspecto de Input (mejor en móvil que uno propio)
-const SELECT =
+// Desplegable nativo con el aspecto de Input (mejor en móvil que uno propio). También en session-form
+export const SELECT =
   "h-11 w-full min-w-0 rounded-lg border border-input bg-transparent px-3 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
 
 type Options = { classTypes: ClassTypeRow[]; coaches: CoachOption[] }
@@ -254,7 +254,7 @@ function ScheduleSlotForm({ slot, classTypes, coaches, onSaved }: Options & { sl
   )
 }
 
-function FieldError({ id, message }: { id: string; message?: string }) {
+export function FieldError({ id, message }: { id: string; message?: string }) {
   return message ? (
     <p id={id} className="text-sm text-destructive">
       {message}

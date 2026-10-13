@@ -15,6 +15,11 @@ export function toDateKey(date: Date, timeZone = GYM_TIME_ZONE): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(date)
 }
 
+/** Hora (HH:MM) de un instante, en la zona horaria del gimnasio */
+export function toTimeKey(date: Date, timeZone = GYM_TIME_ZONE): string {
+  return new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date)
+}
+
 export function addDays(key: string, days: number): string {
   const date = toUtcNoon(key)
   date.setUTCDate(date.getUTCDate() + days)

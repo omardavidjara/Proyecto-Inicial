@@ -1,5 +1,6 @@
 import { z } from "zod"
 
+import { isDateKey } from "@/lib/dates"
 import { CAPACITY_MAX, DURATION_MAX, DURATION_MIN } from "@/lib/validation/class-types"
 
 // Plantilla semanal (SPEC F3). Los formularios envían texto: los números se convierten aquí.
@@ -31,3 +32,25 @@ export const scheduleSlotSchema = z.object({
 })
 
 export type ScheduleSlotInput = z.output<typeof scheduleSlotSchema>
+
+// Sesiones concretas (SPEC F3): las sueltas eligen tipo; al editar una sesión el tipo no cambia
+export const CANCEL_REASON_MAX = 200
+
+export const sessionSchema = z.object({
+  date: z.string("Elige el día").refine(isDateKey, "Elige el día"),
+  startTime: scheduleSlotSchema.shape.startTime,
+  durationMinutes: scheduleSlotSchema.shape.durationMinutes,
+  capacity: scheduleSlotSchema.shape.capacity,
+  coachId: scheduleSlotSchema.shape.coachId,
+})
+
+export const oneOffSessionSchema = sessionSchema.extend({ classTypeId: scheduleSlotSchema.shape.classTypeId })
+
+export const cancelReasonSchema = z
+  .string()
+  .trim()
+  .max(CANCEL_REASON_MAX, `Como mucho ${CANCEL_REASON_MAX} caracteres`)
+  .transform((reason) => reason || null)
+
+export type SessionInput = z.output<typeof sessionSchema>
+export type OneOffSessionInput = z.output<typeof oneOffSessionSchema>

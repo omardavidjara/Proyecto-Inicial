@@ -91,6 +91,8 @@ id, class_type_id → class_types, weekday (0 = lunes … 6), start_time (`time`
 
 Generación (F3, `lib/data/schedule.ts`): al guardar una franja y cada día con el cron se crean las sesiones de hoy a 27 días después, solo las que aún no han empezado. La hora local se pasa a UTC en Postgres con la zona de `gym_settings` (Europe/Madrid si no hay fila), así que los cambios de hora salen bien. Una sesión **intacta** es futura, de la plantilla, programada, sin `is_customized` y sin ninguna reserva: al editar, desactivar o eliminar una franja, sus sesiones intactas se borran y se vuelven a generar; las demás no se tocan y se ajustan desde la agenda. Una franja solo se elimina si no le queda ninguna otra sesión (la FK `restrict` lo impide); si no, se desactiva.
 
+Próximas sesiones (F3, `/admin/horario?vista=sesiones`): sesiones sueltas (`slot_id` null), mover y cambiar entrenador o aforo, y cancelar. Solo se cambian sesiones programadas que aún no han empezado, y nunca a una hora pasada. Editar bloquea la sesión (`FOR UPDATE`), no deja bajar el aforo de las reservas confirmadas (una individual sigue con 1), conserva el tipo y marca `is_customized` si algo cambia. Cancelar es definitivo: guarda `cancel_reason` y anula las reservas vivas (confirmadas y en espera) sin descontar; la ocurrencia no se regenera. Pendiente para F5: promover la lista de espera al subir el aforo; para F10: avisar por push de la cancelación (hoy el diálogo pide avisar a mano).
+
 `coach_id` (aquí y en `schedule_slots`) debe ser un perfil con `is_coach = true`: lo valida la capa de datos (no se puede expresar con una FK).
 
 ### `bookings`
@@ -195,7 +197,8 @@ app/
   admin/agenda                     ?vista=dia|semana|mes&fecha=AAAA-MM-DD
   admin/sesiones/[sessionId]       Detalle de sesión
   admin/anulaciones                Anulaciones tardías pendientes de decidir
-  admin/horario                    Plantilla semanal (F3): crear, editar, activar/desactivar y eliminar franjas
+  admin/horario                    Horario (F3): plantilla semanal (crear, editar, activar/desactivar y eliminar franjas) y
+                                   ?vista=sesiones: próximas sesiones (sueltas, mover, entrenador/aforo y cancelar)
   admin/tipos-clase                Crear, editar, activar/desactivar y eliminar tipos de clase
   admin/perfil                     Perfil (mismo componente que /perfil, con la navegación de administración)
   admin/clientes                   ?estado=pendiente|activo|baja&q=
