@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { addDays, isDateKey } from "@/lib/dates"
+
 // Tarifas (SPEC F4). Los formularios envían texto: los números se convierten aquí.
 
 export const PLAN_PERIODS = ["week", "month", "unlimited"] as const
@@ -37,4 +39,20 @@ export function planLimitLabel(plan: { period: PlanPeriod; classesPerPeriod: num
   if (plan.period === "unlimited" || plan.classesPerPeriod == null) return "Ilimitada"
   const classes = `${plan.classesPerPeriod} ${plan.classesPerPeriod === 1 ? "clase" : "clases"}`
   return `${classes} / ${plan.period === "week" ? "semana" : "mes"}`
+}
+
+/** Hasta cuándo se puede programar un cambio de tarifa */
+export const CHANGE_MAX_DAYS = 366
+
+/** Cambiar la tarifa de un cliente: «Sin tarifa» llega vacío; la fecha, de hoy a un año vista */
+export function changePlanSchema(today: string) {
+  const last = addDays(today, CHANGE_MAX_DAYS)
+  return z.object({
+    planId: z.union([z.literal("").transform(() => null), z.uuid("Elige una tarifa")], "Elige una tarifa"),
+    startsOn: z
+      .string("Elige la fecha")
+      .refine(isDateKey, "Elige la fecha")
+      .refine((day) => day >= today, "No puede ser anterior a hoy")
+      .refine((day) => day <= last, "Como mucho, a un año vista"),
+  })
 }

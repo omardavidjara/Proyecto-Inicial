@@ -5,8 +5,10 @@ import { Bell, CalendarPlus, Megaphone, Ticket } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { EmptyState } from "@/components/empty-state"
 import { PrototypeNotice } from "@/components/prototype-notice"
+import { PlanSummaryTiles } from "@/components/sessions/plan-summary"
 import { SessionCard } from "@/components/sessions/session-card"
 import { Button } from "@/components/ui/button"
+import { getMyPlanSummary } from "@/lib/dal"
 import { formatDayLabel } from "@/lib/dates"
 import {
   ANNOUNCEMENTS,
@@ -23,6 +25,7 @@ export default async function ClientHomePage() {
   const today = prototypeToday()
   const now = gymTimeNow()
   const next = prototypeNextBooking(today, now)
+  const plan = await getMyPlanSummary()
 
   return (
     <Page
@@ -63,18 +66,7 @@ export default async function ClientHomePage() {
         )}
       </section>
 
-      <section aria-label="Tu tarifa" className="grid grid-cols-2 gap-2">
-        <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
-          <span className="text-sm text-muted-foreground">Te quedan esta semana</span>
-          <span className="text-2xl font-semibold tabular-nums">
-            <span className="text-primary">1</span> de 3
-          </span>
-        </div>
-        <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
-          <span className="text-sm text-muted-foreground">Tu tarifa</span>
-          <span className="font-semibold">3 clases / semana</span>
-        </div>
-      </section>
+      <PlanSummaryTiles summary={plan} />
 
       <Button asChild size="lg" className="w-full">
         <Link href="/calendario">

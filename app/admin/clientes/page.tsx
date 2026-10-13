@@ -6,7 +6,7 @@ import { ClientActions } from "@/components/admin/client-actions"
 import { EmptyState } from "@/components/empty-state"
 import type { ClientRow } from "@/lib/data/clients"
 import { formatDayLong, toDateKey } from "@/lib/dates"
-import { listClientsForAdmin } from "@/lib/dal"
+import { listActivePlansForAdmin, listClientsForAdmin, listMembershipsForAdmin } from "@/lib/dal"
 import type { ProfileStatus } from "@/lib/roles"
 import { cn } from "@/lib/utils"
 
@@ -28,7 +28,10 @@ const EMPTY: Record<ProfileStatus, { icon: React.ReactNode; title: string }> = {
 export default async function ClientesPage({ searchParams }: PageProps<"/admin/clientes">) {
   const { estado } = await searchParams
   const tab = TABS.find((t) => t.param === estado) ?? TABS[0]
-  const clients = await listClientsForAdmin(tab.status)
+  const today = toDateKey(new Date())
+  const [clients, plans] = await Promise.all([listClientsForAdmin(tab.status), listActivePlansForAdmin()])
+  // El historial de tarifas solo se enseña (y se cambia) en los activos
+  const histories = tab.status === "active" ? await listMembershipsForAdmin(clients.map((c) => c.userId)) : new Map()
 
   return (
     <Page title="Clientes" wide>
@@ -64,9 +67,21 @@ export default async function ClientesPage({ searchParams }: PageProps<"/admin/c
                 ) : (
                   <span className="text-sm text-muted-foreground">Sin teléfono</span>
                 )}
+                {client.status === "active" ? (
+                  <span className={cn("text-sm", client.planName ? "text-foreground" : "text-muted-foreground")}>
+                    {client.planName ? `Tarifa: ${client.planName}` : "Sin tarifa"}
+                  </span>
+                ) : null}
                 <span className="text-xs text-muted-foreground first-letter:uppercase">{dateLine(client)}</span>
               </div>
-              <ClientActions userId={client.userId} name={client.fullName} status={client.status} />
+              <ClientActions
+                userId={client.userId}
+                name={client.fullName}
+                status={client.status}
+                plans={plans}
+                history={histories.get(client.userId)}
+                today={today}
+              />
             </li>
           ))}
         </ul>

@@ -17,6 +17,7 @@ import { anonymizeAccount } from "@/lib/data/account"
 import { listMyBookings } from "@/lib/data/bookings"
 import * as classTypes from "@/lib/data/class-types"
 import * as clients from "@/lib/data/clients"
+import * as memberships from "@/lib/data/memberships"
 import * as plans from "@/lib/data/plans"
 import * as schedule from "@/lib/data/schedule"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
@@ -24,6 +25,7 @@ import { createSignUpProfile, ensureProfile, getMyProfile as selectMyProfile, se
 import { del } from "@vercel/blob"
 
 import { isOwnAvatarUrl } from "@/lib/avatar"
+import { toDateKey } from "@/lib/dates"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
@@ -74,6 +76,12 @@ export async function requireArea(area: Area): Promise<Viewer> {
   if (viewer.status !== "active") redirect(PENDING_PATH)
   if (!canAccessArea(viewer, area)) redirect(homePathFor(viewer))
   return viewer
+}
+
+/** Mi tarifa de hoy y las clases que me quedan en el periodo (solo las del usuario de la sesión) */
+export async function getMyPlanSummary() {
+  const viewer = await requireArea("client")
+  return memberships.getPlanSummary(getDb(), viewer.userId, toDateKey(new Date()))
 }
 
 /** Mis reservas (solo las del usuario de la sesión) */
@@ -155,10 +163,23 @@ export async function saveMyProfile(input: { fullName: string; phone: string }) 
 // (ARCHITECTURE §6). Cada una devuelve false si el cambio no encaja con el estado actual.
 
 const clientIdSchema = z.uuid()
+const planIdSchema = z.uuid()
 
 export async function listClientsForAdmin(status: ProfileStatus) {
   await requireArea("admin")
   return clients.listClients(getDb(), status)
+}
+
+/** Tarifas activas para elegir al aprobar, reactivar o cambiar la tarifa */
+export async function listActivePlansForAdmin() {
+  await requireArea("admin")
+  return (await plans.listPlans(getDb())).filter((plan) => plan.isActive)
+}
+
+/** Historial de tarifas de los clientes de la lista */
+export async function listMembershipsForAdmin(userIds: string[]) {
+  await requireArea("admin")
+  return memberships.listMemberships(getDb(), userIds.filter((id) => clientIdSchema.safeParse(id).success))
 }
 
 export async function countPendingClientsForAdmin() {
@@ -167,22 +188,35 @@ export async function countPendingClientsForAdmin() {
 }
 
 export type ClientDecision = "approve" | "reject" | "deactivate" | "reactivate"
+export type DecisionOutcome = "done" | "conflict" | "plan_not_found"
 
-export async function decideClient(decision: ClientDecision, userId: unknown) {
+/** Al aprobar o reactivar se puede elegir una tarifa (opcional): se valida aquí y empieza hoy */
+export async function decideClient(decision: ClientDecision, userId: unknown, planId: unknown = null): Promise<DecisionOutcome> {
   await requireArea("admin")
   const parsed = clientIdSchema.safeParse(userId)
-  if (!parsed.success) return false
+  if (!parsed.success) return "conflict"
+  const plan = planId == null || planId === "" ? null : planIdSchema.safeParse(planId)
+  if (plan && !plan.success) return "plan_not_found"
+  const planIdValue = plan ? plan.data : null
   switch (decision) {
+    // Transacciones (perfil + tarifa o reservas): necesitan el Pool, el driver HTTP no las admite
     case "approve":
-      return clients.approveClient(getDb(), parsed.data)
-    case "reject":
-      return clients.rejectClient(getDb(), parsed.data)
+      return clients.approveClient(getTxDb(), parsed.data, planIdValue)
     case "reactivate":
-      return clients.reactivateClient(getDb(), parsed.data)
+      return clients.reactivateClient(getTxDb(), parsed.data, planIdValue)
+    case "reject":
+      return (await clients.rejectClient(getDb(), parsed.data)) ? "done" : "conflict"
     case "deactivate":
-      // Transacción (perfil + reservas futuras): necesita el Pool, el driver HTTP no las admite
-      return clients.deactivateClient(getTxDb(), parsed.data)
+      return (await clients.deactivateClient(getTxDb(), parsed.data)) ? "done" : "conflict"
   }
+}
+
+/** Cambiar o quitar (sin tarifa) la tarifa de un cliente activo desde hoy o una fecha futura */
+export async function changeClientPlan(userId: unknown, planId: string | null, startsOn: string): Promise<clients.ChangePlanResult> {
+  await requireArea("admin")
+  const parsed = clientIdSchema.safeParse(userId)
+  if (!parsed.success) return "not_found"
+  return clients.changeClientPlan(getTxDb(), parsed.data, planId, startsOn)
 }
 
 // ── Tipos de clase (F2, solo administración) ────────────────────────────────────────────────────────────
@@ -220,7 +254,6 @@ export async function deleteClassType(id: unknown): Promise<classTypes.DeleteRes
 
 // ── Tarifas (F4, solo administración) ─────────────────────────────────────────────────────────────────
 
-const planIdSchema = z.uuid()
 
 export async function listPlansForAdmin() {
   await requireArea("admin")

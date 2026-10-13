@@ -66,6 +66,11 @@ export function formatDayLong(key: string): string {
   return format(key, { weekday: "long", day: "numeric", month: "long" })
 }
 
+/** "6 oct 2026" */
+export function formatDateShort(key: string): string {
+  return format(key, { day: "numeric", month: "short", year: "numeric" }).replaceAll(".", "")
+}
+
 function toUtcNoon(key: string): Date {
   return new Date(`${key}T12:00:00Z`)
 }

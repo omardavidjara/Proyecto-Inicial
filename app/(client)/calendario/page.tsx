@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
-import Link from "next/link"
 import { CalendarX2 } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { EmptyState } from "@/components/empty-state"
 import { PrototypeNotice } from "@/components/prototype-notice"
 import { DayPicker } from "@/components/sessions/day-picker"
+import { PlanSummaryBar } from "@/components/sessions/plan-summary"
 import { SessionCard } from "@/components/sessions/session-card"
+import { getMyPlanSummary } from "@/lib/dal"
 import { formatDayLong, isDateKey } from "@/lib/dates"
 import { prototypeSessions, prototypeToday, prototypeWeek } from "@/lib/prototype/data"
 import { gymTimeNow, isClosed } from "@/lib/prototype/now"
@@ -23,19 +24,12 @@ export default async function CalendarPage({
   const selected = isDateKey(fecha) && week.includes(fecha) ? fecha : today
   const now = gymTimeNow()
   const sessions = prototypeSessions(selected, today)
+  const plan = await getMyPlanSummary()
 
   return (
     <Page title="Calendario">
       <PrototypeNotice />
-      <Link
-        href="/reservas"
-        className="flex items-center justify-between rounded-xl border bg-card px-4 py-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        <span className="text-sm text-muted-foreground">Tarifa 3 clases / semana</span>
-        <span className="font-semibold tabular-nums">
-          Te quedan <span className="text-primary">1</span> esta semana
-        </span>
-      </Link>
+      <PlanSummaryBar summary={plan} />
       <DayPicker days={week} selected={selected} hrefFor={(day) => `/calendario?fecha=${day}`} />
       <section aria-labelledby="day-title" className="flex flex-col gap-3">
         <h2 id="day-title" className="text-lg font-semibold first-letter:uppercase">
