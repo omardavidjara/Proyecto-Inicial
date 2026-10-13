@@ -68,7 +68,7 @@ Restricción `check`: `role = 'coach'` implica `is_coach = true`; `role = 'clien
 `name` y `timezone` solo los cambia el desarrollador; el resto, también el administrador.
 
 ### `class_types`
-id, name, kind enum `group | individual`, duration_minutes, default_capacity, color, is_active.
+id, name, kind enum `group | individual`, duration_minutes, default_capacity, color, is_active. `color` es uno de la paleta (`CLASS_COLORS` de `lib/sessions.ts`), una individual tiene `default_capacity = 1` y `name` es único sin distinguir mayúsculas (`lower(name)`). No se borra un tipo que usan el horario o las sesiones (FK `restrict`): se desactiva.
 
 ### `schedule_slots` (plantilla semanal)
 id, class_type_id → class_types, weekday (0 = lunes … 6), start_time (`time`, hora local del gimnasio), duration_minutes, capacity, coach_id → profiles null, valid_from `date`, valid_to `date null`, is_active.
@@ -194,7 +194,8 @@ app/
   admin/sesiones/[sessionId]       Detalle de sesión
   admin/anulaciones                Anulaciones tardías pendientes de decidir
   admin/horario                    Plantilla semanal
-  admin/tipos-clase
+  admin/tipos-clase                Crear, editar, activar/desactivar y eliminar tipos de clase
+  admin/perfil                     Perfil (mismo componente que /perfil, con la navegación de administración)
   admin/clientes                   ?estado=pendiente|activo|baja&q=
   admin/clientes/[userId]
   admin/tarifas
