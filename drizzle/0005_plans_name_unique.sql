@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "plans_name_uq" ON "plans" USING btree (lower("name"));

@@ -179,11 +179,11 @@ describe('/admin/tipos-clase', () => {
   })
 })
 
-test('«Más» enlaza a tipos de clase, horario y perfil del administrador', () => {
+test('«Más» enlaza a tipos de clase, horario, tarifas y perfil del administrador', () => {
   render(<MasOpcionesPage />)
   const nav = screen.getByRole('navigation', { name: 'Más opciones' })
   expect(within(nav).getByRole('link', { name: /Tipos de clase/ }).getAttribute('href')).toBe('/admin/tipos-clase')
   expect(within(nav).getByRole('link', { name: /Mi perfil/ }).getAttribute('href')).toBe('/admin/perfil')
   expect(within(nav).getByRole('link', { name: /Horario/ }).getAttribute('href')).toBe('/admin/horario')
-  expect(within(nav).queryByRole('link', { name: /Tarifas/ })).toBeNull()
+  expect(within(nav).getByRole('link', { name: /Tarifas/ }).getAttribute('href')).toBe('/admin/tarifas')
 })
