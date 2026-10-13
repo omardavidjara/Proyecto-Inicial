@@ -12,7 +12,7 @@ type Option = { label: string; icon: React.ReactNode } & ({ href: string } | { c
 // Menú "Más" (ARCHITECTURE §5). Las opciones aún sin pantalla indican con qué funcionalidad llegan
 const OPTIONS: Option[] = [
   { label: "Tipos de clase", href: "/admin/tipos-clase", icon: <Dumbbell /> },
-  { label: "Horario", comingIn: "F3", icon: <CalendarClock /> },
+  { label: "Horario", href: "/admin/horario", icon: <CalendarClock /> },
   { label: "Tarifas", comingIn: "F4", icon: <Tags /> },
   { label: "Avisos", comingIn: "F10", icon: <Bell /> },
   { label: "Ajustes", comingIn: "F11", icon: <Settings /> },
