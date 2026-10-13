@@ -124,6 +124,13 @@ export const classTypes = pgTable(
   (t) => [
     check("class_types_duration_positive", sql`${t.durationMinutes} > 0`),
     check("class_types_capacity_positive", sql`${t.defaultCapacity} > 0`),
+    // Paleta de lib/sessions.ts (CLASS_COLORS); __tests__/schema.test.ts comprueba que coinciden
+    check(
+      "class_types_color_palette",
+      sql`${t.color} in ('orange', 'red', 'amber', 'green', 'teal', 'blue', 'violet', 'pink')`,
+    ),
+    check("class_types_individual_capacity_one", sql`${t.kind} <> 'individual' or ${t.defaultCapacity} = 1`),
+    uniqueIndex("class_types_name_uq").on(sql`lower(${t.name})`),
   ],
 );
 

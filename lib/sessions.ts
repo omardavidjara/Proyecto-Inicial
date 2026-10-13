@@ -15,6 +15,18 @@ export const CLASS_COLOR_BG: Record<ClassColor, string> = {
   pink: "bg-class-pink",
 }
 
+/** Nombre de cada color para lectores de pantalla y el selector de tipos de clase */
+export const CLASS_COLOR_LABEL: Record<ClassColor, string> = {
+  orange: "Naranja",
+  red: "Rojo",
+  amber: "Ámbar",
+  green: "Verde",
+  teal: "Turquesa",
+  blue: "Azul",
+  violet: "Violeta",
+  pink: "Rosa",
+}
+
 export type Availability = {
   kind: "free" | "few" | "full"
   remaining: number

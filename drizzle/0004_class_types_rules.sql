@@ -1,0 +1,3 @@
+CREATE UNIQUE INDEX "class_types_name_uq" ON "class_types" USING btree (lower("name"));--> statement-breakpoint
+ALTER TABLE "class_types" ADD CONSTRAINT "class_types_color_palette" CHECK ("class_types"."color" in ('orange', 'red', 'amber', 'green', 'teal', 'blue', 'violet', 'pink'));--> statement-breakpoint
+ALTER TABLE "class_types" ADD CONSTRAINT "class_types_individual_capacity_one" CHECK ("class_types"."kind" <> 'individual' or "class_types"."default_capacity" = 1);

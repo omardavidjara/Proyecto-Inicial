@@ -56,7 +56,8 @@ afterAll(async () => {
 async function newSession() {
   const [type] = await db
     .insert(classTypes)
-    .values({ name: "Funcional", durationMinutes: 60, defaultCapacity: 10, color: "orange" })
+    // El nombre es único (sin distinguir mayúsculas): uno por sesión de prueba
+    .values({ name: `Funcional ${randomUUID()}`, durationMinutes: 60, defaultCapacity: 10, color: "orange" })
     .returning();
   const [session] = await db
     .insert(sessions)

@@ -13,6 +13,7 @@ import { getDb, getTxDb } from "@/db"
 import { getAuth } from "@/lib/auth"
 import { anonymizeAccount } from "@/lib/data/account"
 import { listMyBookings } from "@/lib/data/bookings"
+import * as classTypes from "@/lib/data/class-types"
 import * as clients from "@/lib/data/clients"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
 import { createSignUpProfile, ensureProfile, getMyProfile as selectMyProfile, setMyAvatar, updateMyProfile, type Viewer } from "@/lib/data/profiles"
@@ -23,6 +24,7 @@ import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
+import type { ClassTypeInput } from "@/lib/validation/class-types"
 
 /** Usuario de la sesión verificada, o `null`. Una sola comprobación por render (`cache`). */
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
@@ -175,6 +177,39 @@ export async function decideClient(decision: ClientDecision, userId: unknown) {
       // Transacción (perfil + reservas futuras): necesita el Pool, el driver HTTP no las admite
       return clients.deactivateClient(getTxDb(), parsed.data)
   }
+}
+
+// ── Tipos de clase (F2, solo administración) ────────────────────────────────────────────────────────────
+// El id llega del navegador: se valida aquí. Un id que no existe devuelve "not_found" / false.
+
+const classTypeIdSchema = z.uuid()
+
+export async function listClassTypesForAdmin() {
+  await requireArea("admin")
+  return classTypes.listClassTypes(getDb())
+}
+
+/** Crea (sin id) o edita un tipo de clase */
+export async function saveClassType(id: unknown, input: ClassTypeInput): Promise<classTypes.SaveResult> {
+  await requireArea("admin")
+  if (id == null) return classTypes.createClassType(getDb(), input)
+  const parsed = classTypeIdSchema.safeParse(id)
+  if (!parsed.success) return "not_found"
+  return classTypes.updateClassType(getDb(), parsed.data, input)
+}
+
+export async function setClassTypeActive(id: unknown, isActive: boolean) {
+  await requireArea("admin")
+  const parsed = classTypeIdSchema.safeParse(id)
+  if (!parsed.success) return false
+  return classTypes.setClassTypeActive(getDb(), parsed.data, isActive)
+}
+
+export async function deleteClassType(id: unknown): Promise<classTypes.DeleteResult> {
+  await requireArea("admin")
+  const parsed = classTypeIdSchema.safeParse(id)
+  if (!parsed.success) return "not_found"
+  return classTypes.deleteClassType(getDb(), parsed.data)
 }
 
 // ── Foto de perfil (F1) ─────────────────────────────────────────────────────────────────────────────────
