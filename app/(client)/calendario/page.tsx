@@ -1,15 +1,14 @@
 import type { Metadata } from "next"
-import { CalendarX2 } from "lucide-react"
+import Link from "next/link"
+import { ArrowLeftRight, CalendarX2 } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { EmptyState } from "@/components/empty-state"
-import { PrototypeNotice } from "@/components/prototype-notice"
+import { Button } from "@/components/ui/button"
 import { DayPicker } from "@/components/sessions/day-picker"
 import { PlanSummaryBar } from "@/components/sessions/plan-summary"
 import { SessionCard } from "@/components/sessions/session-card"
-import { getMyPlanSummary } from "@/lib/dal"
-import { formatDayLong, isDateKey } from "@/lib/dates"
-import { prototypeSessions, prototypeToday, prototypeWeek } from "@/lib/prototype/data"
-import { gymTimeNow, isClosed } from "@/lib/prototype/now"
+import { getBookingSettings, getMyBookingToChange, getMyCalendarDay, getMyPlanSummary } from "@/lib/dal"
+import { addDays, formatDayLabel, formatDayLong, isDateKey, toDateKey, toTimeKey } from "@/lib/dates"
 
 export const metadata: Metadata = { title: "Calendario" }
 
@@ -18,19 +17,43 @@ export default async function CalendarPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const today = prototypeToday()
-  const week = prototypeWeek(today)
-  const { fecha } = await searchParams
-  const selected = isDateKey(fecha) && week.includes(fecha) ? fecha : today
-  const now = gymTimeNow()
-  const sessions = prototypeSessions(selected, today)
-  const plan = await getMyPlanSummary()
+  const { fecha, cambiar } = await searchParams
+  const settings = await getBookingSettings()
+  const now = new Date()
+  const today = toDateKey(now, settings.timeZone)
+  // Los días con reservas abiertas: de hoy a la ventana de reserva
+  const days = Array.from({ length: settings.bookingWindowDays }, (_, i) => addDays(today, i))
+  const selected = isDateKey(fecha) && days.includes(fecha) ? fecha : today
+
+  const [sessions, plan, changing] = await Promise.all([
+    getMyCalendarDay(selected),
+    getMyPlanSummary(),
+    cambiar ? getMyBookingToChange(cambiar) : null,
+  ])
+  const changeQuery = changing ? `cambiar=${changing.id}` : ""
+  const withChange = (path: string, hasQuery = false) =>
+    changeQuery ? `${path}${hasQuery ? "&" : "?"}${changeQuery}` : path
 
   return (
     <Page title="Calendario">
-      <PrototypeNotice />
       <PlanSummaryBar summary={plan} />
-      <DayPicker days={week} selected={selected} hrefFor={(day) => `/calendario?fecha=${day}`} />
+      {changing && (
+        <section
+          aria-label="Cambiar de sesión"
+          className="flex flex-col gap-3 rounded-xl border border-primary bg-card p-4 sm:flex-row sm:items-center"
+        >
+          <ArrowLeftRight className="size-5 shrink-0 text-primary" aria-hidden="true" />
+          <p className="flex-1 text-sm">
+            Elige la sesión a la que quieres cambiar tu reserva de <strong>{changing.className}</strong> (
+            {formatDayLabel(toDateKey(changing.startsAt, settings.timeZone), today).toLowerCase()} a las{" "}
+            {toTimeKey(changing.startsAt, settings.timeZone)}).
+          </p>
+          <Button variant="outline" size="sm" asChild>
+            <Link href={`/calendario?fecha=${selected}`}>No cambiar</Link>
+          </Button>
+        </section>
+      )}
+      <DayPicker days={days} selected={selected} hrefFor={(day) => withChange(`/calendario?fecha=${day}`, true)} />
       <section aria-labelledby="day-title" className="flex flex-col gap-3">
         <h2 id="day-title" className="text-lg font-semibold first-letter:uppercase">
           {formatDayLong(selected)}
@@ -39,7 +62,7 @@ export default async function CalendarPage({
           <EmptyState
             icon={<CalendarX2 />}
             title="No hay clases este día"
-            description="El gimnasio cierra los domingos. Elige otro día."
+            description="No hay sesiones programadas. Elige otro día."
           />
         ) : (
           <ul className="flex flex-col gap-2">
@@ -47,12 +70,17 @@ export default async function CalendarPage({
               <li key={s.id}>
                 <SessionCard
                   session={{
-                    ...s,
-                    href: `/calendario/${s.id}`,
-                    className: s.classType.name,
-                    color: s.classType.color,
-                    subtitle: s.coach,
-                    closed: isClosed(s.date, s.start, today, now),
+                    href: withChange(`/calendario/${s.id}`),
+                    start: toTimeKey(s.startsAt, settings.timeZone),
+                    end: toTimeKey(s.endsAt, settings.timeZone),
+                    className: s.className,
+                    color: s.color,
+                    subtitle: s.coachName ?? "Sin entrenador asignado",
+                    capacity: s.capacity,
+                    booked: s.booked,
+                    status: s.status,
+                    closed: s.startsAt <= now,
+                    myBooking: s.myBooking ?? undefined,
                   }}
                 />
               </li>

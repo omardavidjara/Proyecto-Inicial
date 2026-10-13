@@ -14,7 +14,9 @@ import { z } from "zod"
 import { getDb, getTxDb } from "@/db"
 import { getAuth } from "@/lib/auth"
 import { anonymizeAccount } from "@/lib/data/account"
+import * as bookingData from "@/lib/data/bookings"
 import { listMyBookings } from "@/lib/data/bookings"
+import * as calendar from "@/lib/data/calendar"
 import * as classTypes from "@/lib/data/class-types"
 import * as clients from "@/lib/data/clients"
 import * as memberships from "@/lib/data/memberships"
@@ -88,6 +90,49 @@ export async function getMyPlanSummary() {
 export async function getMyBookings() {
   const viewer = await requireArea("client")
   return listMyBookings(getDb(), viewer)
+}
+
+// ── Calendario y reservas (F5) ──────────────────────────────────────────────────────────────────────────
+// Cliente, administrador y desarrollador reservan para sí (ARCHITECTURE §6); el entrenador sin rol de
+// administración no entra en la zona de cliente. Siempre con el usuario de la sesión.
+
+/** Reglas de reserva y zona horaria del gimnasio */
+export async function getBookingSettings() {
+  await requireArea("client")
+  return bookingData.getBookingSettings(getDb())
+}
+
+/** Sesiones de un día con mis reservas */
+export async function getMyCalendarDay(day: string) {
+  const viewer = await requireArea("client")
+  return calendar.listDaySessions(getDb(), viewer.userId, day)
+}
+
+/** Una sesión con mi reserva, o `null` */
+export async function getMyCalendarSession(sessionId: unknown) {
+  const viewer = await requireArea("client")
+  return calendar.getCalendarSession(getDb(), viewer.userId, sessionId)
+}
+
+/** Mi reserva viva que quiero cambiar de sesión, o `null` */
+export async function getMyBookingToChange(bookingId: unknown) {
+  const viewer = await requireArea("client")
+  return calendar.getMyLiveBooking(getDb(), viewer.userId, bookingId)
+}
+
+export async function bookMySession(sessionId: unknown) {
+  const viewer = await requireArea("client")
+  return bookingData.bookSession(getTxDb(), viewer.userId, sessionId)
+}
+
+export async function cancelMyBooking(bookingId: unknown) {
+  const viewer = await requireArea("client")
+  return bookingData.cancelBooking(getTxDb(), viewer.userId, bookingId)
+}
+
+export async function changeMyBooking(bookingId: unknown, sessionId: unknown) {
+  const viewer = await requireArea("client")
+  return bookingData.changeBooking(getTxDb(), viewer.userId, bookingId, sessionId)
 }
 
 // ── Límite de intentos de inicio de sesión (lib/data/login-attempts.ts) ──────────────────────────────────
