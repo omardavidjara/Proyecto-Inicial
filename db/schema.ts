@@ -258,6 +258,7 @@ export const plans = pgTable(
       "plans_classes_per_period_matches_period",
       sql`(${t.period} = 'unlimited' and ${t.classesPerPeriod} is null) or (${t.period} <> 'unlimited' and ${t.classesPerPeriod} is not null and ${t.classesPerPeriod} > 0)`,
     ),
+    uniqueIndex("plans_name_uq").on(sql`lower(${t.name})`),
   ],
 );
 

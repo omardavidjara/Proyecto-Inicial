@@ -36,6 +36,13 @@
       "when": 1791891112729,
       "tag": "0004_class_types_rules",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791897110106,
+      "tag": "0005_plans_name_unique",
+      "breakpoints": true
     }
   ]
 }

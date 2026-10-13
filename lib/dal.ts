@@ -17,6 +17,7 @@ import { anonymizeAccount } from "@/lib/data/account"
 import { listMyBookings } from "@/lib/data/bookings"
 import * as classTypes from "@/lib/data/class-types"
 import * as clients from "@/lib/data/clients"
+import * as plans from "@/lib/data/plans"
 import * as schedule from "@/lib/data/schedule"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
 import { createSignUpProfile, ensureProfile, getMyProfile as selectMyProfile, setMyAvatar, updateMyProfile, type Viewer } from "@/lib/data/profiles"
@@ -28,6 +29,7 @@ import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
 import type { ClassTypeInput } from "@/lib/validation/class-types"
+import type { PlanInput } from "@/lib/validation/plans"
 import type { OneOffSessionInput, ScheduleSlotInput, SessionInput } from "@/lib/validation/schedule"
 
 /** Usuario de la sesión verificada, o `null`. Una sola comprobación por render (`cache`). */
@@ -214,6 +216,38 @@ export async function deleteClassType(id: unknown): Promise<classTypes.DeleteRes
   const parsed = classTypeIdSchema.safeParse(id)
   if (!parsed.success) return "not_found"
   return classTypes.deleteClassType(getDb(), parsed.data)
+}
+
+// ── Tarifas (F4, solo administración) ─────────────────────────────────────────────────────────────────
+
+const planIdSchema = z.uuid()
+
+export async function listPlansForAdmin() {
+  await requireArea("admin")
+  return plans.listPlans(getDb())
+}
+
+/** Crea (sin id) o edita una tarifa */
+export async function savePlan(id: unknown, input: PlanInput): Promise<plans.SaveResult> {
+  await requireArea("admin")
+  if (id == null) return plans.createPlan(getDb(), input)
+  const parsed = planIdSchema.safeParse(id)
+  if (!parsed.success) return "not_found"
+  return plans.updatePlan(getDb(), parsed.data, input)
+}
+
+export async function setPlanActive(id: unknown, isActive: boolean) {
+  await requireArea("admin")
+  const parsed = planIdSchema.safeParse(id)
+  if (!parsed.success) return false
+  return plans.setPlanActive(getDb(), parsed.data, isActive)
+}
+
+export async function deletePlan(id: unknown): Promise<plans.DeleteResult> {
+  await requireArea("admin")
+  const parsed = planIdSchema.safeParse(id)
+  if (!parsed.success) return "not_found"
+  return plans.deletePlan(getDb(), parsed.data)
 }
 
 // ── Horario (F3, solo administración) ───────────────────────────────────────────────────────────────────

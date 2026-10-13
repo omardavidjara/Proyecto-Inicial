@@ -13,7 +13,7 @@ type Option = { label: string; icon: React.ReactNode } & ({ href: string } | { c
 const OPTIONS: Option[] = [
   { label: "Tipos de clase", href: "/admin/tipos-clase", icon: <Dumbbell /> },
   { label: "Horario", href: "/admin/horario", icon: <CalendarClock /> },
-  { label: "Tarifas", comingIn: "F4", icon: <Tags /> },
+  { label: "Tarifas", href: "/admin/tarifas", icon: <Tags /> },
   { label: "Avisos", comingIn: "F10", icon: <Bell /> },
   { label: "Ajustes", comingIn: "F11", icon: <Settings /> },
   { label: "Mi perfil", href: "/admin/perfil", icon: <UserRound /> },

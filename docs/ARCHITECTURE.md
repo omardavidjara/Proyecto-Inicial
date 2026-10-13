@@ -112,7 +112,7 @@ Próximas sesiones (F3, `/admin/horario?vista=sesiones`): sesiones sueltas (`slo
 Único parcial `(session_id, user_id) where status in ('confirmed','waitlisted')`: un cliente no puede tener dos reservas vivas en la misma sesión.
 
 ### `plans` (tarifas)
-id, name, period enum `week | month | unlimited`, classes_per_period int null, is_active.
+id, name, period enum `week | month | unlimited`, classes_per_period int null, is_active. Nombre único sin distinguir mayúsculas (`plans_name_uq` sobre `lower(name)`). Solo se borra si nunca se ha asignado (FK `restrict` desde `memberships`); si no, se desactiva.
 
 ### `memberships` (tarifa asignada a un cliente)
 id, user_id → profiles, plan_id → plans, starts_on `date`, ends_on `date null`. La vigente es la que cubre la fecha de la sesión. Historial completo. No puede haber dos tarifas solapadas para el mismo cliente: restricción de exclusión `exclude using gist (user_id with =, daterange(starts_on, ends_on, '[]') with &&)` (extensión `btree_gist`).
