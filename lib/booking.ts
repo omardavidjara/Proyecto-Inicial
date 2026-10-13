@@ -45,3 +45,12 @@ export function hasClassesLeft(plan: { period: PlanPeriod; classesPerPeriod: num
 export function placeFor(capacity: number, confirmed: number): "confirmed" | "waitlisted" {
   return confirmed < capacity ? "confirmed" : "waitlisted"
 }
+
+/** "2 horas", "1 hora", "90 minutos" */
+export function formatMinutes(minutes: number): string {
+  if (minutes > 0 && minutes % 60 === 0) {
+    const hours = minutes / 60
+    return hours === 1 ? "1 hora" : `${hours} horas`
+  }
+  return minutes === 1 ? "1 minuto" : `${minutes} minutos`
+}
