@@ -110,7 +110,9 @@ const startOfDay = (day: string) => sql`(${day}::date::timestamp at time zone ${
 
 /**
  * Clases que gastan cupo en el periodo de `day` (ARCHITECTURE §3): reservas confirmadas, anulaciones tardías
- * que el administrador decidió descontar y faltas sin avisar, de sesiones que empiezan dentro del periodo.
+ * que el administrador decidió descontar y faltas sin avisar, de sesiones que empiezan dentro del periodo. Una
+ * falta es una reserva confirmada con `attendance = no_show`: ya cuenta como confirmada. Una reserva anulada no
+ * cuenta aunque tuviera una falta marcada (quitar a un cliente nunca descuenta, SPEC F6).
  */
 export async function countUsedClasses(db: Db, userId: string, period: Exclude<PlanPeriod, "unlimited">, day: string) {
   const { from, to } = periodBounds(period, day)
@@ -126,7 +128,6 @@ export async function countUsedClasses(db: Db, userId: string, period: Exclude<P
         or(
           eq(bookings.status, "confirmed"),
           and(eq(bookings.status, "late_cancelled"), eq(bookings.lateCancelCharged, true)),
-          eq(bookings.attendance, "no_show"),
         ),
       ),
     )

@@ -204,6 +204,17 @@ describe('quitar', () => {
     expect(await removeBookingFromSession(db, waiting, now)).toBe('removed')
   })
 
+  test('una falta ya marcada deja de contar para el cupo al quitar (AUDITORIA-2026-10-14 #1)', async () => {
+    const started = await session('2026-10-14T07:30:00Z')
+    const user = await client()
+    const id = await book(started, user, 'confirmed')
+    expect(await setAttendance(db, id, 'no_show', now)).toBe(true)
+    expect(await countUsedClasses(db, user, 'week', '2026-10-14')).toBe(1)
+    expect(await removeBookingFromSession(db, id, now)).toBe('removed')
+    expect(await statusOf(id)).toMatchObject({ status: 'cancelled', attendance: 'pending' })
+    expect(await countUsedClasses(db, user, 'week', '2026-10-14')).toBe(0)
+  })
+
   test('ya anulada, de una sesión cancelada o que no existe', async () => {
     const s = await session(future)
     const late = await book(s, await client(), 'late_cancelled')

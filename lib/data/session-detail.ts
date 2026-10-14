@@ -190,7 +190,8 @@ export async function removeBookingFromSession(db: Db, bookingId: unknown, now =
       .where(and(eq(bookings.id, parsed.data), inArray(bookings.status, ["confirmed", "waitlisted"])))
       .for("update")
     if (!booking) return "not_found"
-    await tx.update(bookings).set({ status: "cancelled", cancelledAt: now }).where(eq(bookings.id, parsed.data))
+    // La asistencia vuelve a pendiente: una falta ya marcada no debe quedar en una reserva anulada
+    await tx.update(bookings).set({ status: "cancelled", cancelledAt: now, attendance: "pending" }).where(eq(bookings.id, parsed.data))
     if (booking.status === "confirmed") await promoteWaitlist(tx, session.id, now)
     return "removed"
   })
