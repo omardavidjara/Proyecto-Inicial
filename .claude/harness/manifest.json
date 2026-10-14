@@ -1,0 +1,15 @@
+{
+  "note": "Copia generada por github.com/omardavidjara/claude-harness (sync-project.mjs). No edites estas skills aquí: cambia el harness y vuelve a sincronizar.",
+  "version": "1.1.0",
+  "commit": "542776b",
+  "skills": [
+    "aprender",
+    "auditoria",
+    "cerrar-fase",
+    "continuar",
+    "funcionalidad",
+    "guardar",
+    "nuevo-proyecto",
+    "stack-next-neon"
+  ]
+}
