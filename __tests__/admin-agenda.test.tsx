@@ -101,6 +101,7 @@ describe('página de la agenda', () => {
     expect(screen.getByLabelText('8 de 12 plazas')).toBeDefined()
     expect(screen.getByLabelText('3 en lista de espera').textContent).toBe('+3')
     expect(screen.getByText('Cancelada')).toBeDefined()
+    expect(screen.getByRole('link', { name: 'Pilates' }).getAttribute('href')).toMatch(/^\/admin\/sesiones\//)
     expect(screen.getByRole('link', { name: 'Anterior' }).getAttribute('href')).toBe('/admin/agenda?vista=dia&fecha=2030-03-25')
     expect(screen.getByRole('link', { name: 'Semana' }).getAttribute('href')).toBe('/admin/agenda?vista=semana&fecha=2030-03-26')
   })
@@ -112,7 +113,8 @@ describe('página de la agenda', () => {
     expect(screen.getByRole('link', { name: 'Semana' }).getAttribute('aria-current')).toBe('page')
     const tuesday = screen.getByRole('region', { name: 'martes, 26 de marzo' })
     expect(within(tuesday).getByText('CrossTraining')).toBeDefined()
-    expect(within(tuesday).getByRole('link').getAttribute('href')).toBe('/admin/agenda?vista=dia&fecha=2030-03-26')
+    expect(within(tuesday).getAllByRole('link')[0].getAttribute('href')).toBe('/admin/agenda?vista=dia&fecha=2030-03-26')
+    expect(within(tuesday).getByRole('link', { name: /CrossTraining/ }).getAttribute('href')).toMatch(/^\/admin\/sesiones\//)
     expect(screen.getAllByText('Sin sesiones')).toHaveLength(6)
   })
 

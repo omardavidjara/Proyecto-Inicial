@@ -9,9 +9,11 @@ import { CLASS_COLOR_BG, type ClassColor } from "@/lib/sessions"
 import { cn } from "@/lib/utils"
 
 // Agenda del administrador (SPEC F6): componentes de servidor, las fechas no llegan al navegador.
-// En la PR 3 cada sesión enlazará a su detalle (/admin/sesiones/[id]).
+// Cada sesión enlaza a su detalle (/admin/sesiones/[id]).
 
 const linkFocus = "outline-none focus-visible:ring-2 focus-visible:ring-ring"
+
+export const sessionHref = (id: string) => `/admin/sesiones/${id}`
 
 /** Pestañas Día / Semana / Mes, ‹ Hoy › y el título del periodo */
 export function AgendaToolbar({ view, date, today, range }: { view: AgendaView; date: string; today: string; range: AgendaRange }) {
@@ -98,13 +100,19 @@ export function SessionsTable({ sessions, now }: { sessions: AgendaSession[]; no
           {sessions.map((s) => {
             const cancelled = s.status === "cancelled"
             return (
-              <TableRow key={s.id} className={cn("h-14", (cancelled || s.startsAt <= now) && "text-muted-foreground")}>
+              <TableRow
+                key={s.id}
+                className={cn("relative h-14 focus-within:bg-muted/50", (cancelled || s.startsAt <= now) && "text-muted-foreground")}
+              >
                 <TableCell className={cn("pl-4 font-semibold tabular-nums", cancelled && "line-through")}>{toTimeKey(s.startsAt)}</TableCell>
                 <TableCell>
                   <span className="flex items-center gap-2">
                     <Dot color={s.color} />
                     <span className="flex flex-col">
-                      <span className={cn(cancelled && "line-through")}>{s.className}</span>
+                      {/* El enlace cubre toda la fila (after:absolute) */}
+                      <Link href={sessionHref(s.id)} className={cn("outline-none after:absolute after:inset-0", cancelled && "line-through")}>
+                        {s.className}
+                      </Link>
                       <span className="text-xs text-muted-foreground sm:hidden">{s.coachName ?? "Sin entrenador"}</span>
                     </span>
                   </span>
@@ -157,19 +165,22 @@ export function AgendaWeek({ range, sessions, today, now }: { range: AgendaRange
                 {daySessions.map((s) => {
                   const cancelled = s.status === "cancelled"
                   return (
-                    <li
-                      key={s.id}
-                      className={cn(
-                        "flex items-center justify-between gap-2 rounded-lg border bg-card px-2.5 py-2 text-sm lg:flex-col lg:items-start lg:gap-1",
-                        (cancelled || s.startsAt <= now) && "text-muted-foreground",
-                      )}
-                    >
-                      <span className="flex min-w-0 items-center gap-2">
-                        <Dot color={s.color} />
-                        <span className={cn("font-semibold tabular-nums", cancelled && "line-through")}>{toTimeKey(s.startsAt)}</span>
-                        <span className={cn("truncate", cancelled && "line-through")}>{s.className}</span>
-                      </span>
-                      <Occupancy session={s} />
+                    <li key={s.id}>
+                      <Link
+                        href={sessionHref(s.id)}
+                        className={cn(
+                          "flex items-center justify-between gap-2 rounded-lg border bg-card px-2.5 py-2 text-sm hover:bg-muted/50 lg:flex-col lg:items-start lg:gap-1",
+                          linkFocus,
+                          (cancelled || s.startsAt <= now) && "text-muted-foreground",
+                        )}
+                      >
+                        <span className="flex min-w-0 items-center gap-2">
+                          <Dot color={s.color} />
+                          <span className={cn("font-semibold tabular-nums", cancelled && "line-through")}>{toTimeKey(s.startsAt)}</span>
+                          <span className={cn("truncate", cancelled && "line-through")}>{s.className}</span>
+                        </span>
+                        <Occupancy session={s} />
+                      </Link>
                     </li>
                   )
                 })}

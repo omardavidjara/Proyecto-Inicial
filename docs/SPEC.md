@@ -77,6 +77,10 @@ Reglas (configurables por el administrador; los periodos de las tarifas se cuent
 ### F6. Agenda del administrador
 - Vistas **día / semana / mes** con todas las sesiones, ocupación (p. ej. 8/12) y lista de espera.
 - Detalle de sesión: asistentes, lista de espera, anulaciones tardías, añadir o quitar un cliente a mano (saltándose límites si hace falta), marcar asistencia.
+  - **Asistencia**: desde que empieza la sesión, cada plaza confirmada se marca «Asistió» o «Faltó» (pulsar otra vez la deja sin marcar), con el resumen «Asistieron · Faltaron · Sin marcar» para ver quién reservó y no vino. «Faltó» gasta la clase de la tarifa.
+  - **Añadir a mano**: buscador de clientes activos por nombre; se salta cupo, ventana y aforo, también en sesiones pasadas. Si estaba en la lista de espera, pasa a tener plaza («Confirmar plaza»).
+  - **Quitar**: anula la plaza o el puesto en la lista de espera **sin descontar**; si queda una plaza libre en una sesión futura, entra el primero de la lista de espera.
+  - Una sesión cancelada se ve en solo lectura.
 - **Anulaciones tardías pendientes**: lista con las anulaciones tardías sin decidir; por cada una, "Descontar clase" o "No descontar".
 
 ### F7. Entrenadores
@@ -180,6 +184,8 @@ Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada 
 6. **Administradores entrenadores**: un administrador puede ser también entrenador; también hay entrenadores que no son administradores.
 
 ## 9. Historial de cambios
+
+- 2026-10-14 · F6 PR 3: detalle de sesión del administrador. Quitar a un cliente nunca descuenta la clase; la asistencia se marca desde que empieza la sesión y se resume (asistieron, faltaron, sin marcar) para ver quién reservó y no vino. El entrenador tendrá lo mismo en sus sesiones en F7.
 
 - 2026-10-04 · Textos legales: política de privacidad (`/privacidad`) y aviso legal (`/aviso-legal`) públicos, información básica de protección de datos en el registro y enlaces en login y perfil. Los datos del titular se completan en la Fase 7.
 

@@ -23,6 +23,7 @@ import * as clients from "@/lib/data/clients"
 import * as memberships from "@/lib/data/memberships"
 import * as plans from "@/lib/data/plans"
 import * as schedule from "@/lib/data/schedule"
+import * as sessionDetail from "@/lib/data/session-detail"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
 import { createSignUpProfile, ensureProfile, getMyProfile as selectMyProfile, setMyAvatar, updateMyProfile, type Viewer } from "@/lib/data/profiles"
 import { del } from "@vercel/blob"
@@ -520,4 +521,36 @@ export async function listLateCancellationsForAdmin() {
 export async function decideLateCancellation(bookingId: unknown, charge: boolean) {
   const viewer = await requireArea("admin")
   return agenda.decideLateCancellation(getDb(), viewer.userId, bookingId, charge)
+}
+
+// ── Detalle de sesión (F6, solo administración) ─────────────────────────────────────────────────────────
+// Los ids (sesión, cliente, reserva) llegan del navegador: se validan en la capa de datos.
+
+/** La sesión con asistentes, lista de espera y anulaciones tardías, o `null` si no existe */
+export async function getSessionDetailForAdmin(sessionId: unknown) {
+  await requireArea("admin")
+  return sessionDetail.getSessionDetail(getDb(), sessionId)
+}
+
+/** Buscador de «Añadir cliente»: clientes activos sin plaza confirmada en la sesión */
+export async function searchClientsForSession(sessionId: unknown, query: unknown) {
+  await requireArea("admin")
+  return sessionDetail.searchClientsForSession(getDb(), sessionId, query)
+}
+
+/** Añadir a mano, saltándose cupo, ventana y aforo. Queda anotado qué administrador lo hizo */
+export async function addClientToSession(sessionId: unknown, userId: unknown) {
+  const viewer = await requireArea("admin")
+  return sessionDetail.addClientToSession(getTxDb(), viewer.userId, sessionId, userId)
+}
+
+/** Quitar a un cliente de la sesión sin descontar la clase */
+export async function removeBookingFromSession(bookingId: unknown) {
+  await requireArea("admin")
+  return sessionDetail.removeBookingFromSession(getTxDb(), bookingId)
+}
+
+export async function setBookingAttendance(bookingId: unknown, attendance: sessionDetail.Attendance) {
+  await requireArea("admin")
+  return sessionDetail.setAttendance(getDb(), bookingId, attendance)
 }
