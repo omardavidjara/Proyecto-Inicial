@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Bell, CalendarClock, ChevronRight, Dumbbell, Settings, Tags, UserRound } from "lucide-react"
+import { Bell, CalendarClock, CalendarX, ChevronRight, Dumbbell, Settings, Tags, UserRound } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { SignOutButton } from "@/components/auth/sign-out-button"
 import { LegalLinks } from "@/components/legal/legal-links"
@@ -14,6 +14,7 @@ const OPTIONS: Option[] = [
   { label: "Tipos de clase", href: "/admin/tipos-clase", icon: <Dumbbell /> },
   { label: "Horario", href: "/admin/horario", icon: <CalendarClock /> },
   { label: "Tarifas", href: "/admin/tarifas", icon: <Tags /> },
+  { label: "Anulaciones tardías", href: "/admin/anulaciones", icon: <CalendarX /> },
   { label: "Avisos", comingIn: "F10", icon: <Bell /> },
   { label: "Ajustes", comingIn: "F11", icon: <Settings /> },
   { label: "Mi perfil", href: "/admin/perfil", icon: <UserRound /> },
