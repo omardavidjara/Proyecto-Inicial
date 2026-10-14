@@ -35,7 +35,7 @@ export type CalendarSession = {
 }
 
 const tz = sql`coalesce((select timezone from gym_settings where id = 1), 'Europe/Madrid')`
-const startOfDay = (day: string) => sql`(${day}::date::timestamp at time zone ${tz}::text)`
+export const startOfDay = (day: string) => sql`(${day}::date::timestamp at time zone ${tz}::text)`
 
 // Con el nombre de la tabla: sin él, el subselect leería "id" como bookings.id (lib/data/schedule.ts)
 const countBookings = (status: "confirmed" | "waitlisted") =>

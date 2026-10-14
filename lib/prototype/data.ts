@@ -54,11 +54,6 @@ const SATURDAY: Slot[] = [
   ["11:30", "12:30", "hyrox", "Dani", 14],
 ]
 
-export const LATE_CANCELLATIONS = [
-  { id: "lc1", client: "Cliente de ejemplo 1", session: "CrossTraining · 07:00", when: "Anuló 40 min antes" },
-  { id: "lc2", client: "Cliente de ejemplo 2", session: "Hyrox · 19:00 (ayer)", when: "Anuló 15 min antes" },
-]
-
 export function prototypeToday(): string {
   return toDateKey(new Date())
 }

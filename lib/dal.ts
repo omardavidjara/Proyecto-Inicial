@@ -14,6 +14,7 @@ import { z } from "zod"
 import { getDb, getTxDb } from "@/db"
 import { getAuth } from "@/lib/auth"
 import { anonymizeAccount } from "@/lib/data/account"
+import * as agenda from "@/lib/data/agenda"
 import * as bookingData from "@/lib/data/bookings"
 import * as calendar from "@/lib/data/calendar"
 import * as myBookings from "@/lib/data/my-bookings"
@@ -482,4 +483,30 @@ export async function deleteMyAccount(): Promise<DeleteAccountResult> {
     return "failed"
   }
   return "deleted"
+}
+
+// ── Agenda y anulaciones tardías (F6, solo administración) ──────────────────────────────────────────────
+
+/** «Hoy»: sesiones del día y las primeras anulaciones tardías pendientes (con el total) */
+export async function getAdminToday(lateLimit: number) {
+  await requireArea("admin")
+  const db = getDb()
+  const today = toDateKey(new Date())
+  const [daySessions, late, lateCount] = await Promise.all([
+    agenda.listSessionsBetween(db, today, today),
+    agenda.listPendingLateCancellations(db, lateLimit),
+    agenda.countPendingLateCancellations(db),
+  ])
+  return { today, sessions: daySessions, late, lateCount }
+}
+
+export async function listLateCancellationsForAdmin() {
+  await requireArea("admin")
+  return agenda.listPendingLateCancellations(getDb())
+}
+
+/** El id de la reserva llega del navegador: se valida en la capa de datos. Queda anotado quién decidió */
+export async function decideLateCancellation(bookingId: unknown, charge: boolean) {
+  const viewer = await requireArea("admin")
+  return agenda.decideLateCancellation(getDb(), viewer.userId, bookingId, charge)
 }

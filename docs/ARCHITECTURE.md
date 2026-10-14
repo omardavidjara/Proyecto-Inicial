@@ -165,7 +165,7 @@ Hecho en F5 (PR 1): reglas en `lib/booking.ts` y transacciones en `lib/data/book
 
 **Baja de cliente** o **eliminación de cuenta**: sus reservas futuras pasan a `cancelled` (sin descontar) y se promueve la lista de espera de cada sesión afectada.
 
-**Decidir anulación tardía** (admin): fija `late_cancel_charged` y `late_cancel_decided_by`. Si se descuenta y el cliente ya superaba su cupo del periodo, no se anula nada: solo cuenta para la próxima comprobación.
+**Decidir anulación tardía** (admin): fija `late_cancel_charged` y `late_cancel_decided_by`. Si se descuenta y el cliente ya superaba su cupo del periodo, no se anula nada: solo cuenta para la próxima comprobación. Hecho en F6 (PR 1, `lib/data/agenda.ts`): solo se decide una vez (la actualización exige `late_cancel_charged is null`; si otra persona se adelantó, se avisa y se recarga la lista). `/admin/anulaciones` muestra las 100 más antiguas sin paginar; «Hoy», las 5 primeras y el total.
 
 Los administradores pueden forzar una reserva (saltar aforo/cupo/ventana); queda `created_by` = admin. Un admin o desarrollador que reserva **para sí** también necesita tarifa vigente salvo que fuerce la reserva.
 
