@@ -78,3 +78,14 @@ function toUtcNoon(key: string): Date {
 function format(key: string, options: Intl.DateTimeFormatOptions): string {
   return new Intl.DateTimeFormat("es-ES", { ...options, timeZone: "UTC" }).format(toUtcNoon(key))
 }
+
+/** "octubre de 2026" */
+export function formatMonthYear(key: string): string {
+  return format(key, { month: "long", year: "numeric" })
+}
+
+/** Día 1 del mes de ese día, desplazado `months` meses */
+export function startOfMonth(key: string, months = 0): string {
+  const date = new Date(Date.UTC(Number(key.slice(0, 4)), Number(key.slice(5, 7)) - 1 + months, 1, 12))
+  return date.toISOString().slice(0, 10)
+}
