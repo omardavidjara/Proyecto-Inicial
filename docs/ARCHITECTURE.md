@@ -165,6 +165,8 @@ Hecho en F5 (PR 1): reglas en `lib/booking.ts` y transacciones en `lib/data/book
 
 **Baja de cliente** o **eliminación de cuenta**: sus reservas futuras pasan a `cancelled` (sin descontar) y se promueve la lista de espera de cada sesión afectada.
 
+**Detalle de sesión** (admin, F6 PR 3, `lib/data/session-detail.ts`): **añadir a mano** bloquea la sesión y después el perfil (cliente activo, rol `client`); se salta cupo, ventana y aforo, también en sesiones pasadas; si el cliente estaba en la lista de espera, su reserva pasa a `confirmed`; si no, se inserta con `created_by` = admin. **Quitar** deja la reserva viva en `cancelled` (nunca `late_cancelled`: no descuenta) y, si era confirmada, promueve la lista de espera (solo en sesiones futuras). **Asistencia**: solo reservas `confirmed` de sesiones programadas que ya han empezado. En una sesión cancelada no se cambia nada.
+
 **Decidir anulación tardía** (admin): fija `late_cancel_charged` y `late_cancel_decided_by`. Si se descuenta y el cliente ya superaba su cupo del periodo, no se anula nada: solo cuenta para la próxima comprobación. Hecho en F6 (PR 1, `lib/data/agenda.ts`): solo se decide una vez (la actualización exige `late_cancel_charged is null`; si otra persona se adelantó, se avisa y se recarga la lista). `/admin/anulaciones` muestra las 100 más antiguas sin paginar; «Hoy», las 5 primeras y el total.
 
 Los administradores pueden forzar una reserva (saltar aforo/cupo/ventana); queda `created_by` = admin. Un admin o desarrollador que reserva **para sí** también necesita tarifa vigente salvo que fuerce la reserva.
@@ -338,6 +340,7 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 12. Historial de cambios
 
+- 2026-10-14 · F6 PR 3: detalle `/admin/sesiones/[sessionId]` (`lib/data/session-detail.ts`, acciones en `app/admin/sesiones/[sessionId]/actions.ts`): asistentes con asistencia, lista de espera, anulaciones tardías, añadir (buscador por nombre con el índice trigram de `profiles.full_name`, 10 resultados) y quitar. Cada sesión de la agenda y de «Hoy» enlaza a su detalle. `lockSessions` se exporta desde `lib/data/bookings.ts` para mantener el orden de bloqueos. F7 reutilizará la lectura y la asistencia para el entrenador (solo sus sesiones). Sin cambios de esquema.
 - 2026-10-14 · F6 PR 2: agenda `/admin/agenda` (día, semana y mes; el mes consulta la cuadrícula entera, hasta 42 días, en una sola consulta con `listSessionsBetween`). Los parámetros se validan en `lib/agenda.ts` (`parseAgendaParams`, años 2000–2099). «Hoy» comparte la tabla de sesiones (`components/admin/agenda.tsx`).
 - 2026-10-05 · Inicio de sesión con Neon Auth (correo y contraseña, Google), `proxy.ts` con el middleware del SDK, `lib/dal.ts` con `requireViewer`/`requireArea`, reglas en `lib/roles.ts`, consultas en `lib/data/`, página `/pendiente` y script `set-role`. §6 actualizado.
 

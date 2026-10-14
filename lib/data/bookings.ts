@@ -77,7 +77,7 @@ export async function getBookingSettings(db: Db): Promise<BookingSettings> {
 type LockedSession = { id: string; status: "scheduled" | "cancelled"; startsAt: Date; capacity: number }
 
 /** Bloquea las sesiones en orden de id (el mismo en todas las operaciones, para no bloquearse entre ellas) */
-async function lockSessions(db: Db, ids: string[]): Promise<LockedSession[]> {
+export async function lockSessions(db: Db, ids: string[]): Promise<LockedSession[]> {
   if (ids.length === 0) return []
   return db
     .select({ id: sessions.id, status: sessions.status, startsAt: sessions.startsAt, capacity: sessions.capacity })
