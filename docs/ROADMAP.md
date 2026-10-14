@@ -71,6 +71,8 @@ Auditoría intermedia (2026-10-08, antes de empezar la Fase 5): `docs/reviews/AU
 
 Auditoría rápida (2026-10-12, F1 terminada): `docs/reviews/AUDITORIA-2026-10-12.md` (sin críticos; pendientes repartidos abajo).
 
+Auditoría rápida (2026-10-14, F6 terminada, antes de F7): `docs/reviews/AUDITORIA-2026-10-14.md` (sin críticos; un fallo medio y pendientes repartidos abajo).
+
 ## Fase 5 · Funcionalidades (una por sesión, en el orden de SPEC)
 Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → CI verde → PR → [T] el usuario fusiona.
 Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/prototype/` por consultas reales, páginas "Próximamente" (`components/coming-soon.tsx`) por las pantallas reales y la franja `PrototypeNotice`. Cuando no quede nada, borrar `lib/prototype/` y esos dos componentes.
@@ -81,6 +83,7 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 - [x] F4 · Tarifas y asignación a clientes. Plan aprobado el 2026-10-13 en 2 PR: (1) catálogo en `/admin/tarifas` (crear, editar con aviso de cuántos clientes la tienen, activar/desactivar y eliminar solo si nunca se asignó; nombre único sin distinguir mayúsculas, migración 0005) ✅; (2) asignación: tarifa **opcional** al aprobar un alta, «Cambiar tarifa» con fecha de inicio e historial, cerrar la vigente al dar de baja, y tarifa real con clases restantes en la vista del cliente ✅ (`lib/data/memberships.ts`: `assignPlan`, `endMembershipsFrom` y `countUsedClasses`, que F5 usará al reservar; «Inicio» y «Calendario» ya muestran la tarifa real, el resto sigue siendo prototipo). Terminada el 2026-10-13. Pendiente para F8: tarifa e historial en la ficha del cliente
 - [x] F5 · Calendario y reservas del cliente (reservar, modificar, anular, lista de espera). Plan aprobado el 2026-10-13 en 3 PR: (1) reglas y transacciones (`lib/booking.ts`, `lib/data/bookings.ts`: reservar, anular, cambiar y promover la lista de espera, también al subir el aforo, dar de baja y eliminar la cuenta) ✅; (2) calendario y detalle de sesión del cliente con datos reales ✅ (`lib/data/calendar.ts`, acciones en `app/(client)/calendario/actions.ts`; los días van de hoy a la ventana de reserva; cambiar de sesión = «Cambiar a otra sesión» → el calendario con `?cambiar=<reserva>` → «Cambiar a esta sesión»); (3) «Mis reservas» ✅ (`lib/data/my-bookings.ts`: próximas agrupadas por día; historial de clases empezadas y anulaciones con «Ver más» por cursor `(inicio, id)`; tarifa y clases restantes) y «Inicio» con nombre y próxima clase confirmada reales. Las pantallas del cliente ya no usan `lib/prototype`. Terminada el 2026-10-13. Pendiente para F10: «Últimos avisos» en «Inicio» y el punto de no leídos de la campana (quitados del prototipo)
 - [x] F6 · Agenda del administrador (día / semana / mes) y anulaciones tardías. Plan aprobado el 2026-10-14 en 3 PR: (1) ✅ #37 anulaciones tardías (`lib/data/agenda.ts`: pendientes de la más antigua a la más reciente, «Descontar» / «No descontar» con quién decidió; `/admin/anulaciones`, enlazada desde «Hoy» y «Más») y «Hoy» con datos reales; (2) ✅ #39 agenda `/admin/agenda?vista=dia|semana|mes&fecha=` con ocupación y lista de espera; (3) ✅ detalle `/admin/sesiones/[id]`: asistentes, lista de espera, anulaciones tardías, añadir o quitar un cliente a mano y asistencia. Al añadir a mano se salta todo: cupo de la tarifa, ventana de reserva y aforo (puede quedar 13/12), también en sesiones pasadas para registrar la asistencia. Quitar nunca descuenta; la asistencia se marca desde que empieza la sesión, con resumen «Asistieron · Faltaron · Sin marcar». Terminada el 2026-10-14
+- [ ] Arreglo antes de F7: una falta («Faltó») sigue gastando clase después de quitar al cliente de la sesión (`countUsedClasses` cuenta `no_show` sin mirar el estado; `removeBookingFromSession` no reinicia la asistencia). Quitar nunca descuenta: corregir con test. AUDITORIA-2026-10-14 #1
 - [ ] F7 · Entrenadores: mis clases, asistentes y asistencia. Heredado de F6: reutilizar `lib/data/session-detail.ts` (`getSessionDetail`, `setAttendance`) limitado a las sesiones con `coach_id` = el entrenador, y el resumen de asistencia (petición del usuario: el entrenador debe ver quién reservó y no participó). Sustituir el prototipo `components/coach/attendance-list.tsx` (mismo diseño que `components/admin/session-detail.tsx`)
 - [ ] F8 · Gestión de clientes (lista, ficha, filtros)
 - [ ] F9 · Incidencias
@@ -91,6 +94,8 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 - [ ] [C] `docs/AUDIT.md` por gravedad: filtrado por usuario en cada consulta a Neon, sesión de Neon Auth, autorización, validación, secretos, cabeceras/CSP, límite de peticiones, dependencias, subida de archivos y protección de datos (lo que dice `/privacidad` coincide con lo que hace la app: datos que se guardan, proveedores, conservación, eliminación de cuenta y vaciado de la caché al cerrar sesión)
 - [ ] [C] Separar desarrollo y producción antes de tener clientes reales: rama de desarrollo de Neon para `.env.local` y sin `NEON_API_KEY`/`NEON_PROJECT_ID`/`NEON_AUTH_BRANCH_ID` en local (hoy «Eliminar mi cuenta» en local borra usuarios reales). Desbloquea apagar «Allow Localhost» (Fase 7). AUDITORIA-2026-10-12 #2
 - [ ] [C] `npm audit`: revisar los avisos altos de herramientas de desarrollo (`braces`/`fast-glob` vía `eslint-config-next` y `shadcn`; `esbuild` vía `drizzle-kit`) y actualizarlos o justificarlos en `docs/AUDIT.md`. AUDITORIA-2026-10-12 #3
+- [ ] [T] Activar las alertas de Dependabot y las actualizaciones de seguridad (GitHub → Settings → Code security): hoy están desactivadas. AUDITORIA-2026-10-14 #2
+- [ ] [C] Borrar o reutilizar `getBookingForViewer` (`lib/data/bookings.ts`), que ya no se usa fuera de sus tests. AUDITORIA-2026-10-14 #3
 - [ ] 🛑 [T] Revisar la auditoría
 - [ ] [C] Corregir los puntos críticos, un commit por punto
 
@@ -122,6 +127,7 @@ La app nativa carga la web publicada en Vercel (SSR), así que las mejoras de la
 
 ## Fase 9 · Mantenimiento
 - Semanal: errores de Sentry y PR de Dependabot. `@neondatabase/auth` (beta) va en PR propia: leer el changelog y probar login, registro, Google y eliminar cuenta antes de fusionar (AUDITORIA-2026-10-12 #4)
+- Node local: actualizar a ≥ 24.15 (aviso EBADENGINE de `w3c-xmlserializer` en `npm ci`; AUDITORIA-2026-10-14 #4)
 - Mensual: consumo en Neon (CU-h, almacenamiento, ramas), Vercel (uso y Blob) y Sentry frente a `docs/LIMITS.md`; volver a comprobar las cifras del documento
 - Mensual: repetir la Fase 6
 - Tras cada funcionalidad: actualizar SPEC y ARCHITECTURE
