@@ -2,7 +2,6 @@ import { expect, test } from 'vitest'
 import {
   prototypeAttendees,
   prototypeCoachSessions,
-  prototypeNextBooking,
   prototypeSession,
   prototypeSessions,
 } from '@/lib/prototype/data'
@@ -39,10 +38,4 @@ test('el entrenador solo ve las sesiones que imparte', () => {
 test('una sesión tiene tantos asistentes como reservas', () => {
   const [session] = prototypeSessions('2026-10-07', today)
   expect(prototypeAttendees(session)).toHaveLength(session.booked)
-})
-
-test('la próxima clase del cliente es una reserva confirmada que aún no ha empezado', () => {
-  const next = prototypeNextBooking(today, '23:59')
-  expect(next?.myBooking?.status).toBe('confirmed')
-  expect(next!.date > today).toBe(true)
 })

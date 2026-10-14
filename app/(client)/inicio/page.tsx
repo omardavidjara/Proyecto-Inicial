@@ -1,63 +1,60 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { connection } from "next/server"
-import { Bell, CalendarPlus, Megaphone, Ticket } from "lucide-react"
+import { Bell, CalendarPlus, Ticket } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { EmptyState } from "@/components/empty-state"
-import { PrototypeNotice } from "@/components/prototype-notice"
 import { PlanSummaryTiles } from "@/components/sessions/plan-summary"
 import { SessionCard } from "@/components/sessions/session-card"
 import { Button } from "@/components/ui/button"
-import { getMyPlanSummary } from "@/lib/dal"
-import { formatDayLabel } from "@/lib/dates"
-import {
-  ANNOUNCEMENTS,
-  PROTOTYPE_CLIENT,
-  prototypeNextBooking,
-  prototypeToday,
-} from "@/lib/prototype/data"
-import { gymTimeNow } from "@/lib/prototype/now"
+import { getBookingSettings, getMyFirstName, getMyNextBooking, getMyPlanSummary } from "@/lib/dal"
+import { formatDayLabel, toDateKey, toTimeKey } from "@/lib/dates"
 
 export const metadata: Metadata = { title: "Inicio" }
 
+// Los últimos avisos del gimnasio llegan con la F10 (SPEC: «Inicio» los muestra)
 export default async function ClientHomePage() {
-  await connection() // la próxima clase depende de la hora actual
-  const today = prototypeToday()
-  const now = gymTimeNow()
-  const next = prototypeNextBooking(today, now)
-  const plan = await getMyPlanSummary()
+  const [name, next, plan, settings] = await Promise.all([
+    getMyFirstName(),
+    getMyNextBooking(),
+    getMyPlanSummary(),
+    getBookingSettings(),
+  ])
+  const { timeZone } = settings
+  const today = toDateKey(new Date(), timeZone)
 
   return (
     <Page
-      title={`Hola, ${PROTOTYPE_CLIENT}`}
+      title={name ? `Hola, ${name}` : "Hola"}
       actions={
         <Link
           href="/avisos"
-          aria-label={`Avisos (${ANNOUNCEMENTS.length} nuevos)`}
-          className="relative -mr-3 flex size-11 items-center justify-center rounded-lg outline-none hover:bg-muted active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label="Avisos"
+          className="-mr-3 flex size-11 items-center justify-center rounded-lg outline-none hover:bg-muted active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Bell className="size-6" aria-hidden="true" />
-          <span aria-hidden="true" className="absolute top-2.5 right-2.5 size-2.5 rounded-full bg-primary ring-2 ring-background" />
         </Link>
       }
     >
-      <PrototypeNotice />
-
       <section aria-labelledby="next-title" className="flex flex-col gap-3">
         <h2 id="next-title" className="text-lg font-semibold">
           Tu próxima clase
         </h2>
         {next ? (
           <div className="flex flex-col gap-1.5">
-            <p className="text-sm font-medium text-primary">{formatDayLabel(next.date, today)}</p>
+            <p className="text-sm font-medium text-primary">{formatDayLabel(toDateKey(next.startsAt, timeZone), today)}</p>
             <SessionCard
               session={{
-                ...next,
-                href: `/calendario/${next.id}`,
-                className: next.classType.name,
-                color: next.classType.color,
-                subtitle: next.coach,
+                href: `/calendario/${next.sessionId}`,
+                start: toTimeKey(next.startsAt, timeZone),
+                end: toTimeKey(next.endsAt, timeZone),
+                className: next.className,
+                color: next.color,
+                subtitle: next.coachName ?? "Sin entrenador asignado",
+                capacity: next.capacity,
+                booked: next.booked,
+                status: next.sessionStatus,
                 closed: false,
+                myBooking: { status: "confirmed" },
               }}
             />
           </div>
@@ -75,28 +72,9 @@ export default async function ClientHomePage() {
         </Link>
       </Button>
 
-      <section aria-labelledby="news-title" className="flex flex-col gap-3">
-        <div className="flex items-center justify-between">
-          <h2 id="news-title" className="text-lg font-semibold">
-            Avisos del gimnasio
-          </h2>
-          <Link href="/avisos" className="inline-flex min-h-11 items-center text-sm font-medium text-primary">
-            Ver todos
-          </Link>
-        </div>
-        <ul className="flex flex-col gap-2">
-          {ANNOUNCEMENTS.map((a) => (
-            <li key={a.id} className="flex gap-3 rounded-xl border bg-card p-4">
-              <Megaphone className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden="true" />
-              <div className="flex flex-col gap-1">
-                <span className="font-medium">{a.title}</span>
-                <span className="text-sm text-muted-foreground">{a.body}</span>
-                <span className="text-xs text-muted-foreground">{a.date}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <Link href="/reservas" className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-primary">
+        Ver mis reservas
+      </Link>
     </Page>
   )
 }

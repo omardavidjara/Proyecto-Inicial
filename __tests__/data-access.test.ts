@@ -7,7 +7,8 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { eq } from 'drizzle-orm'
 
 import { bookings, classTypes, profiles, sessions } from '@/db/schema'
-import { getBookingForViewer, listMyBookings } from '@/lib/data/bookings'
+import { getBookingForViewer } from '@/lib/data/bookings'
+import { listBookingHistory, listUpcomingBookings } from '@/lib/data/my-bookings'
 import { createSignUpProfile, ensureProfile, getMyProfile, initialFullName, setMyAvatar, updateMyProfile, type Viewer } from '@/lib/data/profiles'
 
 import { createTestDb, type TestDb } from './helpers/test-db'
@@ -62,10 +63,12 @@ describe('perfil en el primer inicio de sesión', () => {
 
 describe('dos usuarios: ninguno ve los datos del otro', () => {
   test('cada uno lista solo sus reservas', async () => {
-    const anaList = await listMyBookings(db, ana)
-    const brunoList = await listMyBookings(db, bruno)
-    expect(anaList.map((b) => b.id)).toEqual([anaBookingId])
-    expect(brunoList.map((b) => b.id)).toEqual([brunoBookingId])
+    const before = new Date('2026-11-01T00:00:00Z')
+    const after = new Date('2026-11-03T00:00:00Z')
+    expect((await listUpcomingBookings(db, ana.userId, before)).map((b) => b.id)).toEqual([anaBookingId])
+    expect((await listUpcomingBookings(db, bruno.userId, before)).map((b) => b.id)).toEqual([brunoBookingId])
+    expect((await listBookingHistory(db, ana.userId, { now: after })).items.map((b) => b.id)).toEqual([anaBookingId])
+    expect((await listBookingHistory(db, bruno.userId, { now: after })).items.map((b) => b.id)).toEqual([brunoBookingId])
   })
 
   test('pedir la reserva del otro por su id devuelve lo mismo que si no existiera', async () => {

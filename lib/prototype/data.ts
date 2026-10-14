@@ -148,24 +148,3 @@ export function prototypeAttendees(session: ProtoSession): ProtoAttendee[] {
     attendance: "pending" as const,
   })).sort((a, b) => a.name.localeCompare(b.name, "es"))
 }
-
-// --- Cliente ---
-
-export const PROTOTYPE_CLIENT = "Alex"
-
-export const ANNOUNCEMENTS = [
-  { id: "a1", title: "Horario especial el 12 de octubre", body: "Por el festivo solo habrá clases de 10:00 a 13:00.", date: "Hace 2 días" },
-  { id: "a2", title: "Nueva clase de Movilidad", body: "Desde el lunes, martes y jueves a las 08:30.", date: "Hace 1 semana" },
-]
-
-/** Próxima reserva confirmada del cliente desde ahora */
-export function prototypeNextBooking(today: string, now: string): ProtoSession | undefined {
-  for (let i = 0; i < 7; i++) {
-    const date = addDays(today, i)
-    const next = prototypeSessions(date, today).find(
-      (s) => s.myBooking?.status === "confirmed" && s.status === "scheduled" && (date > today || s.start > now)
-    )
-    if (next) return next
-  }
-  return undefined
-}

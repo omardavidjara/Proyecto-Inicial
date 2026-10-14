@@ -15,8 +15,8 @@ import { getDb, getTxDb } from "@/db"
 import { getAuth } from "@/lib/auth"
 import { anonymizeAccount } from "@/lib/data/account"
 import * as bookingData from "@/lib/data/bookings"
-import { listMyBookings } from "@/lib/data/bookings"
 import * as calendar from "@/lib/data/calendar"
+import * as myBookings from "@/lib/data/my-bookings"
 import * as classTypes from "@/lib/data/class-types"
 import * as clients from "@/lib/data/clients"
 import * as memberships from "@/lib/data/memberships"
@@ -86,10 +86,28 @@ export async function getMyPlanSummary() {
   return memberships.getPlanSummary(getDb(), viewer.userId, toDateKey(new Date()))
 }
 
-/** Mis reservas (solo las del usuario de la sesión) */
-export async function getMyBookings() {
+/** Nombre de pila para el saludo de «Inicio» */
+export async function getMyFirstName() {
   const viewer = await requireArea("client")
-  return listMyBookings(getDb(), viewer)
+  return viewer.fullName.trim().split(/\s+/)[0] ?? ""
+}
+
+/** Mis próximas reservas (vivas) */
+export async function getMyUpcomingBookings() {
+  const viewer = await requireArea("client")
+  return myBookings.listUpcomingBookings(getDb(), viewer.userId)
+}
+
+/** Mi próxima clase confirmada, o `null` */
+export async function getMyNextBooking() {
+  const viewer = await requireArea("client")
+  return myBookings.getNextConfirmedBooking(getDb(), viewer.userId)
+}
+
+/** Una página de mi historial; `cursor` llega del navegador y se valida en la capa de datos */
+export async function getMyBookingHistory(cursor?: unknown) {
+  const viewer = await requireArea("client")
+  return myBookings.listBookingHistory(getDb(), viewer.userId, { cursor })
 }
 
 // ── Calendario y reservas (F5) ──────────────────────────────────────────────────────────────────────────
