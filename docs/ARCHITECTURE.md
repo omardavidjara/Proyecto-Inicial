@@ -196,7 +196,7 @@ app/
   entrenador/incidencias           Incidencias que ha abierto (F9)
   entrenador/perfil                Perfil (mismo componente que /perfil, con la navegación del entrenador)
   admin/                           Hoy
-  admin/agenda                     ?vista=dia|semana|mes&fecha=AAAA-MM-DD
+  admin/agenda                     ?vista=dia|semana|mes&fecha=AAAA-MM-DD (si no valen: Día de hoy)
   admin/sesiones/[sessionId]       Detalle de sesión
   admin/anulaciones                Anulaciones tardías pendientes de decidir
   admin/horario                    Horario (F3): plantilla semanal (crear, editar, activar/desactivar y eliminar franjas) y
@@ -338,6 +338,7 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 12. Historial de cambios
 
+- 2026-10-14 · F6 PR 2: agenda `/admin/agenda` (día, semana y mes; el mes consulta la cuadrícula entera, hasta 42 días, en una sola consulta con `listSessionsBetween`). Los parámetros se validan en `lib/agenda.ts` (`parseAgendaParams`, años 2000–2099). «Hoy» comparte la tabla de sesiones (`components/admin/agenda.tsx`).
 - 2026-10-05 · Inicio de sesión con Neon Auth (correo y contraseña, Google), `proxy.ts` con el middleware del SDK, `lib/dal.ts` con `requireViewer`/`requireArea`, reglas en `lib/roles.ts`, consultas en `lib/data/`, página `/pendiente` y script `set-role`. §6 actualizado.
 
 - 2026-10-04 · `profiles.user_id` y sus referencias pasan de `text` a `uuid`, el tipo real de `neon_auth.user.id`.

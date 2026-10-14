@@ -89,6 +89,20 @@ describe('sesiones de un rango', () => {
     const afterStart = await listSessionsBetween(db, '2026-10-20', '2026-10-20', new Date('2026-10-20T19:00:00Z'))
     expect(afterStart[1]).toMatchObject({ booked: 2, waitlisted: 0 })
   })
+
+  test('una semana entera, con las canceladas', async () => {
+    const monday = await session('2026-10-26T08:00:00Z')
+    const sunday = await session('2026-11-01T20:00:00Z')
+    const nextMonday = await session('2026-11-02T08:00:00Z')
+    await db.update(sessions).set({ status: 'cancelled' }).where(eq(sessions.id, sunday))
+
+    const week = await listSessionsBetween(db, '2026-10-26', '2026-11-01', now)
+    expect(week.map((s) => [s.id, s.status])).toEqual([
+      [monday, 'scheduled'],
+      [sunday, 'cancelled'],
+    ])
+    expect(week.some((s) => s.id === nextMonday)).toBe(false)
+  })
 })
 
 describe('anulaciones tardías', () => {

@@ -2,13 +2,11 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { connection } from "next/server"
 import { Page } from "@/components/app-shell/app-shell"
+import { SessionsTable } from "@/components/admin/agenda"
 import { LateCancellations } from "@/components/admin/late-cancellations"
-import { Badge } from "@/components/ui/badge"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { lateCancellationItem } from "@/lib/agenda"
 import { countPendingClientsForAdmin, getAdminToday } from "@/lib/dal"
-import { formatDayLong, toTimeKey } from "@/lib/dates"
-import { CLASS_COLOR_BG } from "@/lib/sessions"
+import { formatDayLong } from "@/lib/dates"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = { title: "Hoy" }
@@ -59,46 +57,7 @@ export default async function AdminTodayPage() {
         {sessions.length === 0 ? (
           <p className="text-muted-foreground">Hoy no hay sesiones.</p>
         ) : (
-          <div className="rounded-xl border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="pl-4">Hora</TableHead>
-                  <TableHead>Clase</TableHead>
-                  <TableHead className="hidden sm:table-cell">Entrenador</TableHead>
-                  <TableHead className="pr-4 text-right">Ocupación</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sessions.map((s) => {
-                  const closed = s.startsAt <= now
-                  return (
-                    <TableRow key={s.id} className={cn("h-14", closed && "text-muted-foreground")}>
-                      <TableCell className="pl-4 font-semibold tabular-nums">{toTimeKey(s.startsAt)}</TableCell>
-                      <TableCell>
-                        <span className="flex items-center gap-2">
-                          <span aria-hidden="true" className={cn("size-2.5 shrink-0 rounded-full", CLASS_COLOR_BG[s.color])} />
-                          <span className="flex flex-col">
-                            {s.className}
-                            <span className="text-xs text-muted-foreground sm:hidden">{s.coachName ?? "Sin entrenador"}</span>
-                          </span>
-                        </span>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">{s.coachName ?? "Sin entrenador"}</TableCell>
-                      <TableCell className="pr-4 text-right">
-                        <span className="flex items-center justify-end gap-2">
-                          {s.waitlisted > 0 && <Badge variant="warning">+{s.waitlisted}</Badge>}
-                          <span className="tabular-nums">
-                            {s.booked}/{s.capacity}
-                          </span>
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          <SessionsTable sessions={sessions} now={now} />
         )}
       </section>
     </Page>

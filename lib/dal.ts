@@ -27,6 +27,7 @@ import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/da
 import { createSignUpProfile, ensureProfile, getMyProfile as selectMyProfile, setMyAvatar, updateMyProfile, type Viewer } from "@/lib/data/profiles"
 import { del } from "@vercel/blob"
 
+import { agendaRange, parseAgendaParams } from "@/lib/agenda"
 import { isOwnAvatarUrl } from "@/lib/avatar"
 import { toDateKey } from "@/lib/dates"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
@@ -498,6 +499,16 @@ export async function getAdminToday(lateLimit: number) {
     agenda.countPendingLateCancellations(db),
   ])
   return { today, sessions: daySessions, late, lateCount }
+}
+
+/** Agenda: ?vista y ?fecha llegan del navegador y se validan aquí (si no valen, vista Día de hoy) */
+export async function getAdminAgenda(params: { vista?: unknown; fecha?: unknown }) {
+  await requireArea("admin")
+  const today = toDateKey(new Date())
+  const { view, date } = parseAgendaParams(params, today)
+  const range = agendaRange(view, date)
+  const rows = await agenda.listSessionsBetween(getDb(), range.from, range.to)
+  return { today, view, date, range, sessions: rows }
 }
 
 export async function listLateCancellationsForAdmin() {
