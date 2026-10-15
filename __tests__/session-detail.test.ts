@@ -245,3 +245,29 @@ describe('asistencia', () => {
     expect(await setAttendance(db, 'x', 'attended', now)).toBe(false)
   })
 })
+
+describe('entrenador (F7): solo las sesiones que imparte', () => {
+  test('ve y marca la asistencia de las suyas; una ajena es inexistente', async () => {
+    const laura = randomUUID()
+    const pablo = randomUUID()
+    await db.insert(profiles).values([
+      { userId: laura, fullName: 'Laura Coach', role: 'coach', isCoach: true, status: 'active' },
+      { userId: pablo, fullName: 'Pablo Coach', role: 'coach', isCoach: true, status: 'active' },
+    ])
+    const mine = await session(past)
+    const other = await session(past)
+    await db.update(sessions).set({ coachId: laura }).where(eq(sessions.id, mine))
+    await db.update(sessions).set({ coachId: pablo }).where(eq(sessions.id, other))
+    const myBooking = await book(mine, await client('Ana'), 'confirmed')
+    const otherBooking = await book(other, await client('Bea'), 'confirmed')
+
+    expect(await getSessionDetail(db, mine, now, laura)).toMatchObject({ coachName: 'Laura Coach', attendees: [{ fullName: 'Ana' }] })
+    expect(await getSessionDetail(db, other, now, laura)).toBeNull()
+
+    expect(await setAttendance(db, myBooking, 'no_show', now, laura)).toBe(true)
+    expect(await setAttendance(db, otherBooking, 'attended', now, laura)).toBe(false)
+    expect((await statusOf(otherBooking)).attendance).toBe('pending')
+    // Administración sigue pudiendo con todas
+    expect(await setAttendance(db, otherBooking, 'attended', now)).toBe(true)
+  })
+})
