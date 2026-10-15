@@ -89,6 +89,7 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 - [ ] F9 · Incidencias
 - [ ] F10 · Avisos y notificaciones push
 - [ ] F11 · Equipo: roles y ajustes del gimnasio (solo desarrollador)
+- [ ] [J] Entrenador sustituto en una clase ya empezada: hoy Horario solo deja cambiar el entrenador antes de la hora de inicio (F3), así que el sustituto no puede marcar la asistencia (solo administración desde el detalle). Decidir si se permite cambiar el entrenador (solo eso) en sesiones empezadas o pasadas del día. Anotado el 2026-10-15
 
 ## Fase 6 · Auditoría de seguridad
 - [ ] [C] `docs/AUDIT.md` por gravedad: filtrado por usuario en cada consulta a Neon, sesión de Neon Auth, autorización, validación, secretos, cabeceras/CSP, límite de peticiones, dependencias, subida de archivos y protección de datos (lo que dice `/privacidad` coincide con lo que hace la app: datos que se guardan, proveedores, conservación, eliminación de cuenta y vaciado de la caché al cerrar sesión)
