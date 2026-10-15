@@ -88,6 +88,8 @@ Reglas (configurables por el administrador; los periodos de las tarifas se cuent
 - Lista de asistentes de cada sesión y marcar asistencia / falta.
 - Crear una **sesión individual** que imparte él mismo y apuntar en ella a un cliente.
 - Abrir incidencias.
+- **Clases impartidas**: en «Mi semana», selector Semana | Mes (el mes en calendario), resumen del periodo «Impartidas · Programadas · Canceladas» y tabla de las clases ya dadas (fecha, hora, tipo, asistieron/reservaron). Impartida = sesión terminada, no cancelada, con él como entrenador. Cada entrenador solo ve las suyas.
+- **Administración → «Entrenadores»** (en Más): tabla con cada entrenador y sus clases impartidas, programadas y canceladas en la semana o el mes elegidos; al tocar uno se ve su calendario. Solo consulta y control (sin horas ni importes).
 
 ### F8. Gestión de clientes
 - Lista con búsqueda y filtros (pendientes, activos, de baja).
@@ -184,6 +186,8 @@ Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada 
 6. **Administradores entrenadores**: un administrador puede ser también entrenador; también hay entrenadores que no son administradores.
 
 ## 9. Historial de cambios
+
+- 2026-10-15 · F7: resumen de clases impartidas por semana y mes para cada entrenador (solo las suyas) y pantalla «Entrenadores» para administración con todos. Solo consulta y control: sin horas ni importes.
 
 - 2026-10-14 · F6 PR 3: detalle de sesión del administrador. Quitar a un cliente nunca descuenta la clase; la asistencia se marca desde que empieza la sesión y se resume (asistieron, faltaron, sin marcar) para ver quién reservó y no vino. El entrenador tendrá lo mismo en sus sesiones en F7.
 
