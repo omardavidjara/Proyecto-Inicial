@@ -150,7 +150,7 @@ Hecho en F5 (PR 1): reglas en `lib/booking.ts` y transacciones en `lib/data/book
 **Reservar** (transacción):
 1. `SELECT … FROM sessions WHERE id = $1 FOR UPDATE` (bloquea la sesión → no hay sobreventa con reservas simultáneas).
 2. Comprobar: perfil `active`, sesión `scheduled`, `now()` dentro de la ventana (`starts_at - booking_window_days` … `starts_at`), sin reserva viva previa.
-3. Comprobar tarifa: debe existir una `membership` vigente en la fecha de la sesión; si el plan no es `unlimited`, las reservas `confirmed`, `late_cancelled` con `late_cancel_charged = true` y con `attendance = no_show` del periodo (semana de lunes a domingo o mes natural, calculados en la zona horaria del gimnasio) deben ser < `classes_per_period`.
+3. Comprobar tarifa: debe existir una `membership` vigente en la fecha de la sesión; si el plan no es `unlimited`, las reservas `confirmed` (también las que tienen `attendance = no_show`) y `late_cancelled` con `late_cancel_charged = true` del periodo (semana de lunes a domingo o mes natural, calculados en la zona horaria del gimnasio) deben ser < `classes_per_period`.
 4. Si hay plaza → `confirmed`; si no → `waitlisted` (sin consumir cupo).
 
 **Anular**: si faltan ≥ `cancel_deadline_minutes` → `cancelled`; si no → `late_cancelled` con `late_cancel_charged = null` (pendiente). Un administrador decide después `true`/`false`; mientras sea `null` no descuenta. Después, **promover** de la lista de espera (misma transacción): el primer `waitlisted` por `waitlisted_at` cuya tarifa lo permita pasa a `confirmed` → notificación.
@@ -340,6 +340,7 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 12. Historial de cambios
 
+- 2026-10-14 · Arreglo (AUDITORIA-2026-10-14 #1): una falta ya no cuenta para el cupo si después se quita al cliente. `countUsedClasses` solo cuenta `confirmed` (con o sin falta) y tardías descontadas; al quitar, la asistencia vuelve a `pending`. Sin cambios de esquema.
 - 2026-10-14 · F6 PR 3: detalle `/admin/sesiones/[sessionId]` (`lib/data/session-detail.ts`, acciones en `app/admin/sesiones/[sessionId]/actions.ts`): asistentes con asistencia, lista de espera, anulaciones tardías, añadir (buscador por nombre con el índice trigram de `profiles.full_name`, 10 resultados) y quitar. Cada sesión de la agenda y de «Hoy» enlaza a su detalle. `lockSessions` se exporta desde `lib/data/bookings.ts` para mantener el orden de bloqueos. F7 reutilizará la lectura y la asistencia para el entrenador (solo sus sesiones). Sin cambios de esquema.
 - 2026-10-14 · F6 PR 2: agenda `/admin/agenda` (día, semana y mes; el mes consulta la cuadrícula entera, hasta 42 días, en una sola consulta con `listSessionsBetween`). Los parámetros se validan en `lib/agenda.ts` (`parseAgendaParams`, años 2000–2099). «Hoy» comparte la tabla de sesiones (`components/admin/agenda.tsx`).
 - 2026-10-05 · Inicio de sesión con Neon Auth (correo y contraseña, Google), `proxy.ts` con el middleware del SDK, `lib/dal.ts` con `requireViewer`/`requireArea`, reglas en `lib/roles.ts`, consultas en `lib/data/`, página `/pendiente` y script `set-role`. §6 actualizado.
