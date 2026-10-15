@@ -30,7 +30,7 @@ import { del } from "@vercel/blob"
 
 import { agendaRange, parseAgendaParams } from "@/lib/agenda"
 import { isOwnAvatarUrl } from "@/lib/avatar"
-import { toDateKey } from "@/lib/dates"
+import { addDays, isDateKey, startOfWeek, toDateKey } from "@/lib/dates"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
@@ -510,6 +510,24 @@ export async function getAdminAgenda(params: { vista?: unknown; fecha?: unknown 
   const range = agendaRange(view, date)
   const rows = await agenda.listSessionsBetween(getDb(), range.from, range.to)
   return { today, view, date, range, sessions: rows }
+}
+
+// ── Mi semana del entrenador (F7): solo las sesiones con coach_id = el usuario de la sesión ─────────────────
+
+/** Semana de lunes a domingo que contiene `semana` (si no es una fecha válida, la de hoy) */
+export async function getCoachWeek(semana: unknown) {
+  const viewer = await requireArea("coach")
+  const today = toDateKey(new Date())
+  const monday = startOfWeek(isDateKey(semana) ? semana : today)
+  const rows = await agenda.listCoachSessionsBetween(getDb(), viewer.userId, monday, addDays(monday, 6))
+  return { today, monday, sessions: rows }
+}
+
+/** Clases del entrenador en un día; `date` ya validado por la página con `isDateKey` */
+export async function getCoachDay(date: string) {
+  const viewer = await requireArea("coach")
+  const rows = await agenda.listCoachSessionsBetween(getDb(), viewer.userId, date, date)
+  return { today: toDateKey(new Date()), sessions: rows }
 }
 
 export async function listLateCancellationsForAdmin() {

@@ -3,11 +3,9 @@ import { notFound } from "next/navigation"
 import { CalendarX2 } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { EmptyState } from "@/components/empty-state"
-import { PrototypeNotice } from "@/components/prototype-notice"
 import { SessionCard } from "@/components/sessions/session-card"
-import { formatDayLabel, formatDayLong, isDateKey, startOfWeek } from "@/lib/dates"
-import { PROTOTYPE_COACH, prototypeCoachSessions, prototypeToday } from "@/lib/prototype/data"
-import { gymTimeNow, isClosed } from "@/lib/prototype/now"
+import { getCoachDay } from "@/lib/dal"
+import { formatDayLabel, formatDayLong, isDateKey, startOfWeek, toTimeKey } from "@/lib/dates"
 
 export const metadata: Metadata = { title: "Mis clases del día" }
 
@@ -15,9 +13,8 @@ export default async function CoachDayPage({ params }: { params: Promise<{ date:
   const { date } = await params
   if (!isDateKey(date)) notFound()
 
-  const today = prototypeToday()
-  const now = gymTimeNow()
-  const sessions = prototypeCoachSessions(date, PROTOTYPE_COACH, today)
+  const now = new Date()
+  const { today, sessions } = await getCoachDay(date)
   const thisWeek = startOfWeek(date) === startOfWeek(today)
 
   return (
@@ -25,7 +22,6 @@ export default async function CoachDayPage({ params }: { params: Promise<{ date:
       title={formatDayLabel(date, today)}
       backHref={thisWeek ? "/entrenador" : `/entrenador?semana=${startOfWeek(date)}`}
     >
-      <PrototypeNotice />
       <p className="-mt-2 text-muted-foreground first-letter:uppercase">{formatDayLong(date)}</p>
       {sessions.length === 0 ? (
         <EmptyState icon={<CalendarX2 />} title="No tienes clases este día" />
@@ -35,13 +31,16 @@ export default async function CoachDayPage({ params }: { params: Promise<{ date:
             <li key={s.id}>
               <SessionCard
                 session={{
-                  ...s,
-                  myBooking: undefined,
                   href: `/entrenador/sesiones/${s.id}`,
-                  className: s.classType.name,
-                  color: s.classType.color,
-                  subtitle: `${s.booked}/${s.capacity} asistentes${s.waitlist ? ` · ${s.waitlist} en espera` : ""}`,
-                  closed: isClosed(s.date, s.start, today, now),
+                  start: toTimeKey(s.startsAt),
+                  end: toTimeKey(s.endsAt),
+                  className: s.className,
+                  color: s.color,
+                  capacity: s.capacity,
+                  booked: s.booked,
+                  status: s.status,
+                  subtitle: `${s.booked}/${s.capacity} asistentes${s.waitlisted ? ` · ${s.waitlisted} en espera` : ""}`,
+                  closed: s.startsAt <= now,
                 }}
               />
             </li>
