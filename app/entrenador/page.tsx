@@ -2,16 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
-import { PrototypeNotice } from "@/components/prototype-notice"
-import {
-  addDays,
-  formatDayNumber,
-  formatWeekRange,
-  formatWeekdayShort,
-  isDateKey,
-  startOfWeek,
-} from "@/lib/dates"
-import { PROTOTYPE_COACH, prototypeCoachSessions, prototypeToday } from "@/lib/prototype/data"
+import { getCoachWeek } from "@/lib/dal"
+import { addDays, formatDayNumber, formatWeekRange, formatWeekdayShort, startOfWeek, toDateKey, toTimeKey } from "@/lib/dates"
 import { CLASS_COLOR_BG } from "@/lib/sessions"
 import { cn } from "@/lib/utils"
 
@@ -23,16 +15,15 @@ export default async function CoachWeekPage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const today = prototypeToday()
   const { semana } = await searchParams
-  const monday = startOfWeek(isDateKey(semana) ? semana : today)
-  const days = Array.from({ length: 7 }, (_, i) => addDays(monday, i))
-  const week = days.map((day) => ({ day, sessions: prototypeCoachSessions(day, PROTOTYPE_COACH, today) }))
-  const total = week.reduce((sum, d) => sum + d.sessions.length, 0)
+  const { today, monday, sessions: all } = await getCoachWeek(semana)
+  const byDay = Map.groupBy(all, (s) => toDateKey(s.startsAt))
+  const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i)).map((day) => ({ day, sessions: byDay.get(day) ?? [] }))
+  // Las canceladas se ven tachadas, pero no cuentan como clases
+  const total = all.filter((s) => s.status === "scheduled").length
 
   return (
     <Page title="Mi semana" wide>
-      <PrototypeNotice />
       <div className="flex items-center gap-2">
         <WeekLink monday={addDays(monday, -7)} label="Semana anterior" icon={<ChevronLeft />} />
         <div className="flex flex-1 flex-col items-center">
@@ -81,9 +72,9 @@ export default async function CoachWeekPage({
                           s.status === "cancelled" && "line-through"
                         )}
                       >
-                        <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", CLASS_COLOR_BG[s.classType.color])} />
-                        <span className="font-medium tabular-nums">{s.start}</span>
-                        <span className="min-w-0 truncate text-muted-foreground lg:w-full lg:text-xs">{s.classType.name}</span>
+                        <span aria-hidden="true" className={cn("size-2 shrink-0 rounded-full", CLASS_COLOR_BG[s.color])} />
+                        <span className="font-medium tabular-nums">{toTimeKey(s.startsAt)}</span>
+                        <span className="min-w-0 truncate text-muted-foreground lg:w-full lg:text-xs">{s.className}</span>
                       </li>
                     ))}
                   </ul>

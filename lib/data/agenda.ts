@@ -10,7 +10,8 @@ import { startOfDay } from "./calendar"
 import type { Db } from "./db"
 
 // Agenda y anulaciones tardías del administrador (SPEC F6). Solo se llama desde la DAL tras `requireArea("admin")`:
-// aquí se ven las reservas de todos los clientes.
+// aquí se ven las reservas de todos los clientes. Excepción: `listCoachSessionsBetween`, la semana del entrenador
+// (SPEC F7), tras `requireArea("coach")` y limitada a sus sesiones.
 
 export type AgendaSession = {
   id: string
@@ -32,7 +33,20 @@ const countBookings = (status: "confirmed" | "waitlisted") =>
   sql<number>`(select count(*)::int from bookings b where b.session_id = "sessions"."id" and b.status = ${status})`
 
 /** Sesiones de los días `from` a `to` (incluidos, en la zona del gimnasio), canceladas incluidas, por hora */
-export async function listSessionsBetween(db: Db, from: string, to: string, now = new Date()): Promise<AgendaSession[]> {
+export function listSessionsBetween(db: Db, from: string, to: string, now = new Date()): Promise<AgendaSession[]> {
+  return selectSessionsBetween(db, from, to, now)
+}
+
+/**
+ * Las mismas sesiones, solo las que imparte `coachId` (SPEC F7, «Mi semana»). `coachId` sale de la sesión
+ * verificada (DAL tras `requireArea("coach")`), nunca del navegador.
+ */
+export function listCoachSessionsBetween(db: Db, coachId: string, from: string, to: string, now = new Date()): Promise<AgendaSession[]> {
+  return selectSessionsBetween(db, from, to, now, coachId)
+}
+
+async function selectSessionsBetween(db: Db, from: string, to: string, now: Date, coachId?: string): Promise<AgendaSession[]> {
+  const inRange = and(gte(sessions.startsAt, startOfDay(from)), lt(sessions.startsAt, startOfDay(addDays(to, 1))))
   const rows = (await db
     .select({
       id: sessions.id,
@@ -49,7 +63,7 @@ export async function listSessionsBetween(db: Db, from: string, to: string, now 
     .from(sessions)
     .innerJoin(classTypes, eq(classTypes.id, sessions.classTypeId))
     .leftJoin(profiles, eq(profiles.userId, sessions.coachId))
-    .where(and(gte(sessions.startsAt, startOfDay(from)), lt(sessions.startsAt, startOfDay(addDays(to, 1)))))
+    .where(coachId ? and(inRange, eq(sessions.coachId, coachId)) : inRange)
     .orderBy(asc(sessions.startsAt), asc(classTypes.name))) as AgendaSession[]
   return rows.map((row) => (row.startsAt <= now ? { ...row, waitlisted: 0 } : row))
 }

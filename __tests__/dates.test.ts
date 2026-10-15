@@ -28,6 +28,8 @@ describe('fechas del gimnasio', () => {
   test('isDateKey solo acepta fechas reales', () => {
     expect(isDateKey('2026-10-06')).toBe(true)
     expect(isDateKey('2026-02-30')).toBe(false)
+    expect(isDateKey('2026-13-01')).toBe(false)
+    expect(isDateKey('2026-10-32')).toBe(false)
     expect(isDateKey('06/10/2026')).toBe(false)
     expect(isDateKey(undefined)).toBe(false)
   })

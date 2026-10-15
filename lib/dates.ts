@@ -7,7 +7,9 @@ const DATE_KEY = /^\d{4}-\d{2}-\d{2}$/
 
 export function isDateKey(value: unknown): value is string {
   if (typeof value !== "string" || !DATE_KEY.test(value)) return false
-  return toUtcNoon(value).toISOString().slice(0, 10) === value
+  // Mes 13 o día 32 dan una fecha inválida (toISOString lanzaría); 02-30 se desbordaría a marzo
+  const date = toUtcNoon(value)
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
 /** Día (AAAA-MM-DD) de un instante, en la zona horaria del gimnasio */

@@ -10,6 +10,7 @@ import { lateCancellationItem } from '@/lib/agenda'
 import {
   countPendingLateCancellations,
   decideLateCancellation,
+  listCoachSessionsBetween,
   listPendingLateCancellations,
   listSessionsBetween,
 } from '@/lib/data/agenda'
@@ -102,6 +103,24 @@ describe('sesiones de un rango', () => {
       [sunday, 'cancelled'],
     ])
     expect(week.some((s) => s.id === nextMonday)).toBe(false)
+  })
+
+  test('semana del entrenador: solo las sesiones que imparte él', async () => {
+    const laura = await person('Laura Coach')
+    const pablo = await person('Pablo Coach')
+    const mine = await session('2026-11-03T08:00:00Z')
+    const other = await session('2026-11-03T09:00:00Z')
+    const nobody = await session('2026-11-03T10:00:00Z')
+    await db.update(sessions).set({ coachId: laura }).where(eq(sessions.id, mine))
+    await db.update(sessions).set({ coachId: pablo }).where(eq(sessions.id, other))
+    await book(mine, 'confirmed')
+
+    const lauraWeek = await listCoachSessionsBetween(db, laura, '2026-11-02', '2026-11-08', now)
+    expect(lauraWeek.map((s) => s.id)).toEqual([mine])
+    expect(lauraWeek[0]).toMatchObject({ booked: 1, coachName: 'Laura Coach' })
+    expect((await listCoachSessionsBetween(db, pablo, '2026-11-02', '2026-11-08', now)).map((s) => s.id)).toEqual([other])
+    // La agenda del administrador sigue viéndolas todas
+    expect((await listSessionsBetween(db, '2026-11-03', '2026-11-03', now)).map((s) => s.id)).toEqual([mine, other, nobody])
   })
 })
 
