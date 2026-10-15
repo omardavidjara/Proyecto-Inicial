@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/auth', () => ({ getAuth: () => ({ getSession: async () => ({ data: { user: { id: '5b0e3f0a-6f0c-4d8e-9c1a-0d7e2a4b9c11', name: 'X', email: 'x@example.test' } } }) }) }))
 vi.mock('@/lib/data/profiles', () => ({ ensureProfile: async () => mocks.viewer, createSignUpProfile: vi.fn(), getMyProfile: vi.fn(), updateMyProfile: vi.fn() }))
 vi.mock('@/lib/data/agenda', () => ({ listCoachSessionsBetween: mocks.listCoachSessionsBetween }))
+vi.mock('@/lib/data/individual-sessions', () => ({ listIndividualClassTypes: async () => [] }))
 vi.mock('@/db', () => ({ getDb: () => 'http-db', getTxDb: () => 'tx-db' }))
 vi.mock('next/headers', () => ({ cookies: vi.fn(async () => ({})), headers: vi.fn(async () => new Headers()) }))
 vi.mock('next/navigation', () => ({ redirect: mocks.redirect, notFound: vi.fn(() => { throw new Error('NEXT_NOT_FOUND') }), unstable_rethrow: vi.fn(), usePathname: () => '/entrenador' }))

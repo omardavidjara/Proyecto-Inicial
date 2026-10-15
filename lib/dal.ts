@@ -19,6 +19,7 @@ import * as bookingData from "@/lib/data/bookings"
 import * as calendar from "@/lib/data/calendar"
 import * as myBookings from "@/lib/data/my-bookings"
 import * as classTypes from "@/lib/data/class-types"
+import * as individualSessions from "@/lib/data/individual-sessions"
 import * as clients from "@/lib/data/clients"
 import * as memberships from "@/lib/data/memberships"
 import * as plans from "@/lib/data/plans"
@@ -37,7 +38,7 @@ import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type P
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
 import type { ClassTypeInput } from "@/lib/validation/class-types"
 import type { PlanInput } from "@/lib/validation/plans"
-import type { OneOffSessionInput, ScheduleSlotInput, SessionInput } from "@/lib/validation/schedule"
+import type { IndividualSessionInput, OneOffSessionInput, ScheduleSlotInput, SessionInput } from "@/lib/validation/schedule"
 
 /** Usuario de la sesión verificada, o `null`. Una sola comprobación por render (`cache`). */
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
@@ -585,4 +586,23 @@ export async function getSessionDetailForCoach(sessionId: unknown) {
 export async function setBookingAttendanceForCoach(bookingId: unknown, attendance: sessionDetail.Attendance) {
   const viewer = await requireArea("coach")
   return sessionDetail.setAttendance(getDb(), bookingId, attendance, new Date(), viewer.userId)
+}
+
+// ── Sesión individual del entrenador (F7): él mismo como entrenador y un cliente con clases en su tarifa ────
+
+export async function listIndividualClassTypesForCoach() {
+  await requireArea("coach")
+  return individualSessions.listIndividualClassTypes(getDb())
+}
+
+/** Buscador de cliente del diálogo: clientes activos por nombre */
+export async function searchClientsForCoach(query: unknown) {
+  await requireArea("coach")
+  return individualSessions.searchActiveClients(getDb(), query)
+}
+
+/** `input` ya validado con Zod en la acción; el entrenador sale de la sesión verificada */
+export async function createIndividualSession(input: IndividualSessionInput) {
+  const viewer = await requireArea("coach")
+  return individualSessions.createIndividualSession(getTxDb(), viewer.userId, input)
 }

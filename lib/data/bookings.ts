@@ -92,13 +92,13 @@ const isLive = inArray(bookings.status, ["confirmed", "waitlisted"])
 const countConfirmed = (db: Db, sessionId: string) =>
   db.$count(bookings, and(eq(bookings.sessionId, sessionId), eq(bookings.status, "confirmed")))
 
-type MemberCheck = "ok" | "not_active" | "no_plan" | "no_classes_left"
+export type MemberCheck = "ok" | "not_active" | "no_plan" | "no_classes_left"
 
 /**
  * El cliente puede gastar una clase en esa sesión: perfil activo, tarifa vigente el día de la sesión y clases
  * libres en su periodo (ARCHITECTURE §4, paso 3). Bloquea el perfil hasta el final de la transacción.
  */
-async function checkMember(db: Db, userId: string, startsAt: Date, timeZone: string): Promise<MemberCheck> {
+export async function checkMember(db: Db, userId: string, startsAt: Date, timeZone: string): Promise<MemberCheck> {
   const [profile] = await db
     .select({ userId: profiles.userId })
     .from(profiles)
