@@ -159,6 +159,8 @@ Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada 
 
 ## 6. Móvil (alcance de la Fase 8)
 
+**Decisión del 2026-10-15:** la publicación en las tiendas (Fase 8) queda en pausa. La app se usa como **PWA instalada** desde el navegador y las push son web (en iPhone, iOS 16.4+ y solo con la app en la pantalla de inicio). La tabla sigue valiendo para la PWA salvo el deep link y los requisitos de las tiendas, que solo aplican si se retoma la Fase 8.
+
 | Necesidad | Decisión |
 |---|---|
 | Notificaciones push | **Sí** (ver F10) |

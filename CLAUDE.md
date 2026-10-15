@@ -2,7 +2,7 @@
 
 # mi-app
 
-App web (Next.js) que se instala en el móvil como PWA y se publica en las tiendas con Capacitor.
+App web (Next.js) que se instala en el móvil como PWA. La publicación en las tiendas con Capacitor (Fase 8) está en pausa desde el 2026-10-15.
 Qué hace y para quién: ver `docs/SPEC.md` (nombre provisional: Athlos App, gestión de reservas de un gimnasio).
 
 ## Hoja de ruta
