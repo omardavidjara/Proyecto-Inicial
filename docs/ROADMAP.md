@@ -87,7 +87,8 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 - [ ] F7 · Entrenadores: mis clases, asistentes y asistencia. Plan aprobado el 2026-10-15 en 3 PR: (1) «Mi semana» y el día con datos reales, solo las sesiones con `coach_id` = el entrenador (`listCoachSessionsBetween`) ✅; (2) detalle de sesión del entrenador con asistencia y resumen, y `db:set-role … admin --coach` para marcar como entrenador a un administrador ✅ (`getSessionDetail`/`setAttendance` con `coachId`; el entrenador no añade ni quita clientes ni ve las anulaciones tardías; borrado `lib/prototype/`); (3) sesión individual (aforo 1) con un cliente: se salta ventana y aforo pero sí descuenta de la tarifa; (4) clases impartidas del entrenador: Semana | Mes, resumen «Impartidas · Programadas · Canceladas» y tabla de las ya dadas con asistentes; (5) «Entrenadores» en administración: tabla por entrenador y periodo, y su calendario (añadidas el 2026-10-15 a petición del usuario; solo consulta, sin horas ni importes). «Abrir incidencias» pasa a F9.
 - [ ] F8 · Gestión de clientes (lista, ficha, filtros)
 - [ ] F9 · Incidencias
-- [ ] F10 · Avisos y notificaciones push
+- [ ] F10 · Avisos y notificaciones push. Push **web** (Web Push con el service worker de la PWA, sin plugins nativos; decidido el 2026-10-15 al aparcar las tiendas): en Android funciona en el navegador o instalada; en iPhone (iOS 16.4+) solo con la app añadida a la pantalla de inicio, así que pedir el permiso desde la app instalada y explicarlo en «Instalar la app»
+- [ ] [C] Pantalla «Instalar la app» (decidido el 2026-10-15): pasos para Android (botón «Instalar» con `beforeinstallprompt` cuando el navegador lo ofrezca) y para iPhone (Safari → Compartir → «Añadir a pantalla de inicio»); enlazada desde «Inicio» o «Perfil» y oculta si ya se abre instalada (`display-mode: standalone`)
 - [ ] F11 · Equipo: roles y ajustes del gimnasio (solo desarrollador)
 - [ ] [J] Entrenador sustituto en una clase ya empezada: hoy Horario solo deja cambiar el entrenador antes de la hora de inicio (F3), así que el sustituto no puede marcar la asistencia (solo administración desde el detalle). Decidir si se permite cambiar el entrenador (solo eso) en sesiones empezadas o pasadas del día. Anotado el 2026-10-15
 
@@ -111,9 +112,11 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 - [x] [T] Google con credenciales propias en Neon Auth (hecho 2026-10-11): proyecto «Athlos App» en Google Cloud (público Externo, **En producción**, sin logo, así que sin verificación), cliente OAuth web «Athlos Neon Auth» con redirección `{NEON_AUTH_BASE_URL}/callback/google`, ID y secreto en Neon (proveedor `google` de tipo `standard`, cambiado por API sin quitarlo). Login probado en la web: misma cuenta, sin duplicados
 - [ ] [J] La pantalla de Google muestra «neon.tech» y no «Athlos», porque el nombre solo aparece con la marca verificada, y eso exige ser dueño de los dominios autorizados (`neon.tech` no lo es). Con el dominio propio, ver si Neon Auth admite un dominio personalizado para su URL; si no, aceptarlo o valorarlo
 - [ ] [J] Apagar «Allow Localhost» en Neon Auth (lista de producción de Neon). Antes, separar desarrollo y producción: hoy `.env.local` apunta a la base de datos de producción y el login en `localhost` depende de ese ajuste
-- [ ] [T] Probar la web publicada en un móvil real
+- [ ] [T] Probar la web publicada en un móvil real, instalada como PWA en Android y en iPhone (icono, pantalla completa, sin conexión y push)
 
-## Fase 8 · App móvil (Capacitor)
+## Fase 8 · App móvil (Capacitor) ⏸️ en pausa
+**En pausa desde el 2026-10-15** (decisión del usuario): publicar en las tiendas exige cuentas de pago (Apple Developer anual), contratos y revisiones. La app se usa como **PWA instalada desde el navegador** (manifest, iconos y service worker de la Fase 2; pantalla «Instalar la app» en la Fase 5) y las push son web (F10). Esta fase no bloquea la Fase 9; se retoma solo si el usuario lo decide.
+
 La app nativa carga la web publicada en Vercel (SSR), así que las mejoras de la web llegan sin recompilar.
 - [ ] [C] Capacitor con plataformas Android e iOS; iconos y splash
 - [ ] [C] Plugins nativos según SPEC (push, cámara, compartir, barra de estado). Apple rechaza las apps que solo envuelven una web
