@@ -14,7 +14,7 @@ npm run dev -- -H 0.0.0.0    # también desde un móvil en la misma Wi-Fi: http:
 npm run check                # lint + tipos + tests
 npm run build                # compilación de producción
 npm run db:migrate           # aplica las migraciones (drizzle/) en Neon
-npm run db:set-role -- correo@ejemplo.com developer   # rol y alta de una cuenta
+npm run db:set-role -- correo@ejemplo.com developer   # rol y alta de una cuenta (admin --coach: también imparte clases)
 ```
 
 Variables: copia `.env.example` como `.env.local` y rellénalo.

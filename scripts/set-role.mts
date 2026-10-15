@@ -2,22 +2,20 @@
 // una sola vez, nunca desde la UI). Lo demás (aprobar clientes, entrenadores) se hará desde la app (F1, F11).
 //
 //   npm run db:set-role -- correo@ejemplo.com developer
+//   npm run db:set-role -- correo@ejemplo.com admin --coach      (administrador que también imparte clases)
+//   npm run db:set-role -- correo@ejemplo.com admin --no-coach   (deja de impartirlas)
 //
 // La persona tiene que haber entrado al menos una vez (para existir en Neon Auth).
 // Usa DATABASE_URL_UNPOOLED de .env.local: la base de datos en la que se ejecute es la que cambia.
 import { neon } from "@neondatabase/serverless"
-import { z } from "zod"
+import { parseSetRoleArgs } from "./set-role-args.mts"
 
-const ROLES = ["developer", "admin", "coach", "client"] as const
-
-const args = z
-  .tuple([z.email().trim().toLowerCase(), z.enum(ROLES)])
-  .safeParse(process.argv.slice(2))
-if (!args.success) {
-  console.error(`Uso: npm run db:set-role -- <correo> <${ROLES.join("|")}>`)
+const parsed = parseSetRoleArgs(process.argv.slice(2))
+if (!parsed.ok) {
+  console.error(parsed.error)
   process.exit(1)
 }
-const [email, role] = args.data
+const { email, role, coachFlag } = parsed
 
 const url = process.env.DATABASE_URL_UNPOOLED
 if (!url) {
@@ -34,8 +32,6 @@ if (users.length === 0) {
 }
 const user = users[0] as { id: string; name: string | null }
 
-// Entrenador siempre imparte clases; cliente nunca; admin y desarrollador conservan su marca
-const coachFlag = role === "coach" ? "true" : role === "client" ? "false" : null
 const fullName = user.name?.trim() || email.split("@")[0]
 
 const [profile] = await sql`
