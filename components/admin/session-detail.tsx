@@ -9,6 +9,7 @@ import {
   searchClientsAction,
   setAttendanceAction,
   type ClientOption,
+  type SessionActionResult,
 } from "@/app/admin/sesiones/[sessionId]/actions"
 import { EmptyState } from "@/components/empty-state"
 import { Button } from "@/components/ui/button"
@@ -35,8 +36,23 @@ export type WaitlistItem = { bookingId: string; userId: string; fullName: string
 
 const ATTENDANCE_TOAST: Record<Attendance, string> = { attended: "asistió", no_show: "faltó", pending: "sin marcar" }
 
-/** Asistentes confirmados. Con `canMark` (la sesión ha empezado) se marca asistió / faltó; pulsar otra vez lo deja sin marcar */
-export function AttendeeList({ items, canMark, readOnly }: { items: AttendeeItem[]; canMark: boolean; readOnly: boolean }) {
+/**
+ * Asistentes confirmados. Con `canMark` (la sesión ha empezado) se marca asistió / faltó; pulsar otra vez lo deja sin
+ * marcar. El entrenador (F7) pasa su propia acción de asistencia y `canRemove={false}`.
+ */
+export function AttendeeList({
+  items,
+  canMark,
+  readOnly,
+  markAction = setAttendanceAction,
+  canRemove = true,
+}: {
+  items: AttendeeItem[]
+  canMark: boolean
+  readOnly: boolean
+  markAction?: (bookingId: string, attendance: Attendance) => Promise<SessionActionResult>
+  canRemove?: boolean
+}) {
   const [shown, setOptimistic] = useOptimistic(items, (current, { id, attendance }: { id: string; attendance: Attendance }) =>
     current.map((a) => (a.bookingId === id ? { ...a, attendance } : a)),
   )
@@ -46,7 +62,7 @@ export function AttendeeList({ items, canMark, readOnly }: { items: AttendeeItem
     const next = item.attendance === value ? "pending" : value
     startTransition(async () => {
       setOptimistic({ id: item.bookingId, attendance: next })
-      const result = await setAttendanceAction(item.bookingId, next)
+      const result = await markAction(item.bookingId, next)
       if (result.ok) toast.success(`${item.fullName}: ${ATTENDANCE_TOAST[next]}`)
       else toast.error(result.message)
     })
@@ -74,7 +90,7 @@ export function AttendeeList({ items, canMark, readOnly }: { items: AttendeeItem
                 </MarkButton>
               </div>
             )}
-            {!readOnly && <RemoveButton bookingId={a.bookingId} name={a.fullName} what="su plaza" />}
+            {!readOnly && canRemove && <RemoveButton bookingId={a.bookingId} name={a.fullName} what="su plaza" />}
           </div>
         </li>
       ))}

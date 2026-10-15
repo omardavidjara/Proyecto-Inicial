@@ -572,3 +572,17 @@ export async function setBookingAttendance(bookingId: unknown, attendance: sessi
   await requireArea("admin")
   return sessionDetail.setAttendance(getDb(), bookingId, attendance)
 }
+
+// ── Detalle de sesión del entrenador (F7): solo las sesiones que imparte; una ajena es inexistente ─────────
+
+/** Asistentes y lista de espera de una sesión suya, o `null`. Las anulaciones tardías las decide administración */
+export async function getSessionDetailForCoach(sessionId: unknown) {
+  const viewer = await requireArea("coach")
+  const detail = await sessionDetail.getSessionDetail(getDb(), sessionId, new Date(), viewer.userId)
+  return detail && { ...detail, lateCancellations: [] }
+}
+
+export async function setBookingAttendanceForCoach(bookingId: unknown, attendance: sessionDetail.Attendance) {
+  const viewer = await requireArea("coach")
+  return sessionDetail.setAttendance(getDb(), bookingId, attendance, new Date(), viewer.userId)
+}

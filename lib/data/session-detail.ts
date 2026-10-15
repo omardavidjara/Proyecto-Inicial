@@ -10,7 +10,8 @@ import type { Db } from "./db"
 
 // Detalle de una sesión para el administrador (SPEC F6): asistentes, lista de espera, anulaciones tardías,
 // añadir o quitar un cliente a mano y asistencia. Solo se llama desde la DAL tras `requireArea("admin")`.
-// F7 reutilizará la lectura y la asistencia para el entrenador, limitadas a las sesiones que imparte.
+// El entrenador (SPEC F7) reutiliza la lectura y la asistencia tras `requireArea("coach")`, pasando `coachId`
+// (de la sesión verificada): entonces solo valen las sesiones que imparte, y una ajena es inexistente.
 
 export type Attendance = "pending" | "attended" | "no_show"
 
@@ -34,8 +35,8 @@ export type SessionDetail = {
 
 const idSchema = z.uuid()
 
-/** La sesión con sus reservas, o `null` si no existe */
-export async function getSessionDetail(db: Db, sessionId: unknown, now = new Date()): Promise<SessionDetail | null> {
+/** La sesión con sus reservas, o `null` si no existe (o, con `coachId`, si no la imparte él) */
+export async function getSessionDetail(db: Db, sessionId: unknown, now = new Date(), coachId?: string): Promise<SessionDetail | null> {
   const parsed = idSchema.safeParse(sessionId)
   if (!parsed.success) return null
   const coach = alias(profiles, "coach")
@@ -54,7 +55,7 @@ export async function getSessionDetail(db: Db, sessionId: unknown, now = new Dat
     .from(sessions)
     .innerJoin(classTypes, eq(classTypes.id, sessions.classTypeId))
     .leftJoin(coach, eq(coach.userId, sessions.coachId))
-    .where(eq(sessions.id, parsed.data))
+    .where(coachId ? and(eq(sessions.id, parsed.data), eq(sessions.coachId, coachId)) : eq(sessions.id, parsed.data))
   if (!session) return null
 
   const rows = await db
@@ -199,15 +200,15 @@ export async function removeBookingFromSession(db: Db, bookingId: unknown, now =
 
 /**
  * Asistencia de una plaza confirmada, solo desde que empieza la sesión (y si no está cancelada). `false` si no
- * se puede. «Faltó» cuenta para el cupo de la tarifa (ARCHITECTURE §4).
+ * se puede. «Faltó» cuenta para el cupo de la tarifa (ARCHITECTURE §4). Con `coachId`, solo en sus sesiones.
  */
-export async function setAttendance(db: Db, bookingId: unknown, attendance: Attendance, now = new Date()) {
+export async function setAttendance(db: Db, bookingId: unknown, attendance: Attendance, now = new Date(), coachId?: string) {
   const parsed = idSchema.safeParse(bookingId)
   if (!parsed.success) return false
   const startedSessions = db
     .select({ id: sessions.id })
     .from(sessions)
-    .where(and(eq(sessions.status, "scheduled"), lte(sessions.startsAt, now)))
+    .where(and(eq(sessions.status, "scheduled"), lte(sessions.startsAt, now), coachId ? eq(sessions.coachId, coachId) : undefined))
   const updated = await db
     .update(bookings)
     .set({ attendance })
