@@ -64,6 +64,9 @@
   --shadow-raised: var(--elevation-raised);
   --animate-rise: rise 260ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
   --animate-pop: pop 320ms cubic-bezier(0.3, 1.4, 0.5, 1) backwards;
+  --animate-settle: settle 220ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+  --animate-grow: grow 700ms cubic-bezier(0.2, 0.8, 0.2, 1) 150ms backwards;
+  --animate-float: float 9s ease-in-out infinite alternate;
 }
 
 /* Tokens: docs/DESIGN.md §2. Contraste AA comprobado en claro y oscuro. */
@@ -212,6 +215,25 @@
     transform: scale(0.6);
   }
 }
+/* Selección nueva (día elegido, pestaña activa): se asienta en su sitio */
+@keyframes settle {
+  from {
+    opacity: 0.4;
+    transform: scale(0.85);
+  }
+}
+/* Barra de progreso que se llena al entrar */
+@keyframes grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+/* Única animación ambiental: el brillo de la franja de bienvenida, lento y sin cambios bruscos */
+@keyframes float {
+  to {
+    transform: translate(-2.5rem, 1.5rem) scale(1.15);
+  }
+}
 /* Degradado de la acción principal: de primary a primary-strong (el texto cumple AA sobre los dos) */
 @utility bg-brand-gradient {
   background-image: linear-gradient(135deg, var(--primary), var(--primary-strong));
@@ -219,6 +241,10 @@
 /* Fondo destacado suave (tarjeta de bienvenida, cifras): primary al 12 % sobre la tarjeta */
 @utility bg-brand-glow {
   background-image: linear-gradient(135deg, color-mix(in oklab, var(--primary) 12%, var(--card)), var(--card) 70%);
+}
+/* Franja de bienvenida de «Inicio»: primary al 10 % arriba que se funde con el fondo */
+@utility bg-brand-hero {
+  background-image: linear-gradient(170deg, color-mix(in oklab, var(--primary) 10%, var(--background)), var(--background) 85%);
 }
 /* Entrada escalonada de los bloques de una pantalla (máx. 240 ms de retraso) */
 @utility stagger {

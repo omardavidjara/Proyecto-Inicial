@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/empty-state"
 import { Button } from "@/components/ui/button"
 import { DayPicker } from "@/components/sessions/day-picker"
 import { PlanSummaryBar } from "@/components/sessions/plan-summary"
-import { SessionCard } from "@/components/sessions/session-card"
+import { SessionTimeline } from "@/components/sessions/session-timeline"
 import { getBookingSettings, getMyBookingToChange, getMyCalendarDay, getMyPlanSummary } from "@/lib/dal"
 import { addDays, formatDayLabel, formatDayLong, isDateKey, toDateKey, toTimeKey } from "@/lib/dates"
 
@@ -65,27 +65,21 @@ export default async function CalendarPage({
             description="No hay sesiones programadas. Elige otro día."
           />
         ) : (
-          <ul className="flex flex-col gap-2">
-            {sessions.map((s) => (
-              <li key={s.id}>
-                <SessionCard
-                  session={{
-                    href: withChange(`/calendario/${s.id}`),
-                    start: toTimeKey(s.startsAt, settings.timeZone),
-                    end: toTimeKey(s.endsAt, settings.timeZone),
-                    className: s.className,
-                    color: s.color,
-                    subtitle: s.coachName ?? "Sin entrenador asignado",
-                    capacity: s.capacity,
-                    booked: s.booked,
-                    status: s.status,
-                    closed: s.startsAt <= now,
-                    myBooking: s.myBooking ?? undefined,
-                  }}
-                />
-              </li>
-            ))}
-          </ul>
+          <SessionTimeline
+            sessions={sessions.map((s) => ({
+              href: withChange(`/calendario/${s.id}`),
+              start: toTimeKey(s.startsAt, settings.timeZone),
+              end: toTimeKey(s.endsAt, settings.timeZone),
+              className: s.className,
+              color: s.color,
+              subtitle: s.coachName ?? "Sin entrenador asignado",
+              capacity: s.capacity,
+              booked: s.booked,
+              status: s.status,
+              closed: s.startsAt <= now,
+              myBooking: s.myBooking ?? undefined,
+            }))}
+          />
         )}
       </section>
     </Page>

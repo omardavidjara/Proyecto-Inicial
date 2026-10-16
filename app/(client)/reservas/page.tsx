@@ -5,7 +5,7 @@ import { Page } from "@/components/app-shell/app-shell"
 import { EmptyState } from "@/components/empty-state"
 import { BookingHistory } from "@/components/sessions/booking-history"
 import { PlanSummaryTiles } from "@/components/sessions/plan-summary"
-import { SessionCard } from "@/components/sessions/session-card"
+import { SessionTimeline } from "@/components/sessions/session-timeline"
 import { Button } from "@/components/ui/button"
 import { toHistoryEntries } from "@/lib/booking-history"
 import type { MyBookingRow } from "@/lib/data/my-bookings"
@@ -57,30 +57,24 @@ export default async function MisReservasPage() {
           [...days].map(([day, bookings]) => (
             <div key={day} className="flex flex-col gap-1.5">
               <h3 className="text-sm font-medium text-primary">{formatDayLabel(day, today)}</h3>
-              <ul className="flex flex-col gap-2">
-                {bookings.map((b) => (
-                  <li key={b.id}>
-                    <SessionCard
-                      session={{
-                        href: `/calendario/${b.sessionId}`,
-                        start: toTimeKey(b.startsAt, timeZone),
-                        end: toTimeKey(b.endsAt, timeZone),
-                        className: b.className,
-                        color: b.color,
-                        subtitle: b.coachName ?? "Sin entrenador asignado",
-                        capacity: b.capacity,
-                        booked: b.booked,
-                        status: b.sessionStatus,
-                        closed: false,
-                        myBooking: {
-                          status: b.status as "confirmed" | "waitlisted",
-                          waitlistPosition: b.waitlistPosition,
-                        },
-                      }}
-                    />
-                  </li>
-                ))}
-              </ul>
+              <SessionTimeline
+                sessions={bookings.map((b) => ({
+                  href: `/calendario/${b.sessionId}`,
+                  start: toTimeKey(b.startsAt, timeZone),
+                  end: toTimeKey(b.endsAt, timeZone),
+                  className: b.className,
+                  color: b.color,
+                  subtitle: b.coachName ?? "Sin entrenador asignado",
+                  capacity: b.capacity,
+                  booked: b.booked,
+                  status: b.sessionStatus,
+                  closed: false,
+                  myBooking: {
+                    status: b.status as "confirmed" | "waitlisted",
+                    waitlistPosition: b.waitlistPosition,
+                  },
+                }))}
+              />
             </div>
           ))
         )}

@@ -1,14 +1,13 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Bell, CalendarPlus, Ticket } from "lucide-react"
+import { Bell, CalendarPlus } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
-import { EmptyState } from "@/components/empty-state"
 import { InstallLink } from "@/components/pwa/install-link"
 import { PlanSummaryTiles } from "@/components/sessions/plan-summary"
-import { SessionCard } from "@/components/sessions/session-card"
+import { NextClassHero } from "@/components/sessions/next-class-hero"
 import { Button } from "@/components/ui/button"
 import { getBookingSettings, getMyFirstName, getMyNextBooking, getMyPlanSummary } from "@/lib/dal"
-import { formatDayLabel, toDateKey, toTimeKey } from "@/lib/dates"
+import { formatDayLabel, formatStartsIn, toDateKey, toTimeKey } from "@/lib/dates"
 
 export const metadata: Metadata = { title: "Inicio" }
 
@@ -21,7 +20,8 @@ export default async function ClientHomePage() {
     getBookingSettings(),
   ])
   const { timeZone } = settings
-  const today = toDateKey(new Date(), timeZone)
+  const now = new Date()
+  const today = toDateKey(now, timeZone)
 
   return (
     <Page
@@ -36,33 +36,21 @@ export default async function ClientHomePage() {
         </Link>
       }
     >
-      <section aria-labelledby="next-title" className="flex flex-col gap-3">
-        <h2 id="next-title" className="text-lg font-semibold">
-          Tu próxima clase
-        </h2>
-        {next ? (
-          <div className="flex flex-col gap-1.5">
-            <p className="text-sm font-medium text-primary">{formatDayLabel(toDateKey(next.startsAt, timeZone), today)}</p>
-            <SessionCard
-              session={{
-                href: `/calendario/${next.sessionId}`,
-                start: toTimeKey(next.startsAt, timeZone),
-                end: toTimeKey(next.endsAt, timeZone),
-                className: next.className,
-                color: next.color,
-                subtitle: next.coachName ?? "Sin entrenador asignado",
-                capacity: next.capacity,
-                booked: next.booked,
-                status: next.sessionStatus,
-                closed: false,
-                myBooking: { status: "confirmed" },
-              }}
-            />
-          </div>
-        ) : (
-          <EmptyState icon={<Ticket />} title="No tienes clases reservadas" description="Reserva tu próxima clase desde el calendario." />
-        )}
-      </section>
+      <NextClassHero
+        next={
+          next && {
+            href: `/calendario/${next.sessionId}`,
+            dayLabel: formatDayLabel(toDateKey(next.startsAt, timeZone), today),
+            start: toTimeKey(next.startsAt, timeZone),
+            end: toTimeKey(next.endsAt, timeZone),
+            className: next.className,
+            color: next.color,
+            coachName: next.coachName,
+            startsIn: formatStartsIn(next.startsAt, now),
+            soon: next.startsAt.getTime() - now.getTime() < 60 * 60_000,
+          }
+        }
+      />
 
       <PlanSummaryTiles summary={plan} />
 
