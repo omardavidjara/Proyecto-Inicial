@@ -1,7 +1,7 @@
 "use client"
 
 import { useActionState, useEffect, useState } from "react"
-import { Loader2, Search, UserPlus } from "lucide-react"
+import { Loader2, UserPlus } from "lucide-react"
 import { toast } from "sonner"
 import {
   createIndividualSessionAction,
@@ -10,6 +10,7 @@ import {
   type IndividualSessionFormState,
 } from "@/app/entrenador/actions"
 import { FieldError, SELECT } from "@/components/admin/schedule-slot-form"
+import { ClientInitial, ClientSearch } from "@/components/client-search"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -134,7 +135,7 @@ function IndividualSessionForm({ classTypes, today }: { classTypes: IndividualCl
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium">Cliente</span>
           <div className="flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2">
-            <Initial name={client.fullName} />
+            <ClientInitial name={client.fullName} />
             <span className="flex-1 font-medium">{client.fullName}</span>
             <Button type="button" variant="ghost" onClick={() => setClient(null)} aria-label={`Cambiar el cliente ${client.fullName}`}>
               Cambiar
@@ -143,7 +144,7 @@ function IndividualSessionForm({ classTypes, today }: { classTypes: IndividualCl
           <FieldError id="clientId-error" message={errors.clientId} />
         </div>
       ) : (
-        <ClientSearch onPick={setClient} error={errors.clientId} />
+        <ClientSearch search={searchCoachClientsAction} onPick={setClient} error={errors.clientId} emptyText="Ningún cliente activo con ese nombre" />
       )}
 
       <DialogFooter>
@@ -158,75 +159,5 @@ function IndividualSessionForm({ classTypes, today }: { classTypes: IndividualCl
         </Button>
       </DialogFooter>
     </form>
-  )
-}
-
-/** Buscar un cliente activo por nombre (al menos 2 letras) */
-function ClientSearch({ onPick, error }: { onPick: (client: CoachClientOption) => void; error?: string }) {
-  const [query, setQuery] = useState("")
-  const [results, setResults] = useState<CoachClientOption[] | null>(null)
-
-  useEffect(() => {
-    const q = query.trim()
-    if (q.length < 2) return
-    let stale = false
-    const timer = setTimeout(async () => {
-      const found = await searchCoachClientsAction(q)
-      if (!stale) setResults(found)
-    }, 250)
-    return () => {
-      stale = true
-      clearTimeout(timer)
-    }
-  }, [query])
-
-  const shown = query.trim().length < 2 ? null : results
-
-  return (
-    <div className="flex flex-col gap-2">
-      <Label htmlFor="client-search">Cliente</Label>
-      <div className="relative">
-        <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          id="client-search"
-          type="search"
-          autoComplete="off"
-          className="pl-9"
-          placeholder="Escribe al menos 2 letras"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={error ? "clientId-error" : undefined}
-        />
-      </div>
-      <FieldError id="clientId-error" message={error} />
-      <div aria-live="polite">
-        {shown && shown.length === 0 && <p className="py-3 text-center text-sm text-muted-foreground">Ningún cliente activo con ese nombre</p>}
-        {shown && shown.length > 0 && (
-          <ul className="flex max-h-60 flex-col divide-y overflow-y-auto rounded-xl border">
-            {shown.map((option) => (
-              <li key={option.userId}>
-                <button
-                  type="button"
-                  onClick={() => onPick(option)}
-                  className="flex min-h-12 w-full items-center gap-3 px-3 py-2 text-left outline-none hover:bg-muted focus-visible:bg-muted"
-                >
-                  <Initial name={option.fullName} />
-                  <span className="flex-1 font-medium">{option.fullName}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
-  )
-}
-
-function Initial({ name }: { name: string }) {
-  return (
-    <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-medium">
-      {name.charAt(0).toUpperCase()}
-    </span>
   )
 }

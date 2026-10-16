@@ -19,6 +19,7 @@ import * as bookingData from "@/lib/data/bookings"
 import * as calendar from "@/lib/data/calendar"
 import * as myBookings from "@/lib/data/my-bookings"
 import * as classTypes from "@/lib/data/class-types"
+import * as incidents from "@/lib/data/incidents"
 import * as individualSessions from "@/lib/data/individual-sessions"
 import * as clients from "@/lib/data/clients"
 import * as memberships from "@/lib/data/memberships"
@@ -38,6 +39,7 @@ import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
 import type { ClassTypeInput } from "@/lib/validation/class-types"
+import { INCIDENT_MAX_LIMIT, INCIDENT_PAGE_SIZE, type IncidentInput, type IncidentStatus, type NewIncidentInput } from "@/lib/validation/incidents"
 import type { PlanInput } from "@/lib/validation/plans"
 import type { IndividualSessionInput, OneOffSessionInput, ScheduleSlotInput, SessionInput } from "@/lib/validation/schedule"
 
@@ -277,15 +279,27 @@ export async function getClientProfileForAdmin(userId: unknown) {
   const client = await clients.getClient(db, parsed.data, today)
   if (!client) return null
   const id = client.userId
-  const [email, plan, planHistory, upcoming, history, activity] = await Promise.all([
+  const [email, plan, planHistory, upcoming, history, activity, clientIncidents] = await Promise.all([
     clients.getAuthEmail(db, id),
     memberships.getPlanSummary(db, id, today),
     memberships.listMemberships(db, [id]),
     myBookings.listUpcomingBookings(db, id, now),
     myBookings.listBookingHistory(db, id, { now }),
     clients.summarizeClientActivity(db, id, new Date(now.getTime() - CLIENT_ACTIVITY_DAYS * 86_400_000), now),
+    incidents.listClientIncidents(db, id),
   ])
-  return { client, email, plan, planHistory: planHistory.get(id) ?? [], upcoming, history, activity, today, timeZone: settings.timeZone }
+  return {
+    client,
+    email,
+    plan,
+    planHistory: planHistory.get(id) ?? [],
+    upcoming,
+    history,
+    activity,
+    incidents: clientIncidents,
+    today,
+    timeZone: settings.timeZone,
+  }
 }
 
 /** Siguiente página del historial de un cliente; el cursor se valida en la capa de datos */
@@ -699,4 +713,55 @@ export async function searchClientsForCoach(query: unknown) {
 export async function createIndividualSession(input: IndividualSessionInput) {
   const viewer = await requireArea("coach")
   return individualSessions.createIndividualSession(getTxDb(), viewer.userId, input)
+}
+
+// ── Incidencias (F9, administración) ────────────────────────────────────────────────────────────────────
+// Los ids llegan del navegador: se validan en la capa de datos. El estado y el límite llegan por la URL.
+
+const incidentLimitSchema = z.coerce
+  .number()
+  .int()
+  .min(INCIDENT_PAGE_SIZE)
+  .max(INCIDENT_MAX_LIMIT)
+  .catch(INCIDENT_PAGE_SIZE)
+
+export async function listIncidentsForAdmin(status: IncidentStatus, limit?: unknown) {
+  await requireArea("admin")
+  return incidents.listIncidents(getDb(), status, { limit: incidentLimitSchema.parse(limit) })
+}
+
+export async function countIncidentsForAdmin() {
+  await requireArea("admin")
+  return incidents.countIncidentsByStatus(getDb())
+}
+
+/** La incidencia con su cliente, sesión y autor, o `null` */
+export async function getIncidentForAdmin(id: unknown) {
+  await requireArea("admin")
+  const db = getDb()
+  const incident = await incidents.getIncident(db, id)
+  if (!incident) return null
+  const settings = await bookingData.getBookingSettings(db)
+  return { incident, timeZone: settings.timeZone }
+}
+
+export async function searchClientsForIncident(query: unknown) {
+  await requireArea("admin")
+  return incidents.searchClientsForIncident(getDb(), query)
+}
+
+/** `input` ya validado con Zod en la acción; quien la abre sale de la sesión verificada */
+export async function createIncidentForAdmin(input: NewIncidentInput) {
+  const viewer = await requireArea("admin")
+  return incidents.createIncident(getDb(), viewer.userId, input)
+}
+
+export async function updateIncidentForAdmin(id: unknown, input: IncidentInput) {
+  await requireArea("admin")
+  return incidents.updateIncident(getDb(), id, input)
+}
+
+export async function setIncidentStatusForAdmin(id: unknown, status: IncidentStatus) {
+  await requireArea("admin")
+  return incidents.setIncidentStatus(getDb(), id, status)
 }

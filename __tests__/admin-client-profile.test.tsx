@@ -15,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   listUpcomingBookings: vi.fn(),
   listBookingHistory: vi.fn(),
   listPlans: vi.fn(),
+  listClientIncidents: vi.fn(),
   redirect: vi.fn((url: string) => {
     throw new Error(`NEXT_REDIRECT ${url}`)
   }),
@@ -33,6 +34,7 @@ vi.mock('@/lib/data/memberships', () => ({ getPlanSummary: mocks.getPlanSummary,
 vi.mock('@/lib/data/my-bookings', () => ({ listUpcomingBookings: mocks.listUpcomingBookings, listBookingHistory: mocks.listBookingHistory }))
 vi.mock('@/lib/data/bookings', () => ({ getBookingSettings: async () => ({ timeZone: 'Europe/Madrid', bookingWindowDays: 7, cancelDeadlineMinutes: 120 }) }))
 vi.mock('@/lib/data/plans', () => ({ listPlans: mocks.listPlans }))
+vi.mock('@/lib/data/incidents', () => ({ listClientIncidents: mocks.listClientIncidents }))
 vi.mock('@/db', () => ({ getDb: () => 'http-db', getTxDb: () => 'tx-db' }))
 vi.mock('next/headers', () => ({ cookies: vi.fn(async () => ({})), headers: vi.fn(async () => new Headers()) }))
 vi.mock('next/navigation', () => ({
@@ -96,6 +98,7 @@ beforeEach(() => {
   })
   mocks.summarizeClientActivity.mockResolvedValue({ attended: 4, noShow: 1, unmarked: 2, lateCancelled: 0, cancelled: 3 })
   mocks.listPlans.mockResolvedValue([])
+  mocks.listClientIncidents.mockResolvedValue([])
 })
 
 describe('permisos', () => {
@@ -145,6 +148,37 @@ describe('página', () => {
     const history = screen.getByRole('region', { name: 'Historial' })
     expect(within(history).getByText('Falta sin avisar')).toBeTruthy()
     expect(within(history).getByRole('link').getAttribute('href')).toBe(`/admin/sesiones/${SESSION_ID}`)
+    expect(within(screen.getByRole('region', { name: 'Incidencias' })).getByText('Sin incidencias')).toBeTruthy()
+  })
+
+  test('incidencias del cliente: estado, prioridad y enlace a su detalle', async () => {
+    mocks.listClientIncidents.mockResolvedValue([
+      {
+        id: 'i-1',
+        title: 'Taquilla rota',
+        description: 'No cierra',
+        priority: 'high',
+        status: 'in_progress',
+        createdAt: new Date('2026-10-10T10:00:00Z'),
+        updatedAt: new Date('2026-10-10T10:00:00Z'),
+        closedAt: null,
+        clientId: CLIENT_ID,
+        clientName: 'Ana Prueba',
+        sessionId: null,
+        sessionStartsAt: null,
+        sessionClassName: null,
+        createdById: 'admin-1',
+        createdByName: 'Admin',
+      },
+    ])
+    render(await page(CLIENT_ID))
+    expect(mocks.listClientIncidents).toHaveBeenCalledWith('http-db', CLIENT_ID)
+    const section = screen.getByRole('region', { name: 'Incidencias' })
+    const link = within(section).getByRole('link', { name: /Taquilla rota/ })
+    expect(link.getAttribute('href')).toBe('/admin/incidencias/i-1')
+    expect(within(link).getByText('En curso')).toBeTruthy()
+    expect(within(link).getByText('Prioridad alta')).toBeTruthy()
+    expect(within(section).getByRole('button', { name: 'Nueva incidencia' })).toBeTruthy()
   })
 
   test('sin correo ni tarifa: lo dice sin fallar', async () => {
