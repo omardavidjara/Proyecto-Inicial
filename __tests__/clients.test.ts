@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 import { bookings, classTypes, profiles, sessions } from '@/db/schema'
 import {
   approveClient,
+  countClientsByStatus,
   countPendingClients,
   deactivateClient,
   listClients,
@@ -134,6 +135,24 @@ describe('listas', () => {
     await client({ status: 'active' })
 
     expect((await listClients(db, 'pending')).map((c) => c.userId)).toEqual([old, recent])
+    expect((await listClients(db, 'pending', { limit: 1 })).map((c) => c.userId)).toEqual([old])
     expect(await countPendingClients(db)).toBe(2)
+  })
+  test('búsqueda por nombre sin distinguir mayúsculas, con los comodines como texto, y recuentos por estado', async () => {
+    await db.delete(bookings)
+    await db.delete(profiles)
+    const ana = await client({ fullName: 'Ana García', status: 'active' })
+    const mariana = await client({ fullName: 'Mariana López', status: 'inactive' })
+    await client({ fullName: 'Luis Pérez', status: 'active' })
+    await client({ fullName: '100% Ana', status: 'pending' })
+    await client({ fullName: 'Ana Entrenadora', role: 'coach', isCoach: true, status: 'active' })
+    await client({ fullName: 'Ana Borrada', status: 'inactive', deletedAt: new Date() })
+
+    expect((await listClients(db, 'active', { query: '  aNa ' })).map((c) => c.userId)).toEqual([ana])
+    expect((await listClients(db, 'inactive', { query: 'ana' })).map((c) => c.userId)).toEqual([mariana])
+    expect(await countClientsByStatus(db, 'ana')).toEqual({ pending: 1, active: 1, inactive: 1 })
+    expect(await countClientsByStatus(db, '%')).toEqual({ pending: 1, active: 0, inactive: 0 })
+    expect(await countClientsByStatus(db, '_')).toEqual({ pending: 0, active: 0, inactive: 0 })
+    expect(await countClientsByStatus(db)).toEqual({ pending: 1, active: 2, inactive: 1 })
   })
 })

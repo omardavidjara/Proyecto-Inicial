@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   reactivateClient: vi.fn(),
   listClients: vi.fn(),
   countPendingClients: vi.fn(),
+  countClientsByStatus: vi.fn(),
   changeClientPlan: vi.fn(),
   listPlans: vi.fn(),
   listMemberships: vi.fn(),
@@ -31,6 +32,9 @@ vi.mock('@/lib/data/clients', () => ({
   reactivateClient: mocks.reactivateClient,
   listClients: mocks.listClients,
   countPendingClients: mocks.countPendingClients,
+  countClientsByStatus: mocks.countClientsByStatus,
+  CLIENT_PAGE_SIZE: 50,
+  CLIENT_MAX_LIMIT: 500,
   changeClientPlan: mocks.changeClientPlan,
 }))
 vi.mock('@/lib/data/plans', () => ({ listPlans: mocks.listPlans }))
@@ -67,6 +71,7 @@ beforeEach(() => {
     { id: 'old', name: 'Antigua', period: 'week', classesPerPeriod: 2, isActive: false, clients: 0 },
   ])
   mocks.listMemberships.mockResolvedValue(new Map())
+  mocks.countClientsByStatus.mockResolvedValue({ pending: 1, active: 1, inactive: 0 })
 })
 
 describe('acción de altas y bajas', () => {
@@ -121,9 +126,9 @@ describe('/admin/clientes', () => {
   test('por defecto, pendientes: pestaña marcada y botones de aprobar y rechazar', async () => {
     mocks.listClients.mockResolvedValue([row('pending')])
     render(await ClientesPage({ params: Promise.resolve({}), searchParams: Promise.resolve({}) }))
-    expect(mocks.listClients).toHaveBeenCalledWith('http-db', 'pending')
+    expect(mocks.listClients).toHaveBeenCalledWith('http-db', 'pending', { query: '', limit: 50 })
     const tabs = screen.getByRole('navigation', { name: 'Estado de los clientes' })
-    expect(within(tabs).getByRole('link', { name: 'Pendientes' }).getAttribute('aria-current')).toBe('page')
+    expect(within(tabs).getByRole('link', { name: /^Pendientes/ }).getAttribute('aria-current')).toBe('page')
     expect(screen.getByText('Ana Prueba')).toBeDefined()
     expect(screen.getByRole('link', { name: '600112233' }).getAttribute('href')).toBe('tel:600112233')
     expect(screen.getByRole('button', { name: 'Aprobar' })).toBeDefined()
@@ -133,7 +138,7 @@ describe('/admin/clientes', () => {
   test('activos: dar de baja', async () => {
     mocks.listClients.mockResolvedValue([row('active', { approvedAt: new Date('2026-10-06T10:00:00Z') })])
     render(await ClientesPage({ params: Promise.resolve({}), searchParams: Promise.resolve({ estado: 'activo' }) }))
-    expect(mocks.listClients).toHaveBeenCalledWith('http-db', 'active')
+    expect(mocks.listClients).toHaveBeenCalledWith('http-db', 'active', { query: '', limit: 50 })
     expect(screen.getByRole('button', { name: 'Dar de baja' })).toBeDefined()
   })
 
@@ -146,7 +151,44 @@ describe('/admin/clientes', () => {
   test('un estado inventado en la URL cae en pendientes', async () => {
     mocks.listClients.mockResolvedValue([])
     render(await ClientesPage({ params: Promise.resolve({}), searchParams: Promise.resolve({ estado: 'todos' }) }))
-    expect(mocks.listClients).toHaveBeenCalledWith('http-db', 'pending')
+    expect(mocks.listClients).toHaveBeenCalledWith('http-db', 'pending', { query: '', limit: 50 })
+  })
+  test('pestañas con su recuento; buscar conserva la pestaña y la pestaña conserva la búsqueda', async () => {
+    mocks.listClients.mockResolvedValue([row('active')])
+    mocks.countClientsByStatus.mockResolvedValue({ pending: 2, active: 1, inactive: 4 })
+    render(await ClientesPage({ params: Promise.resolve({}), searchParams: Promise.resolve({ estado: 'activo', q: '  ana ' }) }))
+    expect(mocks.listClients).toHaveBeenCalledWith('http-db', 'active', { query: 'ana', limit: 50 })
+    expect(mocks.countClientsByStatus).toHaveBeenCalledWith('http-db', 'ana')
+    const tabs = screen.getByRole('navigation', { name: 'Estado de los clientes' })
+    expect(within(tabs).getByRole('link', { name: 'Baja 4' }).getAttribute('href')).toBe('/admin/clientes?estado=baja&q=ana')
+    const search = screen.getByRole('search')
+    expect((within(search).getByLabelText('Buscar por nombre') as HTMLInputElement).value).toBe('ana')
+    expect((search.querySelector('input[name=estado]') as HTMLInputElement).value).toBe('activo')
+    expect(screen.queryByRole('link', { name: /Ver más/ })).toBeNull()
+  })
+
+  test('sin resultados de la búsqueda: lo dice', async () => {
+    mocks.listClients.mockResolvedValue([])
+    render(await ClientesPage({ params: Promise.resolve({}), searchParams: Promise.resolve({ estado: 'baja', q: 'zz' }) }))
+    expect(screen.getByText('Ningún cliente coincide con «zz»')).toBeTruthy()
+  })
+
+  test('«Ver más» pide 50 más y la URL no deja pasar límites raros', async () => {
+    mocks.listClients.mockResolvedValue(Array.from({ length: 50 }, (_, i) => row('pending', { userId: `u${i}` })))
+    mocks.countClientsByStatus.mockResolvedValue({ pending: 120, active: 0, inactive: 0 })
+    render(await ClientesPage({ params: Promise.resolve({}), searchParams: Promise.resolve({ limite: '99999' }) }))
+    expect(mocks.listClients).toHaveBeenCalledWith('http-db', 'pending', { query: '', limit: 50 })
+    expect(screen.getByRole('link', { name: 'Ver más (50 de 120)' }).getAttribute('href')).toBe('/admin/clientes?estado=pendiente&limite=100')
+    cleanup()
+    render(await ClientesPage({ params: Promise.resolve({}), searchParams: Promise.resolve({ limite: '100' }) }))
+    expect(mocks.listClients).toHaveBeenLastCalledWith('http-db', 'pending', { query: '', limit: 100 })
+  })
+
+  test('solo administración ve la lista', async () => {
+    as('coach')
+    await expect(ClientesPage({ params: Promise.resolve({}), searchParams: Promise.resolve({}) })).rejects.toThrow('NEXT_REDIRECT')
+    expect(mocks.listClients).not.toHaveBeenCalled()
+    expect(mocks.countClientsByStatus).not.toHaveBeenCalled()
   })
 })
 
