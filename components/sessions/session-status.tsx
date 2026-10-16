@@ -7,6 +7,8 @@ export type SessionStatusInput = {
   booked: number
   status: "scheduled" | "cancelled"
   closed: boolean
+  /** «Se abre el lun 26 oct» mientras aún no se puede reservar */
+  opensLabel?: string
   myBooking?: { status: "confirmed" | "waitlisted" | "late_cancelled"; waitlistPosition?: number }
 }
 
@@ -29,6 +31,7 @@ export function SessionStatusBadge({ session }: { session: SessionStatusInput })
     )
   if (session.myBooking?.status === "late_cancelled") return <Badge variant="destructive">Anulación tardía</Badge>
   if (session.closed) return <Badge variant="secondary">Cerrada</Badge>
+  if (session.opensLabel) return <Badge variant="outline">{session.opensLabel}</Badge>
 
   const { kind, label } = availability(session.capacity, session.booked)
   if (kind === "full") return <Badge variant="secondary">Completa · lista de espera</Badge>

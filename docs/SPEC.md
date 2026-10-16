@@ -59,7 +59,7 @@ Orden = prioridad de implementación en la Fase 5 (cada una es una rama).
 - El cobro se hace **fuera de la app** por ahora.
 
 ### F5. Calendario y reservas (cliente)
-- Calendario por días con las sesiones, plazas libres y estado de la reserva propia.
+- Calendario con vistas **Día · Semana · Mes** (desde hoy en adelante) con las sesiones, plazas libres y estado de la reserva propia. El mes muestra todas las sesiones generadas; las que aún no admiten reserva llevan «Se abre …» y no se pueden reservar hasta entonces.
 - **Reservar**: solo si la sesión está abierta, hay plaza, el cliente tiene una **tarifa vigente** y le quedan clases en el periodo.
 - **Modificar**: cambiar una reserva a otra sesión (= anular + reservar, en una sola acción).
 - **Anular**: libera la plaza.
@@ -123,7 +123,7 @@ Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada 
 
 **Cliente** (navegación inferior: Inicio · Calendario · Mis reservas; Perfil arriba a la derecha, en la cabecera)
 - **Inicio**: saludo, próxima clase reservada, clases que le quedan en el periodo, últimos avisos y botón "Reservar clase"
-- Calendario (selector de día + lista de sesiones)
+- Calendario (Día · Semana · Mes; en Día, selector de los días que admiten reserva + lista de sesiones)
 - Detalle de sesión (reservar / anular / lista de espera)
 - Mis reservas (próximas, historial, clases restantes)
 - Avisos (desde Inicio y el icono de campana de la cabecera)
@@ -191,6 +191,7 @@ Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada 
 
 ## 9. Historial de cambios
 
+- 2026-10-17 · Calendario del cliente con vistas Día · Semana · Mes; las sesiones fuera de la ventana de reserva llevan «Se abre …» (opción a).
 - 2026-10-16 · Primera entrada: nombre y apellidos y teléfono obligatorios para todos («Completa tus datos»), para que el gimnasio sepa quién es cada cliente que se registra.
 - 2026-10-16 · Pantalla «Instalar la app» (`/instalar`, pública): botón «Instalar» en Android cuando el navegador lo ofrece y pasos para Android e iPhone; avisa de que en iPhone las push necesitan la app instalada.
 
