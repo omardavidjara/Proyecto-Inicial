@@ -90,6 +90,8 @@ describe('listas y recuentos', () => {
   test('por estado, la más reciente primero; el límite corta', async () => {
     const first = await open()
     const second = await open()
+    // Creadas en el mismo milisegundo empatarían: la primera, un minuto antes
+    await db.update(incidents).set({ createdAt: new Date(Date.now() - 60_000) }).where(eq(incidents.id, first))
     const list = await listIncidents(db, 'open', { limit: 500 })
     expect(list.findIndex((i) => i.id === second)).toBeLessThan(list.findIndex((i) => i.id === first))
     expect(await listIncidents(db, 'open', { limit: 1 })).toHaveLength(1)
