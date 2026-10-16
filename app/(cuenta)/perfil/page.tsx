@@ -23,7 +23,7 @@ export default async function PerfilPage() {
   }
   if (!canAccessArea(viewer, "client")) redirect("/entrenador/perfil")
   return (
-    <AppShell nav={clientNav} navLabel="Navegación principal">
+    <AppShell nav={clientNav} navLabel="Navegación principal" profileHref="/perfil">
       <Page title="Perfil">
         <ProfileView profile={profile} deletion={deletion} />
       </Page>

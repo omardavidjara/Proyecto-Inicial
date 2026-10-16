@@ -5,23 +5,20 @@ import {
   Menu,
   Ticket,
   TriangleAlert,
-  User,
   Users,
 } from "lucide-react"
 import type { NavItem } from "./bottom-nav"
 
-// docs/SPEC.md §4: navegación de cada rol
+// docs/SPEC.md §4: navegación de cada rol. El perfil va arriba a la derecha, en la cabecera (AppShell profileHref)
 export const clientNav: NavItem[] = [
   { href: "/inicio", label: "Inicio", icon: <House /> },
   { href: "/calendario", label: "Calendario", icon: <CalendarDays /> },
   { href: "/reservas", label: "Mis reservas", icon: <Ticket /> },
-  { href: "/perfil", label: "Perfil", icon: <User /> },
 ]
 
 export const coachNav: NavItem[] = [
   { href: "/entrenador", label: "Mi semana", icon: <CalendarRange /> },
   { href: "/entrenador/incidencias", label: "Incidencias", icon: <TriangleAlert /> },
-  { href: "/entrenador/perfil", label: "Perfil", icon: <User /> },
 ]
 
 export const adminNav: NavItem[] = [

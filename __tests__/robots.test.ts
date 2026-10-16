@@ -1,6 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 
-vi.mock('next/font/google', () => ({ Geist: () => ({ variable: '' }), Geist_Mono: () => ({ variable: '' }) }))
+vi.mock('next/font/google', () => ({ Geist: () => ({ variable: '' }), Geist_Mono: () => ({ variable: '' }), Cinzel: () => ({ variable: '' }) }))
 vi.mock('@/lib/dal', () => ({ getSessionUser: vi.fn(async () => null) }))
 vi.mock('@/lib/auth-client', () => ({ authClient: { signIn: { social: vi.fn() } } }))
 vi.mock('../app/(auth)/actions', () => ({ signInWithEmail: vi.fn(), signOut: vi.fn() }))
