@@ -31,12 +31,12 @@ export default async function SessionPage({
   const now = new Date()
   const today = toDateKey(now, timeZone)
   const day = toDateKey(session.startsAt, timeZone)
-  const state = bookingWindow(session.startsAt, now, settings)
+  const state = bookingWindow(session.startsAt, now, settings, timeZone)
   const { remaining } = availability(session.capacity, session.booked)
   const percent = Math.min(100, Math.round((session.booked / session.capacity) * 100))
   const deadline = formatMinutes(settings.cancelDeadlineMinutes)
   const live = session.myBooking && session.myBooking.status !== "late_cancelled" ? session.myBooking : null
-  const opensAt = bookingOpensAt(session.startsAt, settings)
+  const opensAt = bookingOpensAt(session.startsAt, settings, timeZone)
   const disabledReason =
     session.status === "cancelled"
       ? "Sesión cancelada"

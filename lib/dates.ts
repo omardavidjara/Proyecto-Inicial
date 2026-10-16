@@ -22,6 +22,33 @@ export function toTimeKey(date: Date, timeZone = GYM_TIME_ZONE): string {
   return new Intl.DateTimeFormat("en-GB", { timeZone, hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(date)
 }
 
+/**
+ * El mismo instante de reloj `days` días de calendario antes o después, en esa zona: cruzar un cambio de hora no
+ * desplaza la hora local (sumar bloques de 24 h sí lo haría)
+ */
+export function addLocalDays(date: Date, days: number, timeZone = GYM_TIME_ZONE): Date {
+  const wall = date.getTime() + offsetAt(date, timeZone) + days * 86_400_000
+  const guess = new Date(wall - offsetAt(date, timeZone))
+  return new Date(wall - offsetAt(guess, timeZone))
+}
+
+/** Lo que va adelantada la hora local de esa zona respecto a UTC en ese instante, en ms */
+function offsetAt(date: Date, timeZone: string): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(date)
+  const get = (type: string) => Number(parts.find((part) => part.type === type)?.value)
+  const local = Date.UTC(get("year"), get("month") - 1, get("day"), get("hour"), get("minute"), get("second"))
+  return local - Math.floor(date.getTime() / 1000) * 1000
+}
+
 export function addDays(key: string, days: number): string {
   const date = toUtcNoon(key)
   date.setUTCDate(date.getUTCDate() + days)
