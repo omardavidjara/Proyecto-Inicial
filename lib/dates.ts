@@ -57,6 +57,17 @@ export function formatDayNumber(key: string): string {
 }
 
 /** "Hoy", "Mañana" o "lun 6 oct" */
+/** «Empieza en 25 min», «Empieza en 1 h 30 min», «Empieza en 5 h»; null si falta 12 h o más */
+export function formatStartsIn(startsAt: Date, now: Date): string | null {
+  const minutes = Math.ceil((startsAt.getTime() - now.getTime()) / 60_000)
+  if (minutes <= 0) return "Ya ha empezado"
+  if (minutes < 60) return `Empieza en ${minutes} min`
+  if (minutes >= 12 * 60) return null
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  return hours < 3 && rest > 0 ? `Empieza en ${hours} h ${rest} min` : `Empieza en ${hours} h`
+}
+
 export function formatDayLabel(key: string, today: string): string {
   if (key === today) return "Hoy"
   if (key === addDays(today, 1)) return "Mañana"

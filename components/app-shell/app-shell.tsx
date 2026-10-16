@@ -56,7 +56,7 @@ export function Page({
   const width = wide ? "max-w-6xl" : "max-w-2xl"
   return (
     <>
-      <header className="sticky top-0 z-30 border-b bg-background/95 pt-safe backdrop-blur lg:-ml-[var(--shell-offset,0px)]">
+      <header className="sticky top-0 z-30 bg-background/95 pt-safe backdrop-blur lg:-ml-[var(--shell-offset,0px)]">
         <div className={cn("mx-auto grid h-16 grid-cols-[1fr_auto_1fr] items-center px-4 lg:max-w-none lg:px-6", width)}>
           <Link
             href="/"
@@ -70,8 +70,13 @@ export function Page({
             <ProfileLink />
           </div>
         </div>
+        {/* Línea inferior con el naranja del logo, más intensa en el centro (bajo la marca) */}
+        <span
+          aria-hidden="true"
+          className="absolute inset-x-0 bottom-0 h-px bg-[linear-gradient(90deg,var(--border),var(--brand),var(--border))]"
+        />
       </header>
-      <main id="contenido" tabIndex={-1} className={cn("mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-4 outline-none", width)}>
+      <main id="contenido" tabIndex={-1} className={cn("stagger mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-4 outline-none", width)}>
         <div className="flex min-h-11 items-center gap-1">
           {backHref && (
             <Link

@@ -9,7 +9,9 @@ export function EmptyState({ icon, title, description, action }: {
 }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed px-6 py-10 text-center">
-      <div className="text-muted-foreground [&_svg]:size-8" aria-hidden="true">{icon}</div>
+      <div className="flex size-14 animate-pop items-center justify-center rounded-full bg-primary/10 text-primary [&_svg]:size-7" aria-hidden="true">
+        {icon}
+      </div>
       <div className="flex flex-col gap-1">
         <p className="font-medium">{title}</p>
         {description && <p className="text-sm text-muted-foreground">{description}</p>}

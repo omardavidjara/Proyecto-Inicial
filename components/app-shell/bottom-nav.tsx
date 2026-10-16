@@ -45,14 +45,23 @@ export function BottomNav({ items, label }: { items: NavItem[]; label: string })
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex h-full flex-col items-center justify-center gap-1 rounded-lg text-xs font-medium text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-6",
+                  "group/nav flex h-full flex-col items-center justify-center gap-0.5 rounded-lg text-xs font-medium text-muted-foreground transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-6",
                   "lg:h-11 lg:flex-row lg:justify-start lg:gap-3 lg:px-3 lg:text-sm lg:[&_svg]:size-5",
+                  active && "lg:animate-settle",
                   active
                     ? "text-primary lg:bg-primary/10"
                     : "hover:text-foreground active:text-foreground lg:hover:bg-muted"
                 )}
               >
-                <span aria-hidden="true">{item.icon}</span>
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "flex h-8 w-14 items-center justify-center rounded-full transition-[background-color,transform] duration-200 lg:h-auto lg:w-auto",
+                    active ? "animate-settle bg-primary/10 lg:animate-none lg:bg-transparent" : "group-active/nav:scale-90"
+                  )}
+                >
+                  {item.icon}
+                </span>
                 {item.label}
                 {item.srHint && <span className="sr-only"> {item.srHint}</span>}
               </Link>
