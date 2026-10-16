@@ -233,9 +233,18 @@ export async function saveMyProfile(input: { fullName: string; phone: string }) 
 const clientIdSchema = z.uuid()
 const planIdSchema = z.uuid()
 
-export async function listClientsForAdmin(status: ProfileStatus) {
+// Búsqueda y "Ver más" llegan por la URL: lo que no encaja se ignora (sin búsqueda, primera página)
+const clientQuerySchema = z.string().trim().max(60).catch("")
+const clientLimitSchema = z.coerce.number().int().min(clients.CLIENT_PAGE_SIZE).max(clients.CLIENT_MAX_LIMIT).catch(clients.CLIENT_PAGE_SIZE)
+
+export async function listClientsForAdmin(status: ProfileStatus, query?: unknown, limit?: unknown) {
   await requireArea("admin")
-  return clients.listClients(getDb(), status)
+  return clients.listClients(getDb(), status, { query: clientQuerySchema.parse(query), limit: clientLimitSchema.parse(limit) })
+}
+
+export async function countClientsForAdmin(query?: unknown) {
+  await requireArea("admin")
+  return clients.countClientsByStatus(getDb(), clientQuerySchema.parse(query))
 }
 
 /** Tarifas activas para elegir al aprobar, reactivar o cambiar la tarifa */

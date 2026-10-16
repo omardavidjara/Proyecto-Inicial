@@ -159,9 +159,9 @@ describe('altas, reactivaciones y bajas', () => {
   test('la lista de clientes enseña la tarifa vigente hoy', async () => {
     const id = await client()
     await assignPlan(db, id, monthly, '2026-10-01')
-    const listed = (await listClients(db, 'active', 200, '2026-10-13')).find((c) => c.userId === id)
+    const listed = (await listClients(db, 'active', { limit: 200 }, '2026-10-13')).find((c) => c.userId === id)
     expect(listed?.planName).toBe('Bono 8')
-    const later = (await listClients(db, 'active', 200, '2026-09-30')).find((c) => c.userId === id)
+    const later = (await listClients(db, 'active', { limit: 200 }, '2026-09-30')).find((c) => c.userId === id)
     expect(later?.planName).toBeNull()
   })
 })

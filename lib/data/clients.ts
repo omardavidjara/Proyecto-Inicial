@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, isNull, lte, or, sql } from "drizzle-orm"
+import { and, asc, count, desc, eq, gte, ilike, isNull, lte, or, sql } from "drizzle-orm"
 import type { PgUpdateSetSource } from "drizzle-orm/pg-core"
 
 import { memberships, plans, profiles } from "@/db/schema"
@@ -36,8 +36,30 @@ export type ClientRow = {
   planName: string | null
 }
 
+export const CLIENT_PAGE_SIZE = 50
+export const CLIENT_MAX_LIMIT = 500
+
+export type ClientListOptions = {
+  /** Parte del nombre, sin distinguir mayúsculas (índice trigram de `full_name`). Vacía = todos */
+  query?: string
+  limit?: number
+}
+
+const isListedClient = and(eq(profiles.role, "client"), isNull(profiles.deletedAt))
+
+function nameFilter(query = "") {
+  const q = query.trim()
+  if (!q) return undefined
+  return ilike(profiles.fullName, `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`)
+}
+
 /** Clientes por estado. Pendientes: el más antiguo primero (cola de altas); el resto, el más reciente primero */
-export async function listClients(db: Db, status: ProfileStatus, limit = 100, today = toDateKey(new Date())): Promise<ClientRow[]> {
+export async function listClients(
+  db: Db,
+  status: ProfileStatus,
+  { query, limit = CLIENT_PAGE_SIZE }: ClientListOptions = {},
+  today = toDateKey(new Date()),
+): Promise<ClientRow[]> {
   return db
     .select(clientColumns)
     .from(profiles)
@@ -50,9 +72,21 @@ export async function listClients(db: Db, status: ProfileStatus, limit = 100, to
       ),
     )
     .leftJoin(plans, eq(plans.id, memberships.planId))
-    .where(and(eq(profiles.role, "client"), eq(profiles.status, status), isNull(profiles.deletedAt)))
+    .where(and(isListedClient, eq(profiles.status, status), nameFilter(query)))
     .orderBy(status === "pending" ? asc(profiles.createdAt) : desc(profiles.createdAt), asc(profiles.userId))
-    .limit(Math.min(Math.max(limit, 1), 200))
+    .limit(Math.min(Math.max(limit, 1), CLIENT_MAX_LIMIT))
+}
+
+/** Cuántos clientes hay en cada estado (con la misma búsqueda que la lista), para las pestañas */
+export async function countClientsByStatus(db: Db, query?: string): Promise<Record<ProfileStatus, number>> {
+  const rows = await db
+    .select({ status: profiles.status, n: count() })
+    .from(profiles)
+    .where(and(isListedClient, nameFilter(query)))
+    .groupBy(profiles.status)
+  const counts: Record<ProfileStatus, number> = { pending: 0, active: 0, inactive: 0 }
+  for (const row of rows) counts[row.status] = row.n
+  return counts
 }
 
 /** Altas pendientes de aprobar ("Hoy" del administrador) */
