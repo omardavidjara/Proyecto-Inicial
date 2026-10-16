@@ -2,38 +2,72 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
+import { AgendaMonth } from "@/components/admin/agenda"
 import { IndividualSessionDialog } from "@/components/coach/individual-session-dialog"
-import { getCoachWeek, listIndividualClassTypesForCoach } from "@/lib/dal"
-import { addDays, formatDayNumber, formatWeekRange, formatWeekdayShort, startOfWeek, toDateKey, toTimeKey } from "@/lib/dates"
+import { CoachSummaryTiles, CoachViewTabs, TaughtTable, coachPeriodHref } from "@/components/coach/taught-summary"
+import { getCoachPeriod, listIndividualClassTypesForCoach } from "@/lib/dal"
+import type { AgendaSession } from "@/lib/data/agenda"
+import { addDays, formatDayNumber, formatWeekRange, formatWeekdayShort, startOfMonth, startOfWeek, toDateKey, toTimeKey } from "@/lib/dates"
 import { CLASS_COLOR_BG } from "@/lib/sessions"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = { title: "Mi semana" }
 
-// Inicio del entrenador: su semana de lunes a domingo; al tocar un día se abren sus clases (docs/SPEC.md F7)
+// Inicio del entrenador: su semana de lunes a domingo (o el mes en calendario); al tocar un día se abren sus clases.
+// Debajo, el resumen del periodo y las clases ya impartidas (docs/SPEC.md F7)
 export default async function CoachWeekPage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const { semana } = await searchParams
-  const [{ today, monday, sessions: all }, individualTypes] = await Promise.all([getCoachWeek(semana), listIndividualClassTypesForCoach()])
+  const [{ today, view, date, range, sessions: all, summary }, individualTypes] = await Promise.all([
+    getCoachPeriod(await searchParams),
+    listIndividualClassTypesForCoach(),
+  ])
+
+  return (
+    <Page title="Mi semana" wide actions={<IndividualSessionDialog classTypes={individualTypes} today={today} />}>
+      <CoachViewTabs view={view} date={date} />
+      {view === "semana" ? (
+        <WeekView monday={range.from} today={today} sessions={all} />
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <PeriodLink href={coachPeriodHref("mes", range.prev)} label="Mes anterior" icon={<ChevronLeft />} />
+            <h2 className="flex-1 text-center font-semibold first-letter:uppercase">{range.title}</h2>
+            <PeriodLink href={coachPeriodHref("mes", range.next)} label="Mes siguiente" icon={<ChevronRight />} />
+          </div>
+          {startOfMonth(date) !== startOfMonth(today) && (
+            <Link href={coachPeriodHref("mes", today)} className="-mt-4 inline-flex min-h-11 items-center self-center text-sm font-medium text-primary">
+              Volver a este mes
+            </Link>
+          )}
+          <AgendaMonth range={range} date={date} sessions={all} today={today} dayHref={(day) => `/entrenador/dia/${day}`} />
+        </>
+      )}
+      <CoachSummaryTiles summary={summary} />
+      <TaughtTable sessions={summary.taughtSessions} />
+    </Page>
+  )
+}
+
+function WeekView({ monday, today, sessions: all }: { monday: string; today: string; sessions: AgendaSession[] }) {
   const byDay = Map.groupBy(all, (s) => toDateKey(s.startsAt))
   const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i)).map((day) => ({ day, sessions: byDay.get(day) ?? [] }))
   // Las canceladas se ven tachadas, pero no cuentan como clases
   const total = all.filter((s) => s.status === "scheduled").length
 
   return (
-    <Page title="Mi semana" wide actions={<IndividualSessionDialog classTypes={individualTypes} today={today} />}>
+    <>
       <div className="flex items-center gap-2">
-        <WeekLink monday={addDays(monday, -7)} label="Semana anterior" icon={<ChevronLeft />} />
+        <PeriodLink href={coachPeriodHref("semana", addDays(monday, -7))} label="Semana anterior" icon={<ChevronLeft />} />
         <div className="flex flex-1 flex-col items-center">
           <span className="font-semibold tabular-nums">{formatWeekRange(monday)}</span>
           <span className="text-sm text-muted-foreground">
             {total === 1 ? "1 clase" : `${total} clases`}
           </span>
         </div>
-        <WeekLink monday={addDays(monday, 7)} label="Semana siguiente" icon={<ChevronRight />} />
+        <PeriodLink href={coachPeriodHref("semana", addDays(monday, 7))} label="Semana siguiente" icon={<ChevronRight />} />
       </div>
       {monday !== startOfWeek(today) && (
         <Link href="/entrenador" className="-mt-4 inline-flex min-h-11 items-center self-center text-sm font-medium text-primary">
@@ -86,14 +120,14 @@ export default async function CoachWeekPage({
           )
         })}
       </ol>
-    </Page>
+    </>
   )
 }
 
-function WeekLink({ monday, label, icon }: { monday: string; label: string; icon: React.ReactNode }) {
+function PeriodLink({ href, label, icon }: { href: string; label: string; icon: React.ReactNode }) {
   return (
     <Link
-      href={`/entrenador?semana=${monday}`}
+      href={href}
       aria-label={label}
       className="flex size-11 items-center justify-center rounded-lg border bg-card outline-none hover:bg-muted active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring [&_svg]:size-5"
     >

@@ -114,10 +114,12 @@ describe('sesiones de un rango', () => {
     await db.update(sessions).set({ coachId: laura }).where(eq(sessions.id, mine))
     await db.update(sessions).set({ coachId: pablo }).where(eq(sessions.id, other))
     await book(mine, 'confirmed')
+    const came = await book(mine, 'confirmed')
+    await db.update(bookings).set({ attendance: 'attended' }).where(eq(bookings.id, came))
 
     const lauraWeek = await listCoachSessionsBetween(db, laura, '2026-11-02', '2026-11-08', now)
     expect(lauraWeek.map((s) => s.id)).toEqual([mine])
-    expect(lauraWeek[0]).toMatchObject({ booked: 1, coachName: 'Laura Coach' })
+    expect(lauraWeek[0]).toMatchObject({ booked: 2, attended: 1, coachName: 'Laura Coach' })
     expect((await listCoachSessionsBetween(db, pablo, '2026-11-02', '2026-11-08', now)).map((s) => s.id)).toEqual([other])
     // La agenda del administrador sigue viéndolas todas
     expect((await listSessionsBetween(db, '2026-11-03', '2026-11-03', now)).map((s) => s.id)).toEqual([mine, other, nobody])

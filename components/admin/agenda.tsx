@@ -193,8 +193,23 @@ export function AgendaWeek({ range, sessions, today, now }: { range: AgendaRange
   )
 }
 
-/** Cuadrícula del mes: por día, cuántas sesiones hay (sin las canceladas) y un punto por tipo de clase */
-export function AgendaMonth({ range, date, sessions, today }: { range: AgendaRange; date: string; sessions: AgendaSession[]; today: string }) {
+/**
+ * Cuadrícula del mes: por día, cuántas sesiones hay (sin las canceladas) y un punto por tipo de clase. Cada día
+ * lleva a la vista Día de la agenda, o a `dayHref` (el entrenador reutiliza la cuadrícula con sus días)
+ */
+export function AgendaMonth({
+  range,
+  date,
+  sessions,
+  today,
+  dayHref = (day) => agendaHref("dia", day),
+}: {
+  range: AgendaRange
+  date: string
+  sessions: AgendaSession[]
+  today: string
+  dayHref?: (day: string) => string
+}) {
   const groups = byDay(sessions.filter((s) => s.status === "scheduled"))
   const days = daysBetween(range.from, range.to)
   const month = date.slice(0, 7)
@@ -213,7 +228,7 @@ export function AgendaMonth({ range, date, sessions, today }: { range: AgendaRan
           return (
             <li key={day}>
               <Link
-                href={agendaHref("dia", day)}
+                href={dayHref(day)}
                 aria-current={day === today ? "date" : undefined}
                 aria-label={`${formatDayLong(day)}: ${count === 1 ? "1 sesión" : `${count} sesiones`}`}
                 className={cn(

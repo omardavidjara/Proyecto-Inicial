@@ -31,7 +31,8 @@ import { del } from "@vercel/blob"
 
 import { agendaRange, parseAgendaParams } from "@/lib/agenda"
 import { isOwnAvatarUrl } from "@/lib/avatar"
-import { addDays, isDateKey, startOfWeek, toDateKey } from "@/lib/dates"
+import { summarizeCoachPeriod } from "@/lib/coach-summary"
+import { addDays, startOfMonth, toDateKey } from "@/lib/dates"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
 import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
@@ -515,13 +516,21 @@ export async function getAdminAgenda(params: { vista?: unknown; fecha?: unknown 
 
 // ── Mi semana del entrenador (F7): solo las sesiones con coach_id = el usuario de la sesión ─────────────────
 
-/** Semana de lunes a domingo que contiene `semana` (si no es una fecha válida, la de hoy) */
-export async function getCoachWeek(semana: unknown) {
+/**
+ * Semana (lunes a domingo) o mes que contiene `fecha` (o `semana`, el enlace antiguo; si no es válida, hoy), con
+ * el resumen de clases impartidas del periodo
+ */
+export async function getCoachPeriod(params: { vista?: unknown; fecha?: unknown; semana?: unknown }) {
   const viewer = await requireArea("coach")
-  const today = toDateKey(new Date())
-  const monday = startOfWeek(isDateKey(semana) ? semana : today)
-  const rows = await agenda.listCoachSessionsBetween(getDb(), viewer.userId, monday, addDays(monday, 6))
-  return { today, monday, sessions: rows }
+  const now = new Date()
+  const today = toDateKey(now)
+  const { date } = parseAgendaParams({ fecha: params.fecha ?? params.semana }, today)
+  const view: "semana" | "mes" = params.vista === "mes" ? "mes" : "semana"
+  const range = agendaRange(view, date)
+  const rows = await agenda.listCoachSessionsBetween(getDb(), viewer.userId, range.from, range.to)
+  // El mes se consulta con la cuadrícula entera, pero el resumen solo cuenta sus días
+  const period = view === "mes" ? { from: startOfMonth(date), to: addDays(startOfMonth(date, 1), -1) } : range
+  return { today, view, date, range, sessions: rows, summary: summarizeCoachPeriod(rows, period.from, period.to, now) }
 }
 
 /** Clases del entrenador en un día; `date` ya validado por la página con `isDateKey` */
