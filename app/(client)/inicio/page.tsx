@@ -3,6 +3,7 @@ import Link from "next/link"
 import { Bell, CalendarPlus, Ticket } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { EmptyState } from "@/components/empty-state"
+import { InstallLink } from "@/components/pwa/install-link"
 import { PlanSummaryTiles } from "@/components/sessions/plan-summary"
 import { SessionCard } from "@/components/sessions/session-card"
 import { Button } from "@/components/ui/button"
@@ -75,6 +76,8 @@ export default async function ClientHomePage() {
       <Link href="/reservas" className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-primary">
         Ver mis reservas
       </Link>
+
+      <InstallLink />
     </Page>
   )
 }
