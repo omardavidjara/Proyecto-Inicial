@@ -7,7 +7,7 @@
 1. **Móvil primero.** La mayoría de clientes reserva desde el móvil, a menudo con una mano y de pie. Se diseña a 360–430 px de ancho y luego se amplía.
 2. **Una acción principal por pantalla.** En el detalle de sesión, el botón grande es "Reservar" (o "Anular"); todo lo demás es secundario.
 3. **El estado se entiende sin leer.** Plazas libres, completa, lista de espera o cancelada se distinguen por color **y** por texto o icono (nunca solo por color).
-4. **Rápido y sobrio.** Sin animaciones decorativas; transiciones de 150–200 ms solo para dar respuesta al toque. Se respeta `prefers-reduced-motion`.
+4. **Vivo pero amable.** El movimiento siempre tiene un propósito: orientar al cambiar de pantalla (los bloques entran subiendo 6 px, escalonados 40 ms, `stagger` en `Page`), responder al toque (botones, tarjetas y días se encogen un poco al pulsarlos) o celebrar algo (`animate-pop` en el icono de los estados vacíos). Duraciones de 150–320 ms, nada en bucle salvo los indicadores de carga. La acción principal lleva el degradado de marca (`bg-brand-gradient`) y una sombra cálida (`shadow-raised`). Con `prefers-reduced-motion: reduce` no hay animaciones ni retrasos.
 5. **Admin denso, cliente aireado.** Las pantallas de administrador pueden mostrar más datos por pantalla (tablas, agenda semanal); las del cliente priorizan legibilidad.
 
 ## 2. Color
@@ -26,7 +26,8 @@ Modo claro y oscuro según el sistema (`prefers-color-scheme`). Todos los pares 
 | `border` / `input` | Bordes y campos | `#e4e4e7` | `#3f3f46` |
 | `brand` | Naranja del logo: decoración, ilustraciones, nunca texto pequeño sobre blanco | `#c4713e` | `#c4713e` |
 | `primary` | Acción principal, día seleccionado, pestaña activa | `#a05428` (naranja Athlos oscuro) | `#e0915c` |
-| `primary-foreground` | Texto sobre `primary` | `#ffffff` | `#0b0b0c` |
+| `primary-strong` | Final del degradado de la acción principal (`bg-brand-gradient`, de `primary` a este) | `#7f3f1b` | `#f0ab7c` |
+| `primary-foreground` | Texto sobre `primary` (y `primary-strong`) | `#ffffff` | `#0b0b0c` |
 | `secondary` | Botones secundarios | `#f4f4f5` | `#27272a` |
 | `destructive` | Anular, dar de baja, eliminar | `#b91c1c` | `#f87171` |
 | `ring` | Anillo de foco | `#a05428` | `#e0915c` |
@@ -91,12 +92,14 @@ Formato de fechas y horas: `es-ES`, 24 h, en la zona horaria del gimnasio. "lun 
 - Escala de 4 px de Tailwind. Márgenes laterales de pantalla: **16 px** (`px-4`); en tablet y escritorio el contenido se centra con `max-w-2xl` (cliente) o `max-w-6xl` (admin).
 - Separación entre tarjetas de una lista: 8–12 px (`gap-2`/`gap-3`). Entre secciones: 24 px (`gap-6`).
 - Radio: `--radius: 0.75rem` (tarjetas y diálogos `rounded-xl`, botones y campos `rounded-lg`, insignias `rounded-full`).
-- Elevación: bordes antes que sombras. Solo la barra inferior, las hojas y los diálogos llevan sombra.
+- Elevación: tarjetas con borde y sombra suave (`shadow-soft`, token `--elevation-soft`); la acción principal y el día seleccionado, sombra cálida de marca (`shadow-raised`, `--elevation-raised`). La barra inferior, las hojas y los diálogos llevan su propia sombra.
+- Fondos destacados: `bg-brand-glow` (primary al 12 % sobre la tarjeta, en diagonal) para la tarjeta de «Reservada por mí» y la cifra de clases que quedan. El texto sobre él cumple AA (se comprueba como las insignias al 10–20 %).
+- Cabecera de marca: en lugar de borde, una línea de 1 px que pasa de `border` a `brand` en el centro.
 
 ## 5. Interacción táctil y diseño móvil
 
 - **Zonas táctiles de 44 × 44 px como mínimo** (botones `h-11`, filas de lista `min-h-11`, iconos con área ampliada). Separación mínima de 8 px entre objetivos.
-- **Navegación inferior** fija en cliente (Inicio · Calendario · Mis reservas; el perfil va en la cabecera) y admin en móvil (Hoy · Agenda · Clientes · Incidencias · Más): icono + etiqueta siempre visible, 64 px de alto + `safe-area-inset-bottom`. En pantallas ≥ 1024 px se convierte en barra lateral.
+- **Navegación inferior** fija en cliente (Inicio · Calendario · Mis reservas; el perfil va en la cabecera) y admin en móvil (Hoy · Agenda · Clientes · Incidencias · Más): icono + etiqueta siempre visible, 64 px de alto + `safe-area-inset-bottom`. El elemento activo lleva el icono sobre una píldora `primary/10`. En pantallas ≥ 1024 px se convierte en barra lateral.
 - **Safe areas**: `viewport-fit=cover` y rellenos con `env(safe-area-inset-*)` en cabecera y barra inferior (muesca de iPhone, barra de gestos de Android).
 - **App instalada en Android**: la barra de gestos y la pantalla de carga toman los colores del manifest (`app/manifest.ts`), que no admite modo claro/oscuro; se usa el fondo oscuro `#0b0b0c` para que no aparezca una franja blanca bajo la barra inferior. Android actualiza la app instalada con el manifest nuevo al cabo de unos días; para verlo al momento, desinstalarla y volver a instalarla.
 - La acción principal queda al alcance del pulgar: botón ancho en la parte inferior de la pantalla de detalle, por encima de la barra.
@@ -155,3 +158,4 @@ Componentes propios ya creados: `SessionCard`, `SessionStatusBadge` y `DayPicker
 - 2026-10-02 · Versión inicial (Fase 2).
 - 2026-10-16 · Manifest con fondo oscuro: sin franja blanca en la barra de gestos de Android.
 - 2026-10-16 · Cabecera de marca con logo y nombre centrados (Cinzel) y botón de perfil en todas las pantallas; el título pasa al contenido y «Perfil» sale de la barra inferior.
+- 2026-10-16 · Estética más viva: principio 4 reescrito («Vivo pero amable»), degradado `primary` → `primary-strong`, sombras `shadow-soft`/`shadow-raised`, `bg-brand-glow`, entrada escalonada de las pantallas, respuesta al toque con escala y píldora en la navegación activa.

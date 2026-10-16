@@ -29,7 +29,7 @@ export function PlanSummaryTiles({ summary }: { summary: PlanSummary }) {
 
   return (
     <section aria-label="Tu tarifa" className="grid grid-cols-2 gap-2">
-      <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
+      <div className="flex flex-col gap-1 rounded-xl border bg-card bg-brand-glow p-4 shadow-soft">
         {current.remaining == null || current.period === "unlimited" ? (
           <>
             <span className="text-sm text-muted-foreground">Clases</span>
@@ -44,7 +44,7 @@ export function PlanSummaryTiles({ summary }: { summary: PlanSummary }) {
           </>
         )}
       </div>
-      <div className="flex flex-col gap-1 rounded-xl border bg-card p-4">
+      <div className="flex flex-col gap-1 rounded-xl border bg-card p-4 shadow-soft">
         <span className="text-sm text-muted-foreground">Tu tarifa</span>
         <span className="font-semibold">{current.planName}</span>
         <span className="text-xs text-muted-foreground">{planLimitLabel(current)}</span>

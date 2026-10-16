@@ -45,7 +45,7 @@ describe.each([
   ['oscuro', dark, 0.2],
 ] as const)('modo %s', (_, t, badgeAlpha) => {
   test('tokens presentes', () => {
-    for (const key of ['background', 'foreground', 'card', 'muted', 'muted-foreground', 'primary', 'primary-foreground', 'destructive', 'success', 'warning', 'ring', 'brand']) {
+    for (const key of ['background', 'foreground', 'card', 'muted', 'muted-foreground', 'primary', 'primary-foreground', 'destructive', 'success', 'warning', 'ring', 'brand', 'primary-strong']) {
       expect(t[key], key).toMatch(/^#/)
     }
   })
@@ -58,6 +58,7 @@ describe.each([
     ['texto secundario sobre tarjeta', 'muted-foreground', 'card'],
     ['texto secundario sobre muted', 'muted-foreground', 'muted'],
     ['botón principal', 'primary-foreground', 'primary'],
+    ['botón principal, final del degradado', 'primary-foreground', 'primary-strong'],
     ['enlaces y cifras en primary', 'primary', 'background'],
     ['primary sobre tarjeta', 'primary', 'card'],
     ['enlace primary sobre muted (información de privacidad)', 'primary', 'muted'],
