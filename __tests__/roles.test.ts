@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { canAccessArea, homePathFor, isPublicPath, type AccessProfile } from '@/lib/roles'
+import { canAccessArea, homePathFor, isProfileComplete, isPublicPath, mustCompleteProfile, type AccessProfile } from '@/lib/roles'
 
 const active = (role: AccessProfile['role'], isCoach = role === 'coach'): AccessProfile => ({ role, isCoach, status: 'active' })
 
@@ -40,4 +40,24 @@ test('solo las páginas públicas se abren sin sesión', () => {
   for (const path of ['/', '/inicio', '/admin', '/entrenador', '/pendiente', '/loginx', '/privacidad-falsa']) {
     expect(isPublicPath(path)).toBe(false)
   }
+})
+
+describe('datos de contacto obligatorios (primera entrada)', () => {
+  test.each([
+    ['nombre y apellidos y teléfono', 'Ana López', '600112233', true],
+    ['sin teléfono (Google)', 'Ana López', null, false],
+    ['teléfono no válido', 'Ana López', '12', false],
+    ['solo el nombre', 'Ana', '600112233', false],
+  ])('%s', (_name, fullName, phone, complete) => {
+    expect(isProfileComplete({ fullName, phone })).toBe(complete)
+  })
+
+  test('todos deben completarlos salvo las cuentas de baja, y "/" los lleva a /completar-perfil', () => {
+    const contact = { fullName: 'Ana', phone: null }
+    expect(mustCompleteProfile({ status: 'pending', ...contact })).toBe(true)
+    expect(mustCompleteProfile({ status: 'active', ...contact })).toBe(true)
+    expect(mustCompleteProfile({ status: 'inactive', ...contact })).toBe(false)
+    expect(homePathFor({ ...active('admin'), ...contact })).toBe('/completar-perfil')
+    expect(homePathFor(active('admin'))).toBe('/admin')
+  })
 })

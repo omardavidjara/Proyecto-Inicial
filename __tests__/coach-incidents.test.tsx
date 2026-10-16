@@ -46,7 +46,7 @@ import CoachIncidentPage from '../app/entrenador/incidencias/[incidentId]/page'
 import CoachIncidenciasPage from '../app/entrenador/incidencias/page'
 
 const as = (role: string, isCoach = role === 'coach') => {
-  mocks.viewer = { userId: 'coach-1', fullName: 'Laura', role, isCoach, status: 'active' }
+  mocks.viewer = { userId: 'coach-1', fullName: 'Laura Prueba', role, isCoach, status: 'active', phone: '600000000' }
 }
 function form(fields: Record<string, string>) {
   const data = new FormData()

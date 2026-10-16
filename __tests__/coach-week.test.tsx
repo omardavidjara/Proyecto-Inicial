@@ -23,7 +23,7 @@ import CoachWeekPage from '../app/entrenador/page'
 import CoachDayPage from '../app/entrenador/dia/[date]/page'
 
 const as = (role: string, isCoach: boolean, status = 'active') => {
-  mocks.viewer = { userId: 'coach-1', fullName: 'Laura', role, isCoach, status }
+  mocks.viewer = { userId: 'coach-1', fullName: 'Laura Prueba', role, isCoach, status, phone: '600000000' }
 }
 const week = (params: Record<string, string> = {}) => CoachWeekPage({ searchParams: Promise.resolve(params) } as never)
 const day = (date: string) => CoachDayPage({ params: Promise.resolve({ date }) } as never)

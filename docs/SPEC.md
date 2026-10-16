@@ -37,6 +37,7 @@ Orden = prioridad de implementación en la Fase 5 (cada una es una rama).
 
 ### F1. Registro, alta y perfil
 - El cliente se registra (correo + contraseña o Google) y queda **pendiente de aprobación**.
+- **Datos obligatorios en la primera entrada**: nombre y apellidos (al menos dos palabras) y teléfono. El registro con correo ya los pide; quien entra con Google (que no da teléfono) o tiene algún dato incompleto pasa primero por «Completa tus datos» y no puede seguir hasta rellenarlos. Vale para todos los roles y para las cuentas ya existentes; no para las dadas de baja.
 - Mientras está pendiente, solo ve una pantalla "Tu alta está pendiente de aprobación".
 - El administrador aprueba (y le asigna tarifa) o rechaza la solicitud. Rechazar deja la cuenta **de baja** (no se borra, para no permitir registros repetidos sin control).
 - Perfil: nombre, teléfono, foto (cámara o galería). El cliente edita su perfil.
@@ -190,6 +191,7 @@ Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada 
 
 ## 9. Historial de cambios
 
+- 2026-10-16 · Primera entrada: nombre y apellidos y teléfono obligatorios para todos («Completa tus datos»), para que el gimnasio sepa quién es cada cliente que se registra.
 - 2026-10-16 · Pantalla «Instalar la app» (`/instalar`, pública): botón «Instalar» en Android cuando el navegador lo ofrece y pasos para Android e iPhone; avisa de que en iPhone las push necesitan la app instalada.
 
 - 2026-10-15 · F7: resumen de clases impartidas por semana y mes para cada entrenador (solo las suyas) y pantalla «Entrenadores» para administración con todos. Solo consulta y control: sin horas ni importes.

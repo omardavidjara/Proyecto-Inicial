@@ -19,6 +19,8 @@ export const fullNameSchema = z
   .trim()
   .min(2, "Escribe tu nombre y apellidos")
   .max(100, "El nombre es demasiado largo")
+  // Al menos nombre y un apellido, para que el gimnasio sepa quién es cada cliente
+  .refine((value) => value.split(/\s+/).length >= 2, "Escribe tu nombre y apellidos")
 
 /** Teléfono: dígitos con prefijo + opcional; se guarda sin espacios, guiones ni paréntesis */
 export const phoneSchema = z

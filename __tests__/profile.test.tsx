@@ -10,21 +10,22 @@ const mocks = vi.hoisted(() => ({
     throw new Error(`NEXT_REDIRECT ${url}`)
   }),
 }))
-vi.mock('@/lib/dal', () => ({ getMyProfile: async () => mocks.profile, saveMyProfile: mocks.saveMyProfile, accountDeletion: async () => mocks.deletion }))
+vi.mock('@/lib/dal', () => ({ getMyProfile: async () => mocks.profile, getViewer: async () => (mocks.profile as { viewer: unknown } | null)?.viewer ?? null, saveMyProfile: mocks.saveMyProfile, accountDeletion: async () => mocks.deletion }))
 vi.mock('next/navigation', () => ({ usePathname: () => '/perfil', redirect: mocks.redirect }))
 vi.mock('next/cache', () => ({ refresh: mocks.refresh }))
 vi.mock('../app/(auth)/actions', () => ({ signOut: vi.fn() }))
 vi.mock('@vercel/blob/client', () => ({ upload: vi.fn() }))
 vi.mock('@/lib/auth', () => ({ getAuth: vi.fn() }))
 
-import { updateProfile } from '../app/(cuenta)/perfil/actions'
+import { completeProfile, updateProfile } from '../app/(cuenta)/perfil/actions'
+import CompleteProfilePage from '../app/(auth)/completar-perfil/page'
 import PerfilPage from '../app/(cuenta)/perfil/page'
 import PendingPage from '../app/(auth)/pendiente/page'
 
 type Status = 'pending' | 'active' | 'inactive'
 const setProfile = (status: Status, role = 'client', phone: string | null = '600112233') => {
   mocks.profile = {
-    viewer: { userId: 'u1', fullName: 'Ana Prueba', role, isCoach: role === 'coach', status },
+    viewer: { userId: 'u1', fullName: 'Ana Prueba', role, isCoach: role === 'coach', status, phone },
     email: 'ana@example.test',
     fullName: 'Ana Prueba',
     phone,
@@ -67,17 +68,9 @@ describe('/perfil según el estado de la cuenta', () => {
 })
 
 describe('/pendiente', () => {
-  test('sin teléfono (registro con Google): pide completarlo y enlaza el perfil', async () => {
-    setProfile('pending', 'client', null)
-    render(await PendingPage())
-    expect(screen.getByText(/Añade tu teléfono/)).toBeDefined()
-    expect(screen.getByRole('link', { name: 'Completar mi perfil' }).getAttribute('href')).toBe('/perfil')
-  })
-
-  test('con teléfono: solo el enlace al perfil', async () => {
+  test('con los datos completos: enlace al perfil', async () => {
     setProfile('pending')
     render(await PendingPage())
-    expect(screen.queryByText(/Añade tu teléfono/)).toBeNull()
     expect(screen.getByRole('link', { name: 'Mi perfil' }).getAttribute('href')).toBe('/perfil')
   })
 })
@@ -119,5 +112,43 @@ describe('eliminar mi cuenta en el perfil', () => {
     render(await PerfilPage())
     expect(screen.queryByRole('button', { name: 'Eliminar mi cuenta' })).toBeNull()
     expect(screen.getByText(/desarrollador no se puede eliminar/)).toBeDefined()
+  })
+})
+
+describe('primera entrada: completar los datos (/completar-perfil)', () => {
+  test('sin teléfono: pide nombre y apellidos y teléfono, con el nombre de Google relleno', async () => {
+    setProfile('pending', 'client', null)
+    render(await CompleteProfilePage())
+    expect(screen.getByRole('heading', { level: 1, name: 'Completa tus datos' })).toBeDefined()
+    expect((screen.getByLabelText('Nombre y apellidos') as HTMLInputElement).value).toBe('Ana Prueba')
+    expect((screen.getByLabelText('Teléfono') as HTMLInputElement).value).toBe('')
+    expect(screen.getByRole('button', { name: 'Continuar' })).toBeDefined()
+  })
+
+  test('con los datos completos no se queda aquí: sigue a su pantalla', async () => {
+    setProfile('pending')
+    await expect(CompleteProfilePage()).rejects.toThrow('NEXT_REDIRECT /pendiente')
+  })
+
+  test('/pendiente sin teléfono manda primero a completar los datos', async () => {
+    setProfile('pending', 'client', null)
+    await expect(PendingPage()).rejects.toThrow('NEXT_REDIRECT /completar-perfil')
+  })
+
+  test('al guardar, sigue a /pendiente (cuenta nueva) o a su inicio (cuenta activa)', async () => {
+    setProfile('pending', 'client', null)
+    await expect(completeProfile({}, form({ fullName: 'Ana López', phone: '600112233' }))).rejects.toThrow('NEXT_REDIRECT /pendiente')
+    expect(mocks.saveMyProfile).toHaveBeenCalledWith({ fullName: 'Ana López', phone: '600112233' })
+    setProfile('active', 'client', null)
+    await expect(completeProfile({}, form({ fullName: 'Ana López', phone: '600112233' }))).rejects.toThrow('NEXT_REDIRECT /inicio')
+  })
+
+  test('sin apellidos o sin teléfono no guarda ni sigue', async () => {
+    setProfile('pending', 'client', null)
+    const state = await completeProfile({}, form({ fullName: 'Ana', phone: '' }))
+    expect(state.fieldErrors?.fullName).toBe('Escribe tu nombre y apellidos')
+    expect(state.fieldErrors?.phone).toBeTruthy()
+    expect(mocks.saveMyProfile).not.toHaveBeenCalled()
+    expect(mocks.redirect).not.toHaveBeenCalled()
   })
 })

@@ -35,7 +35,7 @@ import { deletePlanAction, savePlanAction, setPlanActiveAction } from '../app/ad
 import TarifasPage from '../app/admin/tarifas/page'
 
 const as = (role: string, status = 'active') => {
-  mocks.viewer = { userId: 'admin-1', fullName: 'Admin', role, isCoach: role === 'coach', status }
+  mocks.viewer = { userId: 'admin-1', fullName: 'Admin Prueba', role, isCoach: role === 'coach', status, phone: '600000000' }
 }
 
 function form(fields: Record<string, string>) {

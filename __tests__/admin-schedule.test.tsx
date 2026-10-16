@@ -60,7 +60,7 @@ import HorarioPage from '../app/admin/horario/page'
 import { GET as generateSessionsRoute } from '../app/api/cron/generate-sessions/route'
 
 const as = (role: string, status = 'active') => {
-  mocks.viewer = { userId: 'admin-1', fullName: 'Admin', role, isCoach: role === 'coach', status }
+  mocks.viewer = { userId: 'admin-1', fullName: 'Admin Prueba', role, isCoach: role === 'coach', status, phone: '600000000' }
 }
 
 function form(fields: Record<string, string>) {

@@ -51,7 +51,7 @@ import AdminIncidentPage from '../app/admin/incidencias/[incidentId]/page'
 import IncidenciasPage from '../app/admin/incidencias/page'
 
 const as = (role: string) => {
-  mocks.viewer = { userId: 'admin-1', fullName: 'Admin', role, isCoach: role === 'coach', status: 'active' }
+  mocks.viewer = { userId: 'admin-1', fullName: 'Admin Prueba', role, isCoach: role === 'coach', status: 'active', phone: '600000000' }
 }
 function form(fields: Record<string, string>) {
   const data = new FormData()

@@ -1,3 +1,5 @@
+import { profileSchema } from "@/lib/validation/auth"
+
 // Reglas de acceso por rol y estado (docs/ARCHITECTURE.md §5 y §6). Funciones puras: sin sesión
 // ni base de datos, para poder probarlas solas. Quien las aplica es lib/dal.ts.
 
@@ -19,6 +21,24 @@ export type Area = "client" | "coach" | "admin"
 
 export const LOGIN_PATH = "/login"
 export const PENDING_PATH = "/pendiente"
+/** Primera entrada: nombre y apellidos y teléfono obligatorios antes de seguir */
+export const COMPLETE_PROFILE_PATH = "/completar-perfil"
+
+/** Datos de contacto del perfil */
+export type ContactProfile = { fullName: string; phone: string | null }
+
+/** ¿Tiene nombre y apellidos y un teléfono válidos? (quien entra con Google no da teléfono) */
+export function isProfileComplete(profile: ContactProfile) {
+  return profileSchema.safeParse({ fullName: profile.fullName, phone: profile.phone ?? "" }).success
+}
+
+/**
+ * ¿Debe completar sus datos antes de seguir? Todos menos las cuentas de baja, que solo ven /pendiente.
+ * Vale también para las cuentas ya existentes a las que les falte algo.
+ */
+export function mustCompleteProfile(profile: Pick<AccessProfile, "status"> & ContactProfile) {
+  return profile.status !== "inactive" && !isProfileComplete(profile)
+}
 
 /** Página donde se escribe el código que llega por correo (registro e inicio de sesión sin confirmar, F1) */
 export const confirmEmailPath = (email: string) => `/confirmar-correo?correo=${encodeURIComponent(email)}`
@@ -60,8 +80,12 @@ export function canAccessArea(profile: AccessProfile, area: Area) {
 }
 
 /** Adónde lleva "/" a cada usuario (ARCHITECTURE §5) */
-export function homePathFor(profile: AccessProfile | null) {
+export function homePathFor(profile: (AccessProfile & Partial<ContactProfile>) | null) {
   if (!profile) return LOGIN_PATH
+  // Sin datos de contacto (fullName/phone) no se comprueba: lo deciden los permisos solos
+  if (profile.fullName !== undefined && profile.phone !== undefined && mustCompleteProfile({ status: profile.status, fullName: profile.fullName, phone: profile.phone })) {
+    return COMPLETE_PROFILE_PATH
+  }
   if (profile.status !== "active") return PENDING_PATH
   if (isStaff(profile)) return AREA_HOME.admin
   if (profile.role === "coach") return AREA_HOME.coach

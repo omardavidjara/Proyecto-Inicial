@@ -31,7 +31,7 @@ import { setCoachAttendanceAction } from '../app/entrenador/sesiones/[sessionId]
 
 const SESSION_ID = '0d4b7f6e-2a1c-4e5f-8b9a-1c2d3e4f5a6b'
 const as = (role: string, isCoach: boolean, status = 'active') => {
-  mocks.viewer = { userId: 'coach-1', fullName: 'Laura', role, isCoach, status }
+  mocks.viewer = { userId: 'coach-1', fullName: 'Laura Prueba', role, isCoach, status, phone: '600000000' }
 }
 const page = () => CoachSessionPage({ params: Promise.resolve({ sessionId: SESSION_ID }) } as never)
 

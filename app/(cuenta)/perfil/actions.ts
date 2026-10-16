@@ -5,7 +5,8 @@ import { redirect } from "next/navigation"
 import { z } from "zod"
 
 import { getAuth } from "@/lib/auth"
-import { deleteMyAccount, removeMyAvatar, saveMyAvatar, saveMyProfile } from "@/lib/dal"
+import { deleteMyAccount, getViewer, removeMyAvatar, saveMyAvatar, saveMyProfile } from "@/lib/dal"
+import { homePathFor } from "@/lib/roles"
 import { DELETE_CONFIRMATION, profileSchema, type ProfileInput } from "@/lib/validation/auth"
 
 export type ProfileState = {
@@ -24,6 +25,15 @@ export async function updateProfile(_prev: ProfileState, formData: FormData): Pr
   await saveMyProfile(parsed.data)
   refresh()
   return { saved: true }
+}
+
+/** Primera entrada (/completar-perfil): guarda nombre y teléfono y sigue a la pantalla que toque */
+export async function completeProfile(prev: ProfileState, formData: FormData): Promise<ProfileState> {
+  const result = await updateProfile(prev, formData)
+  if (!result.saved) return result
+  // Los datos ya están guardados y son válidos; getViewer sigue en caché con los de antes de guardar
+  const viewer = await getViewer()
+  redirect(homePathFor(viewer && { role: viewer.role, isCoach: viewer.isCoach, status: viewer.status }))
 }
 
 /** Guarda la foto recién subida a Blob (la DAL comprueba que es del almacén y de la carpeta del usuario) */

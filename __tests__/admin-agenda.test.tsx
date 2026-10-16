@@ -23,7 +23,7 @@ vi.mock('next/server', () => ({ connection: async () => {} }))
 import AgendaPage from '../app/admin/agenda/page'
 
 const as = (role: string, status = 'active') => {
-  mocks.viewer = { userId: 'admin-1', fullName: 'Admin', role, isCoach: role === 'coach', status }
+  mocks.viewer = { userId: 'admin-1', fullName: 'Admin Prueba', role, isCoach: role === 'coach', status, phone: '600000000' }
 }
 const page = (params: Record<string, string> = {}) => AgendaPage({ searchParams: Promise.resolve(params) } as never)
 

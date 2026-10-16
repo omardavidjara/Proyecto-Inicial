@@ -28,7 +28,7 @@ import { createIndividualSessionAction, searchCoachClientsAction } from '../app/
 import { IndividualSessionDialog } from '../components/coach/individual-session-dialog'
 
 const as = (role: string, isCoach: boolean) => {
-  mocks.viewer = { userId: 'coach-1', fullName: 'Laura', role, isCoach, status: 'active' }
+  mocks.viewer = { userId: 'coach-1', fullName: 'Laura Prueba', role, isCoach, status: 'active', phone: '600000000' }
 }
 
 const form = (fields: Record<string, string>) => {

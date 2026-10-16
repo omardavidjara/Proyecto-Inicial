@@ -52,7 +52,7 @@ import { loadClientHistoryAction } from '../app/admin/clientes/[userId]/actions'
 import AdminClientPage from '../app/admin/clientes/[userId]/page'
 
 const as = (role: string) => {
-  mocks.viewer = { userId: 'admin-1', fullName: 'Admin', role, isCoach: false, status: 'active' }
+  mocks.viewer = { userId: 'admin-1', fullName: 'Admin Prueba', role, isCoach: false, status: 'active', phone: '600000000' }
 }
 const page = (userId: string) => AdminClientPage({ params: Promise.resolve({ userId }) } as never)
 const booking = (extra = {}) => ({
