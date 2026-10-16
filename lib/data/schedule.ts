@@ -96,6 +96,15 @@ async function resolveInput(db: Db, input: ScheduleSlotInput, currentClassTypeId
   return { ...input, capacity: type.kind === "individual" ? 1 : input.capacity }
 }
 
+/** Un entrenador de `listCoaches` por id (ya validado), o `null` */
+export async function getCoach(db: Db, coachId: string): Promise<CoachOption | null> {
+  const [coach] = await db
+    .select({ userId: profiles.userId, fullName: profiles.fullName })
+    .from(profiles)
+    .where(and(eq(profiles.userId, coachId), eq(profiles.isCoach, true), eq(profiles.status, "active"), isNull(profiles.deletedAt)))
+  return coach ?? null
+}
+
 /** Sin entrenador, o uno de `listCoaches` */
 export async function isAssignableCoach(db: Db, coachId: string | null) {
   if (!coachId) return true

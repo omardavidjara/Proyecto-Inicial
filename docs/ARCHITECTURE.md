@@ -201,6 +201,8 @@ app/
   admin/agenda                     ?vista=dia|semana|mes&fecha=AAAA-MM-DD (si no valen: Día de hoy)
   admin/sesiones/[sessionId]       Detalle de sesión
   admin/anulaciones                Anulaciones tardías pendientes de decidir
+  admin/entrenadores               Entrenadores (F7): impartidas · programadas · canceladas de cada uno ?semana= o ?vista=mes&fecha=
+  admin/entrenadores/[coachId]     Calendario y clases impartidas de un entrenador (mismos parámetros; solo consulta)
   admin/horario                    Horario (F3): plantilla semanal (crear, editar, activar/desactivar y eliminar franjas) y
                                    ?vista=sesiones: próximas sesiones (sueltas, mover, entrenador/aforo y cancelar)
   admin/tipos-clase                Crear, editar, activar/desactivar y eliminar tipos de clase
@@ -340,6 +342,7 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 12. Historial de cambios
 
+- 2026-10-16 · F7 PR 5: «Entrenadores» en administración (`/admin/entrenadores` y `/admin/entrenadores/[coachId]`), solo consulta tras `requireArea("admin")`. `AgendaSession` trae `coachId`; `getCoachesOverview` consulta el periodo una vez y agrupa con `summarizeCoaches` (`lib/coach-summary.ts`); `getCoachPeriodForAdmin` valida el id con `z.uuid()` y `schedule.getCoach` (entrenador activo; si no, 404). El calendario del entrenador pasa a `components/coach/coach-calendar.tsx`, compartido con «Mi semana». Sin cambios de esquema.
 - 2026-10-15 · F7 PR 2: detalle `/entrenador/sesiones/[sessionId]` con datos reales: `getSessionDetail` y `setAttendance` aceptan `coachId` (sesión ajena = inexistente); DAL `getSessionDetailForCoach` (sin anulaciones tardías, que decide administración) y `setBookingAttendanceForCoach` tras `requireArea("coach")`; `AttendeeList` recibe la acción de asistencia y `canRemove`. Se borran `lib/prototype/`, `components/prototype-notice.tsx` y `components/coach/attendance-list.tsx`: ya no queda prototipo de datos. `db:set-role` admite `--coach` / `--no-coach` (argumentos en `scripts/set-role-args.mts`, con tests; `tsconfig` con `allowImportingTsExtensions` para importar `.mts` como lo hace Node).
 - 2026-10-15 · F7 PR 1: «Mi semana» y «Mis clases del día» con datos reales: `listCoachSessionsBetween` (`lib/data/agenda.ts`, misma consulta que la agenda filtrada por `coach_id`) y `getCoachWeek`/`getCoachDay` en la DAL tras `requireArea("coach")`, con el id del entrenador sacado de la sesión. `isDateKey` ya no lanza con meses o días fuera de rango. Sin cambios de esquema.
 - 2026-10-14 · Arreglo (AUDITORIA-2026-10-14 #1): una falta ya no cuenta para el cupo si después se quita al cliente. `countUsedClasses` solo cuenta `confirmed` (con o sin falta) y tardías descontadas; al quitar, la asistencia vuelve a `pending`. Sin cambios de esquema.

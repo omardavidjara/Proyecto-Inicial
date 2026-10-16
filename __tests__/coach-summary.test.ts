@@ -1,7 +1,7 @@
 // Resumen de clases impartidas del entrenador (F7): impartidas, programadas y canceladas de un periodo
 import { describe, expect, test } from 'vitest'
 
-import { summarizeCoachPeriod } from '@/lib/coach-summary'
+import { summarizeCoachPeriod, summarizeCoaches } from '@/lib/coach-summary'
 import type { AgendaSession } from '@/lib/data/agenda'
 
 const HOUR = 3_600_000
@@ -18,6 +18,7 @@ const session = (startsAt: string, extra: Partial<AgendaSession> = {}): AgendaSe
   booked: 4,
   waitlisted: 0,
   attended: 3,
+  coachId: 'laura',
   coachName: 'Laura',
   status: 'scheduled',
   ...extra,
@@ -47,5 +48,33 @@ describe('summarizeCoachPeriod', () => {
     const summary = summarizeCoachPeriod([february, firstOfMonth, april], '2026-03-01', '2026-03-31', now)
     expect(summary).toMatchObject({ taught: 1, scheduled: 0, cancelled: 0 })
     expect(summary.taughtSessions[0].id).toBe(firstOfMonth.id)
+  })
+})
+
+describe('summarizeCoaches', () => {
+  test('el resumen de cada entrenador en su orden; sin clases, ceros; las demás sesiones no cuentan', () => {
+    const coaches = [
+      { userId: 'laura', fullName: 'Laura' },
+      { userId: 'pablo', fullName: 'Pablo' },
+      { userId: 'eva', fullName: 'Eva' },
+    ]
+    const rows = summarizeCoaches(
+      coaches,
+      [
+        session('2026-03-23T08:00:00Z'),
+        session('2026-03-27T08:00:00Z'),
+        session('2026-03-24T08:00:00Z', { coachId: 'pablo', coachName: 'Pablo', status: 'cancelled' }),
+        session('2026-03-24T09:00:00Z', { coachId: null, coachName: null }),
+        session('2026-03-24T10:00:00Z', { coachId: 'antiguo', coachName: 'Antiguo' }),
+      ],
+      '2026-03-23',
+      '2026-03-29',
+      now,
+    )
+    expect(rows.map((r) => [r.fullName, r.summary.taught, r.summary.scheduled, r.summary.cancelled])).toEqual([
+      ['Laura', 1, 1, 0],
+      ['Pablo', 0, 0, 1],
+      ['Eva', 0, 0, 0],
+    ])
   })
 })
