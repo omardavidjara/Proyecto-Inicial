@@ -2,10 +2,12 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 import { connection } from "next/server"
-import { ChevronRight, History, Mail, Phone, ShieldAlert, Ticket } from "lucide-react"
+import { ChevronRight, History, Mail, Phone, Ticket, TriangleAlert } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { ClientActions } from "@/components/admin/client-actions"
+import { IncidentDialog } from "@/components/admin/incident-form"
 import { EmptyState } from "@/components/empty-state"
+import { IncidentList } from "@/components/incidents/incident-list"
 import { BookingHistory } from "@/components/sessions/booking-history"
 import { Badge } from "@/components/ui/badge"
 import { toHistoryEntries } from "@/lib/booking-history"
@@ -34,7 +36,7 @@ export default async function AdminClientPage({ params }: PageProps<"/admin/clie
   const { userId } = await params
   const [data, plans] = await Promise.all([getClientProfileForAdmin(userId), listActivePlansForAdmin()])
   if (!data) notFound()
-  const { client, email, plan, planHistory, upcoming, history, activity, today, timeZone } = data
+  const { client, email, plan, planHistory, upcoming, history, activity, incidents, today, timeZone } = data
   const status = STATUS[client.status]
 
   return (
@@ -99,12 +101,22 @@ export default async function AdminClientPage({ params }: PageProps<"/admin/clie
             Últimos {CLIENT_ACTIVITY_DAYS} días
           </h2>
           <ActivityTiles activity={activity} />
-          <div className="flex items-center gap-3 rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
-            <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
-            Incidencias: llegan con F9.
-          </div>
         </section>
       </div>
+
+      <section aria-labelledby="incidents-title" className="flex flex-col gap-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 id="incidents-title" className="text-lg font-semibold">
+            Incidencias
+          </h2>
+          <IncidentDialog client={{ userId: client.userId, fullName: client.fullName }} />
+        </div>
+        {incidents.length === 0 ? (
+          <EmptyState icon={<TriangleAlert />} title="Sin incidencias" />
+        ) : (
+          <IncidentList items={incidents} hrefBase="/admin/incidencias" showStatus showClient={false} />
+        )}
+      </section>
 
       <section aria-labelledby="upcoming-title" className="flex flex-col gap-3">
         <h2 id="upcoming-title" className="text-lg font-semibold">
