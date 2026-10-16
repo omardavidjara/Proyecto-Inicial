@@ -73,6 +73,8 @@ Auditoría rápida (2026-10-12, F1 terminada): `docs/reviews/AUDITORIA-2026-10-1
 
 Auditoría rápida (2026-10-14, F6 terminada, antes de F7): `docs/reviews/AUDITORIA-2026-10-14.md` (sin críticos; un fallo medio y pendientes repartidos abajo).
 
+Auditoría rápida (2026-10-17, antes de F10): `docs/reviews/AUDITORIA-2026-10-17.md` (sin críticos; dos pendientes bajos repartidos abajo).
+
 ## Fase 5 · Funcionalidades (una por sesión, en el orden de SPEC)
 Ciclo: rama → 🛑 plan y OK → implementar con tests → check → push → CI verde → PR → [T] el usuario fusiona.
 Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/prototype/` por consultas reales, páginas "Próximamente" (`components/coming-soon.tsx`) por las pantallas reales y la franja `PrototypeNotice`. Cuando no quede nada, borrar `lib/prototype/` y esos dos componentes (`lib/prototype/` y `PrototypeNotice` borrados en F7 PR 2).
@@ -91,7 +93,7 @@ Cada funcionalidad sustituye su parte del prototipo de la Fase 2: datos de `lib/
 - [ ] F10 · Avisos y notificaciones push. Push **web** (Web Push con el service worker de la PWA, sin plugins nativos; decidido el 2026-10-15 al aparcar las tiendas): en Android funciona en el navegador o instalada; en iPhone (iOS 16.4+) solo con la app añadida a la pantalla de inicio, así que pedir el permiso desde la app instalada y explicarlo en «Instalar la app»
 - [x] [C] Pantalla «Instalar la app» (decidido el 2026-10-15): pasos para Android (botón «Instalar» con `beforeinstallprompt` cuando el navegador lo ofrezca) y para iPhone (Safari → Compartir → «Añadir a pantalla de inicio»); enlazada desde «Inicio» o «Perfil» y oculta si ya se abre instalada (`display-mode: standalone`). Hecha el 2026-10-16 (PR #54): `/instalar` pública (se puede enviar el enlace a quien aún no tiene cuenta), enlace en «Inicio» y en «Perfil» (cliente y entrenador), detección en `lib/install.ts` (iPhone con Safari, iPhone con otro navegador, Android, resto). Pendiente para F10: pedir el permiso de push desde la app instalada y, en iPhone sin instalar, enlazar a `/instalar`
 - [x] Mejoras de diseño (pedidas el 2026-10-16, plan aprobado en 3 PR): (1) cabecera de marca con logo y «Athlos» en todas las pantallas, que lleva al inicio de cada rol; el título pasa al contenido ✅ (`feat/brand-header`); (2) estética más animada pero amigable: tokens de degradado y sombra, micro-animaciones con propósito y `prefers-reduced-motion`; reescribir el principio 4 de `docs/DESIGN.md` (`feat/livelier-look`) ✅; (3) calendario del cliente con vistas Día · Semana · Mes reutilizando `lib/agenda.ts`; el mes muestra todas las sesiones generadas y las que quedan fuera de la ventana de reserva llevan «Se abre el …» sin botón de reservar (opción a, elegida el 2026-10-16) (`feat/client-calendar-views`) ✅ (2026-10-17: PR #56–#59 y esta; `lib/client-calendar.ts`, la barra de la agenda se reutiliza con `hrefFor`/`canGoBack`; no se consultan días pasados)
-- [ ] F11 · Equipo: roles y ajustes del gimnasio (solo desarrollador)
+- [ ] F11 · Equipo: roles y ajustes del gimnasio (solo desarrollador). Al hacer editable la zona horaria: que `parseCoachPeriod` y `getCoachDay` (`lib/dal.ts`) usen la de `gym_settings` y no la de por defecto (AUDITORIA-2026-10-17 #1)
 - [ ] [J] Entrenador sustituto en una clase ya empezada: hoy Horario solo deja cambiar el entrenador antes de la hora de inicio (F3), así que el sustituto no puede marcar la asistencia (solo administración desde el detalle). Decidir si se permite cambiar el entrenador (solo eso) en sesiones empezadas o pasadas del día. Anotado el 2026-10-15
 
 ## Fase 6 · Auditoría de seguridad
@@ -132,7 +134,7 @@ La app nativa carga la web publicada en Vercel (SSR), así que las mejoras de la
 - [ ] 🛑 [T] Enviar a revisión en las tiendas
 
 ## Fase 9 · Mantenimiento
-- Semanal: errores de Sentry y PR de Dependabot. `@neondatabase/auth` (beta) va en PR propia: leer el changelog y probar login, registro, Google y eliminar cuenta antes de fusionar (AUDITORIA-2026-10-12 #4)
+- Semanal: errores de Sentry y PR de Dependabot. `@neondatabase/auth` (beta) va en PR propia: leer el changelog y probar login, registro, Google y eliminar cuenta antes de fusionar (AUDITORIA-2026-10-12 #4) En esa PR, revisar también el aviso ERESOLVE de `better-call` en `npm ci` (AUDITORIA-2026-10-17 #2)
 - Node local: actualizar a ≥ 24.15 (aviso EBADENGINE de `w3c-xmlserializer` en `npm ci`; AUDITORIA-2026-10-14 #4)
 - Mensual: consumo en Neon (CU-h, almacenamiento, ramas), Vercel (uso y Blob) y Sentry frente a `docs/LIMITS.md`; volver a comprobar las cifras del documento
 - Mensual: repetir la Fase 6
