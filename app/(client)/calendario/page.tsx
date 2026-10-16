@@ -125,7 +125,7 @@ export default async function CalendarPage({
       )}
 
       {view === "mes" && (
-        <AgendaMonth range={range} date={date} sessions={sessions} today={today} dayHref={(day) => hrefFor("dia", day)} />
+        <AgendaMonth range={range} date={date} sessions={sessions} today={today} dayHref={(day) => hrefFor("dia", day)} minDay={today} />
       )}
     </Page>
   )

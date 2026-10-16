@@ -1,8 +1,9 @@
 // Calendario del cliente con vistas Día · Semana · Mes (SPEC F5): periodo, enlaces y «Se abre …»
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, describe, expect, test } from 'vitest'
-import { AgendaToolbar } from '@/components/admin/agenda'
+import { AgendaMonth, AgendaToolbar } from '@/components/admin/agenda'
 import { SessionStatusBadge } from '@/components/sessions/session-status'
+import { agendaRange } from '@/lib/agenda'
 import { calendarHref, clientCalendarPeriod, opensLabel } from '@/lib/client-calendar'
 
 afterEach(cleanup)
@@ -85,5 +86,23 @@ describe('AgendaToolbar del cliente', () => {
     expect(screen.queryByRole('link', { name: 'Anterior' })).toBeNull()
     expect(screen.getByRole('link', { name: 'Siguiente' }).getAttribute('href')).toBe('/calendario?vista=dia&fecha=2026-10-18')
     expect(screen.getByRole('link', { name: 'Mes' }).getAttribute('href')).toBe('/calendario?vista=mes&fecha=2026-10-17')
+  })
+})
+
+describe('AgendaMonth del cliente', () => {
+  test('los días pasados salen sin enlace; hoy y los siguientes llevan a la vista Día', () => {
+    render(
+      <AgendaMonth
+        range={agendaRange('mes', today)}
+        date={today}
+        sessions={[{ color: 'teal', startsAt: new Date('2026-10-20T08:00:00Z'), status: 'scheduled' }]}
+        today={today}
+        dayHref={(d) => calendarHref('dia', d)}
+        minDay={today}
+      />,
+    )
+    expect(screen.queryByRole('link', { name: /viernes, 16 de octubre/ })).toBeNull()
+    expect(screen.getByRole('link', { name: /sábado, 17 de octubre/ }).getAttribute('href')).toBe('/calendario?vista=dia&fecha=2026-10-17')
+    expect(screen.getByRole('link', { name: 'martes, 20 de octubre: 1 sesión' })).toBeTruthy()
   })
 })

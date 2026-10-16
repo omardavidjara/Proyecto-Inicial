@@ -226,12 +226,15 @@ export function AgendaMonth({
   sessions,
   today,
   dayHref = (day) => agendaHref("dia", day),
+  minDay,
 }: {
   range: AgendaRange
   date: string
   sessions: Pick<AgendaSession, "color" | "startsAt" | "status">[]
   today: string
   dayHref?: (day: string) => string
+  /** Los días anteriores salen atenuados y sin enlace (el cliente no consulta días pasados) */
+  minDay?: string
 }) {
   const groups = byDay(sessions.filter((s) => s.status === "scheduled"))
   const days = daysBetween(range.from, range.to)
@@ -248,6 +251,16 @@ export function AgendaMonth({
           const daySessions = groups.get(day) ?? []
           const colors = [...new Set(daySessions.map((s) => s.color))]
           const count = daySessions.length
+          const cell = "flex min-h-16 flex-col gap-1 rounded-lg border p-1.5 text-sm lg:min-h-24"
+          if (minDay && day < minDay) {
+            return (
+              <li key={day}>
+                <span className={cn(cell, "border-transparent text-muted-foreground")}>
+                  <span className="flex size-7 items-center justify-center tabular-nums">{formatDayNumber(day)}</span>
+                </span>
+              </li>
+            )
+          }
           return (
             <li key={day}>
               <Link
@@ -255,7 +268,8 @@ export function AgendaMonth({
                 aria-current={day === today ? "date" : undefined}
                 aria-label={`${formatDayLong(day)}: ${count === 1 ? "1 sesión" : `${count} sesiones`}`}
                 className={cn(
-                  "flex min-h-16 flex-col gap-1 rounded-lg border bg-card p-1.5 text-sm hover:bg-muted/50 lg:min-h-24",
+                  cell,
+                  "bg-card hover:bg-muted/50",
                   linkFocus,
                   !day.startsWith(month) && "bg-transparent text-muted-foreground",
                 )}
