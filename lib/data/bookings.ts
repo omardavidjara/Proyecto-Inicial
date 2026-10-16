@@ -124,10 +124,10 @@ export type BookFailure =
 export type BookResult = "confirmed" | "waitlisted" | BookFailure
 
 /** Lo que se comprueba de la sesión antes que de la persona; `null` si se puede reservar */
-async function checkSession(db: Db, userId: string, session: LockedSession | undefined, now: Date, rules: BookingRules) {
+async function checkSession(db: Db, userId: string, session: LockedSession | undefined, now: Date, rules: BookingSettings) {
   if (!session) return "not_found" as const
   if (session.status !== "scheduled") return "session_cancelled" as const
-  const window = bookingWindow(session.startsAt, now, rules)
+  const window = bookingWindow(session.startsAt, now, rules, rules.timeZone)
   if (window !== "open") return window
   const [live] = await db
     .select({ id: bookings.id })

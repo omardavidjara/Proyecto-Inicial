@@ -34,8 +34,8 @@ export function clientCalendarPeriod(params: CalendarParams, today: string): Cli
  * empezado
  */
 export function opensLabel(startsAt: Date, now: Date, rules: BookingRules, timeZone?: string): string | undefined {
-  if (bookingWindow(startsAt, now, rules) !== "not_open_yet") return undefined
-  const opensAt = bookingOpensAt(startsAt, rules)
+  if (bookingWindow(startsAt, now, rules, timeZone) !== "not_open_yet") return undefined
+  const opensAt = bookingOpensAt(startsAt, rules, timeZone)
   const today = toDateKey(now, timeZone)
   const day = toDateKey(opensAt, timeZone)
   if (day === today) return `Se abre hoy a las ${toTimeKey(opensAt, timeZone)}`

@@ -1,6 +1,7 @@
 // Reglas de reserva (SPEC F5 y §4, ARCHITECTURE §4): funciones puras, sin base de datos. Las transacciones que
 // las aplican están en lib/data/bookings.ts.
 
+import { addLocalDays, GYM_TIME_ZONE } from "@/lib/dates"
 import type { PlanPeriod } from "@/lib/validation/plans"
 
 export type BookingRules = {
@@ -14,19 +15,21 @@ export type BookingRules = {
 export const DEFAULT_BOOKING_RULES: BookingRules = { bookingWindowDays: 7, cancelDeadlineMinutes: 120 }
 
 const MINUTE = 60_000
-const DAY = 24 * 60 * MINUTE
 
-/** Cuándo se abren las reservas de una sesión. Se cierran al empezar */
-export function bookingOpensAt(startsAt: Date, rules: BookingRules): Date {
-  return new Date(startsAt.getTime() - rules.bookingWindowDays * DAY)
+/**
+ * Cuándo se abren las reservas de una sesión: `bookingWindowDays` días de calendario antes, a la misma hora local
+ * del gimnasio (aunque haya un cambio de hora por medio). Se cierran al empezar
+ */
+export function bookingOpensAt(startsAt: Date, rules: BookingRules, timeZone = GYM_TIME_ZONE): Date {
+  return addLocalDays(startsAt, -rules.bookingWindowDays, timeZone)
 }
 
 export type BookingWindow = "open" | "not_open_yet" | "closed"
 
 /** En qué punto está la ventana de reserva de una sesión programada */
-export function bookingWindow(startsAt: Date, now: Date, rules: BookingRules): BookingWindow {
+export function bookingWindow(startsAt: Date, now: Date, rules: BookingRules, timeZone = GYM_TIME_ZONE): BookingWindow {
   if (startsAt <= now) return "closed"
-  if (now < bookingOpensAt(startsAt, rules)) return "not_open_yet"
+  if (now < bookingOpensAt(startsAt, rules, timeZone)) return "not_open_yet"
   return "open"
 }
 
