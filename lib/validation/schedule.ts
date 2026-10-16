@@ -46,6 +46,14 @@ export const sessionSchema = z.object({
 
 export const oneOffSessionSchema = sessionSchema.extend({ classTypeId: scheduleSlotSchema.shape.classTypeId })
 
+// Sesión individual del entrenador (SPEC F7): la duración sale del tipo y el aforo es 1
+export const individualSessionSchema = z.object({
+  classTypeId: scheduleSlotSchema.shape.classTypeId,
+  date: sessionSchema.shape.date,
+  startTime: sessionSchema.shape.startTime,
+  clientId: z.uuid("Elige un cliente"),
+})
+
 export const cancelReasonSchema = z
   .string()
   .trim()
@@ -54,3 +62,4 @@ export const cancelReasonSchema = z
 
 export type SessionInput = z.output<typeof sessionSchema>
 export type OneOffSessionInput = z.output<typeof oneOffSessionSchema>
+export type IndividualSessionInput = z.output<typeof individualSessionSchema>

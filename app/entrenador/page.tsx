@@ -2,7 +2,8 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
-import { getCoachWeek } from "@/lib/dal"
+import { IndividualSessionDialog } from "@/components/coach/individual-session-dialog"
+import { getCoachWeek, listIndividualClassTypesForCoach } from "@/lib/dal"
 import { addDays, formatDayNumber, formatWeekRange, formatWeekdayShort, startOfWeek, toDateKey, toTimeKey } from "@/lib/dates"
 import { CLASS_COLOR_BG } from "@/lib/sessions"
 import { cn } from "@/lib/utils"
@@ -16,14 +17,14 @@ export default async function CoachWeekPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const { semana } = await searchParams
-  const { today, monday, sessions: all } = await getCoachWeek(semana)
+  const [{ today, monday, sessions: all }, individualTypes] = await Promise.all([getCoachWeek(semana), listIndividualClassTypesForCoach()])
   const byDay = Map.groupBy(all, (s) => toDateKey(s.startsAt))
   const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i)).map((day) => ({ day, sessions: byDay.get(day) ?? [] }))
   // Las canceladas se ven tachadas, pero no cuentan como clases
   const total = all.filter((s) => s.status === "scheduled").length
 
   return (
-    <Page title="Mi semana" wide>
+    <Page title="Mi semana" wide actions={<IndividualSessionDialog classTypes={individualTypes} today={today} />}>
       <div className="flex items-center gap-2">
         <WeekLink monday={addDays(monday, -7)} label="Semana anterior" icon={<ChevronLeft />} />
         <div className="flex flex-1 flex-col items-center">

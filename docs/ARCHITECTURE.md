@@ -171,7 +171,7 @@ Hecho en F5 (PR 1): reglas en `lib/booking.ts` y transacciones en `lib/data/book
 
 Los administradores pueden forzar una reserva (saltar aforo/cupo/ventana); queda `created_by` = admin. Un admin o desarrollador que reserva **para sí** también necesita tarifa vigente salvo que fuerce la reserva.
 
-Un **entrenador** puede crear una sesión individual (`class_types.kind = individual`, aforo 1) con él mismo como `coach_id` y reservarla para un cliente activo; solo puede anular reservas de sesiones que imparte.
+Un **entrenador** puede crear una sesión individual (`class_types.kind = individual`, aforo 1) con él mismo como `coach_id` y reservarla para un cliente activo (`createIndividualSession` en `lib/data/individual-sessions.ts`: una transacción crea la sesión suelta y la reserva confirmada con `created_by` = el entrenador; duración del tipo, solo a horas futuras, sin ventana de reserva; exige tarifa vigente y clases libres como al reservar, y la reserva gasta clase); solo puede anular reservas de sesiones que imparte.
 
 > Driver: las transacciones interactivas necesitan el `Pool` (WebSocket) de `@neondatabase/serverless`, no el driver HTTP. Se usa el Pool para escrituras con transacción y HTTP para lecturas simples.
 

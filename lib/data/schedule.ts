@@ -97,7 +97,7 @@ async function resolveInput(db: Db, input: ScheduleSlotInput, currentClassTypeId
 }
 
 /** Sin entrenador, o uno de `listCoaches` */
-async function isAssignableCoach(db: Db, coachId: string | null) {
+export async function isAssignableCoach(db: Db, coachId: string | null) {
   if (!coachId) return true
   const [coach] = await db
     .select({ userId: profiles.userId })
@@ -270,7 +270,7 @@ export async function listUpcomingSessions(db: Db, now = new Date()): Promise<Se
 }
 
 /** Inicio y fin de una sesión a partir del día y la hora locales del gimnasio */
-async function sessionTimes(db: Db, input: SessionInput) {
+export async function sessionTimes(db: Db, input: Pick<SessionInput, "date" | "startTime" | "durationMinutes">) {
   const result = await db.execute(sql`select ((${input.date}::date + ${input.startTime}::time) at time zone ${tz}::text) as starts_at`)
   const startsAt = new Date((result as unknown as { rows: { starts_at: Date | string }[] }).rows[0].starts_at)
   return { startsAt, endsAt: new Date(startsAt.getTime() + input.durationMinutes * 60_000) }
