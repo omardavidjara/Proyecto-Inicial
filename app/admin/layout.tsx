@@ -7,7 +7,7 @@ import { requireArea } from "@/lib/dal"
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   await requireArea("admin")
   return (
-    <AppShell nav={adminNav} navLabel="Navegación de administración">
+    <AppShell nav={adminNav} navLabel="Navegación de administración" profileHref="/admin/perfil">
       {children}
     </AppShell>
   )

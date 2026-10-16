@@ -3,16 +3,20 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 import { ChevronLeft } from "lucide-react"
 import { BottomNav, type NavItem } from "./bottom-nav"
+import { ProfileHrefProvider, ProfileLink } from "./profile-link"
 import { cn } from "@/lib/utils"
 
 /** Marco de las secciones con navegación (cliente, admin, entrenador). */
 export function AppShell({
   nav,
   navLabel,
+  profileHref,
   children,
 }: {
   nav: NavItem[]
   navLabel: string
+  /** Perfil del rol: botón arriba a la derecha de la cabecera */
+  profileHref: string
   children: ReactNode
 }) {
   return (
@@ -24,7 +28,7 @@ export function AppShell({
       >
         Saltar al contenido
       </a>
-      {children}
+      <ProfileHrefProvider href={profileHref}>{children}</ProfileHrefProvider>
       <BottomNav items={nav} label={navLabel} />
     </div>
   )
@@ -53,15 +57,18 @@ export function Page({
   return (
     <>
       <header className="sticky top-0 z-30 border-b bg-background/95 pt-safe backdrop-blur lg:-ml-[var(--shell-offset,0px)]">
-        <div className={cn("mx-auto flex h-14 items-center px-4 lg:max-w-none lg:px-6", width)}>
+        <div className={cn("mx-auto grid h-16 grid-cols-[1fr_auto_1fr] items-center px-4 lg:max-w-none lg:px-6", width)}>
           <Link
             href="/"
             aria-label="Athlos, ir al inicio"
-            className="-ml-2 flex min-h-11 items-center gap-2 rounded-lg px-2 text-lg font-semibold tracking-tight outline-none hover:bg-muted active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring"
+            className="col-start-2 flex min-h-11 items-center gap-2.5 rounded-lg px-2 outline-none hover:bg-muted active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <Image src="/logo.png" alt="" width={32} height={32} className="size-8" priority />
-            Athlos
+            <Image src="/logo.png" alt="" width={40} height={40} className="size-10" priority />
+            <span className="font-brand text-2xl font-semibold tracking-[0.12em] text-primary uppercase">Athlos</span>
           </Link>
+          <div className="flex justify-end">
+            <ProfileLink />
+          </div>
         </div>
       </header>
       <main id="contenido" tabIndex={-1} className={cn("mx-auto flex w-full flex-1 flex-col gap-6 px-4 py-4 outline-none", width)}>

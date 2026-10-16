@@ -7,7 +7,7 @@ import { requireArea } from "@/lib/dal"
 export default async function ClientLayout({ children }: { children: React.ReactNode }) {
   await requireArea("client")
   return (
-    <AppShell nav={clientNav} navLabel="Navegación principal">
+    <AppShell nav={clientNav} navLabel="Navegación principal" profileHref="/perfil">
       {children}
     </AppShell>
   )
