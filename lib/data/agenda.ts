@@ -24,6 +24,8 @@ export type AgendaSession = {
   booked: number
   /** En lista de espera (0 cuando la sesión ya ha empezado: la lista caduca) */
   waitlisted: number
+  /** Confirmadas marcadas como asistidas */
+  attended: number
   coachName: string | null
   status: "scheduled" | "cancelled"
 }
@@ -31,6 +33,7 @@ export type AgendaSession = {
 // Con el nombre de la tabla: sin él, el subselect leería "id" como bookings.id (lib/data/schedule.ts)
 const countBookings = (status: "confirmed" | "waitlisted") =>
   sql<number>`(select count(*)::int from bookings b where b.session_id = "sessions"."id" and b.status = ${status})`
+const countAttended = sql<number>`(select count(*)::int from bookings b where b.session_id = "sessions"."id" and b.status = 'confirmed' and b.attendance = 'attended')`
 
 /** Sesiones de los días `from` a `to` (incluidos, en la zona del gimnasio), canceladas incluidas, por hora */
 export function listSessionsBetween(db: Db, from: string, to: string, now = new Date()): Promise<AgendaSession[]> {
@@ -57,6 +60,7 @@ async function selectSessionsBetween(db: Db, from: string, to: string, now: Date
       capacity: sessions.capacity,
       booked: countBookings("confirmed"),
       waitlisted: countBookings("waitlisted"),
+      attended: countAttended,
       coachName: profiles.fullName,
       status: sessions.status,
     })

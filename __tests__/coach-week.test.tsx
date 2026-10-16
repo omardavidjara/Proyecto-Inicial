@@ -37,6 +37,7 @@ const session = (extra = {}) => ({
   capacity: 12,
   booked: 8,
   waitlisted: 0,
+  attended: 0,
   coachName: 'Laura',
   status: 'scheduled',
   ...extra,
@@ -88,6 +89,45 @@ describe('Mi semana', () => {
     const [, , from, to] = mocks.listCoachSessionsBetween.mock.calls[0]
     expect(from <= to).toBe(true)
     expect(screen.queryByText('Volver a esta semana')).toBeNull()
+  })
+})
+
+describe('clases impartidas', () => {
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  test('vista Mes: la cuadrícula entera, con los días enlazados a los del entrenador', async () => {
+    render(await week({ vista: 'mes', fecha: '2030-03-15' }))
+    expect(mocks.listCoachSessionsBetween).toHaveBeenCalledWith('http-db', 'coach-1', '2030-02-25', '2030-03-31')
+    expect(screen.getByRole('link', { name: 'Mes' }).getAttribute('aria-current')).toBe('page')
+    expect(screen.getByRole('link', { name: /15 de marzo/ }).getAttribute('href')).toBe('/entrenador/dia/2030-03-15')
+    expect(screen.getByRole('link', { name: 'Mes siguiente' }).getAttribute('href')).toBe('/entrenador?vista=mes&fecha=2030-04-01')
+  })
+
+  test('resumen del periodo y tabla de las ya dadas con asistieron/reservaron', async () => {
+    // Jueves 27 de marzo de 2030 a mediodía en Madrid
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2030-03-27T11:00:00Z'))
+    const given = session({ className: 'Funcional', booked: 6, attended: 5 })
+    mocks.listCoachSessionsBetween.mockResolvedValue([
+      given,
+      session({ className: 'Yoga', startsAt: new Date('2030-03-29T08:00:00Z'), endsAt: new Date('2030-03-29T09:00:00Z') }),
+      session({ className: 'Pilates', startsAt: new Date('2030-03-25T08:00:00Z'), status: 'cancelled' }),
+    ])
+    render(await week())
+
+    const value = (label: string) => screen.getByText(label).nextElementSibling?.textContent
+    expect(value('Impartidas')).toBe('1')
+    expect(value('Programadas')).toBe('1')
+    expect(value('Canceladas')).toBe('1')
+    expect(screen.getByLabelText('5 de 6 asistieron').textContent).toBe('5/6')
+    expect(screen.getByRole('link', { name: 'Funcional' }).getAttribute('href')).toBe(`/entrenador/sesiones/${given.id}`)
+  })
+
+  test('sin clases dadas en el periodo', async () => {
+    render(await week({ semana: '2030-03-27' }))
+    expect(screen.getByText('Aún no has dado clases en este periodo.')).toBeTruthy()
   })
 })
 
