@@ -116,7 +116,7 @@ Reglas (configurables por el administrador; los periodos de las tarifas se cuent
 
 ## 4. Pantallas
 
-**Comunes**: Inicio de sesión · Registro · Alta pendiente · Perfil.
+**Comunes**: Inicio de sesión · Registro · Alta pendiente · Perfil · Instalar la app (pública; enlazada desde Inicio y Perfil si no se abre ya instalada).
 
 Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada usuario entra en **su pantalla de inicio** (cliente → Inicio, entrenador → Mi semana, administrador → Hoy).
 
@@ -189,6 +189,8 @@ Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada 
 6. **Administradores entrenadores**: un administrador puede ser también entrenador; también hay entrenadores que no son administradores.
 
 ## 9. Historial de cambios
+
+- 2026-10-16 · Pantalla «Instalar la app» (`/instalar`, pública): botón «Instalar» en Android cuando el navegador lo ofrece y pasos para Android e iPhone; avisa de que en iPhone las push necesitan la app instalada.
 
 - 2026-10-15 · F7: resumen de clases impartidas por semana y mes para cada entrenador (solo las suyas) y pantalla «Entrenadores» para administración con todos. Solo consulta y control: sin horas ni importes.
 

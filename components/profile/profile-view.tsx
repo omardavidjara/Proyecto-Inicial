@@ -1,5 +1,6 @@
 import { SignOutButton } from "@/components/auth/sign-out-button"
 import { LegalLinks } from "@/components/legal/legal-links"
+import { InstallLink } from "@/components/pwa/install-link"
 import { AvatarField } from "./avatar-field"
 import { DeleteAccount, type AccountDeletion } from "./delete-account"
 import { ProfileForm } from "./profile-form"
@@ -18,6 +19,7 @@ export function ProfileView({ profile, deletion }: { profile: Profile; deletion:
         <p className="-mt-2 text-sm text-muted-foreground">La foto es opcional y la ve el personal del gimnasio.</p>
         <ProfileForm fullName={profile.fullName} phone={profile.phone} email={profile.email} />
       </section>
+      <InstallLink />
       <SignOutButton className="w-full" />
       <DeleteAccount deletion={deletion} />
       <LegalLinks />

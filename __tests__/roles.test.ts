@@ -36,7 +36,7 @@ test('el inicio de cada rol', () => {
 })
 
 test('solo las páginas públicas se abren sin sesión', () => {
-  for (const path of ['/login', '/registro', '/confirmar-correo', '/privacidad', '/aviso-legal', '/offline']) expect(isPublicPath(path)).toBe(true)
+  for (const path of ['/login', '/registro', '/confirmar-correo', '/privacidad', '/aviso-legal', '/offline', '/instalar']) expect(isPublicPath(path)).toBe(true)
   for (const path of ['/', '/inicio', '/admin', '/entrenador', '/pendiente', '/loginx', '/privacidad-falsa']) {
     expect(isPublicPath(path)).toBe(false)
   }
