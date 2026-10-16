@@ -140,6 +140,7 @@ describe('/admin/clientes', () => {
     render(await ClientesPage({ params: Promise.resolve({}), searchParams: Promise.resolve({ estado: 'activo' }) }))
     expect(mocks.listClients).toHaveBeenCalledWith('http-db', 'active', { query: '', limit: 50 })
     expect(screen.getByRole('button', { name: 'Dar de baja' })).toBeDefined()
+    expect(screen.getByRole('link', { name: 'Ana Prueba' }).getAttribute('href')).toBe(`/admin/clientes/${CLIENT_ID}`)
   })
 
   test('baja vacía: estado vacío', async () => {

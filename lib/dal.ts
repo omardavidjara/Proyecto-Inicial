@@ -259,6 +259,45 @@ export async function listMembershipsForAdmin(userIds: string[]) {
   return memberships.listMemberships(getDb(), userIds.filter((id) => clientIdSchema.safeParse(id).success))
 }
 
+/** Días del resumen de actividad de la ficha */
+export const CLIENT_ACTIVITY_DAYS = 30
+
+/**
+ * Ficha de un cliente (SPEC F8): datos, correo, tarifa con clases restantes e historial, próximas reservas,
+ * primera página del historial y resumen de 30 días. `null` si el id no es válido o no es un cliente
+ */
+export async function getClientProfileForAdmin(userId: unknown) {
+  await requireArea("admin")
+  const parsed = clientIdSchema.safeParse(userId)
+  if (!parsed.success) return null
+  const db = getDb()
+  const settings = await bookingData.getBookingSettings(db)
+  const now = new Date()
+  const today = toDateKey(now, settings.timeZone)
+  const client = await clients.getClient(db, parsed.data, today)
+  if (!client) return null
+  const id = client.userId
+  const [email, plan, planHistory, upcoming, history, activity] = await Promise.all([
+    clients.getAuthEmail(db, id),
+    memberships.getPlanSummary(db, id, today),
+    memberships.listMemberships(db, [id]),
+    myBookings.listUpcomingBookings(db, id, now),
+    myBookings.listBookingHistory(db, id, { now }),
+    clients.summarizeClientActivity(db, id, new Date(now.getTime() - CLIENT_ACTIVITY_DAYS * 86_400_000), now),
+  ])
+  return { client, email, plan, planHistory: planHistory.get(id) ?? [], upcoming, history, activity, today, timeZone: settings.timeZone }
+}
+
+/** Siguiente página del historial de un cliente; el cursor se valida en la capa de datos */
+export async function getClientHistoryForAdmin(userId: unknown, cursor: unknown) {
+  await requireArea("admin")
+  const parsed = clientIdSchema.safeParse(userId)
+  const db = getDb()
+  const settings = await bookingData.getBookingSettings(db)
+  if (!parsed.success || !(await clients.getClient(db, parsed.data))) return { page: { items: [], nextCursor: null }, timeZone: settings.timeZone }
+  return { page: await myBookings.listBookingHistory(db, parsed.data, { cursor }), timeZone: settings.timeZone }
+}
+
 export async function countPendingClientsForAdmin() {
   await requireArea("admin")
   return clients.countPendingClients(getDb())

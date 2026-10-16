@@ -1,18 +1,21 @@
 // @vitest-environment node
 // Altas y bajas de clientes (F1) sobre Postgres real (PGlite) con las migraciones.
 import { randomUUID } from 'node:crypto'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
-import { bookings, classTypes, profiles, sessions } from '@/db/schema'
+import { bookings, classTypes, memberships, plans, profiles, sessions } from '@/db/schema'
 import {
   approveClient,
   countClientsByStatus,
   countPendingClients,
   deactivateClient,
+  getAuthEmail,
+  getClient,
   listClients,
   reactivateClient,
   rejectClient,
+  summarizeClientActivity,
 } from '@/lib/data/clients'
 
 import { createTestDb, type TestDb } from './helpers/test-db'
@@ -154,5 +157,46 @@ describe('listas', () => {
     expect(await countClientsByStatus(db, '%')).toEqual({ pending: 1, active: 0, inactive: 0 })
     expect(await countClientsByStatus(db, '_')).toEqual({ pending: 0, active: 0, inactive: 0 })
     expect(await countClientsByStatus(db)).toEqual({ pending: 1, active: 2, inactive: 1 })
+  })
+})
+
+describe('ficha del cliente', () => {
+  test('getClient: cualquier estado, con su tarifa de hoy; ni entrenadores ni eliminados', async () => {
+    const [plan] = await db.insert(plans).values({ name: 'Ficha 8', period: 'month', classesPerPeriod: 8 }).returning()
+    const ana = await client({ status: 'inactive' })
+    await db.insert(memberships).values({ userId: ana, planId: plan.id, startsOn: '2026-10-01' })
+    expect(await getClient(db, ana, '2026-10-16')).toMatchObject({ userId: ana, status: 'inactive', planName: 'Ficha 8' })
+    expect((await getClient(db, ana, '2026-09-30'))?.planName).toBeNull()
+    expect(await getClient(db, await client({ role: 'coach', isCoach: true }))).toBeNull()
+    expect(await getClient(db, await client({ deletedAt: new Date() }))).toBeNull()
+    expect(await getClient(db, randomUUID())).toBeNull()
+  })
+
+  test('getAuthEmail: lee neon_auth.user y, si no está, devuelve null sin fallar', async () => {
+    const id = await client()
+    expect(await getAuthEmail(db, id)).toBeNull()
+    await db.execute(sql`create schema if not exists neon_auth`)
+    await db.execute(sql`create table if not exists neon_auth."user" (id uuid primary key, email text not null)`)
+    await db.execute(sql`insert into neon_auth."user" (id, email) values (${id}, 'ana@example.test')`)
+    expect(await getAuthEmail(db, id)).toBe('ana@example.test')
+    expect(await getAuthEmail(db, randomUUID())).toBeNull()
+  })
+
+  test('summarizeClientActivity: solo sus reservas de sesiones ya empezadas en el periodo', async () => {
+    const id = await client({ status: 'active' })
+    const other = await client({ status: 'active' })
+    const set = (bookingId: string, values: Partial<typeof bookings.$inferInsert>) =>
+      db.update(bookings).set(values).where(eq(bookings.id, bookingId))
+    await set(await booking(id, -2), { attendance: 'attended' })
+    await set(await booking(id, -5), { attendance: 'attended' })
+    await set(await booking(id, -24), { attendance: 'no_show' })
+    await booking(id, -3) // confirmada sin marcar
+    await set(await booking(id, -4), { status: 'late_cancelled', cancelledAt: new Date(), lateCancelCharged: true })
+    await booking(id, -6, 'cancelled')
+    await set(await booking(id, -24 * 40), { attendance: 'attended' }) // fuera del periodo
+    await booking(id, 5) // futura
+    await set(await booking(other, -2), { attendance: 'attended' })
+    const from = new Date(Date.now() - 30 * 86_400_000)
+    expect(await summarizeClientActivity(db, id, from)).toEqual({ attended: 2, noShow: 1, unmarked: 1, lateCancelled: 1, cancelled: 1 })
   })
 })

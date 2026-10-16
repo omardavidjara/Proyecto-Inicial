@@ -5,15 +5,24 @@ import Link from "next/link"
 import { ChevronRight, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
-import { loadHistoryAction } from "@/app/(client)/reservas/actions"
+import { loadHistoryAction, type HistoryPageResult } from "@/app/(client)/reservas/actions"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import type { HistoryEntry } from "@/lib/booking-history"
 import { CLASS_COLOR_BG } from "@/lib/sessions"
 import { cn } from "@/lib/utils"
 
-/** Historial de «Mis reservas»: la primera página llega del servidor y «Ver más» añade las siguientes */
-export function BookingHistory({ initial, initialCursor }: { initial: HistoryEntry[]; initialCursor: string | null }) {
+type Props = {
+  initial: HistoryEntry[]
+  initialCursor: string | null
+  /** Server Action de «Ver más»: por defecto, mi historial; en la ficha del cliente, el suyo */
+  load?: (cursor: string | null) => Promise<HistoryPageResult>
+  /** Ruta del detalle de cada sesión */
+  sessionBase?: string
+}
+
+/** Historial de reservas: la primera página llega del servidor y «Ver más» añade las siguientes */
+export function BookingHistory({ initial, initialCursor, load = loadHistoryAction, sessionBase = "/calendario" }: Props) {
   const [items, setItems] = useState(initial)
   const [cursor, setCursor] = useState(initialCursor)
   const [pending, startTransition] = useTransition()
@@ -21,7 +30,7 @@ export function BookingHistory({ initial, initialCursor }: { initial: HistoryEnt
   const loadMore = () =>
     startTransition(async () => {
       try {
-        const page = await loadHistoryAction(cursor)
+        const page = await load(cursor)
         // Sin duplicados si se pulsa dos veces o cambia algo entre páginas
         setItems((current) => {
           const seen = new Set(current.map((item) => item.id))
@@ -39,7 +48,7 @@ export function BookingHistory({ initial, initialCursor }: { initial: HistoryEnt
         {items.map((item) => (
           <li key={item.id}>
             <Link
-              href={`/calendario/${item.sessionId}`}
+              href={`${sessionBase}/${item.sessionId}`}
               className="relative flex min-h-16 items-center gap-3 py-3 pr-3 pl-5 outline-none hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring"
             >
               <span aria-hidden="true" className={cn("absolute inset-y-2 left-0 w-1 rounded-r", CLASS_COLOR_BG[item.color])} />
