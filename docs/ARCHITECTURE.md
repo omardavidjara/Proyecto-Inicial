@@ -218,6 +218,7 @@ app/
   admin/equipo                     Solo desarrollador
   admin/mas                        Menú "Más" en móvil: horario, tipos de clase, tarifas, avisos, ajustes, vista cliente
   offline                          Página sin conexión (la guarda el service worker, public/sw.js)
+  instalar                         Cómo instalar la PWA en Android e iPhone (pública, sin sesión)
   privacidad                       Política de privacidad (pública, sin sesión; RGPD y tiendas)
   aviso-legal                      Aviso legal y condiciones de uso (pública, sin sesión; LSSI)
   api/auth/[...path]               Neon Auth
@@ -343,6 +344,7 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 12. Historial de cambios
 
+- 2026-10-16 · Ruta pública `instalar` (PWA): pasos de instalación y botón con `beforeinstallprompt`; detección pura en `lib/install.ts`, `useStandalone` en `components/pwa/`. Sin cambios de esquema.
 - 2026-10-16 · F9 PR 2: incidencias del entrenador tras `requireArea("coach")` (`/entrenador/incidencias` y `/entrenador/incidencias/[incidentId]`, todo con `scope.createdBy`: una ajena es inexistente). `createIncident(…, { coachId })` exige que la sesión sea suya y que el cliente tenga una reserva (cualquier estado) en ella; sin sesión, no asocia cliente. Sección «Incidencias» en el detalle de sesión de administración (todas) y del entrenador (las suyas) con `listSessionIncidents`; `SessionDetail.attendees` trae `userId`. Formulario compartido en `components/incidents/`. Sin cambios de esquema.
 - 2026-10-16 · F9 PR 1: incidencias de administración (`/admin/incidencias?estado=&limite=` y `/admin/incidencias/[incidentId]`) tras `requireArea("admin")`. Capa `lib/data/incidents.ts` (`listIncidents`, `countIncidentsByStatus`, `getIncident` y `listClientIncidents`, con `scope.createdBy` para el entrenador en la PR 2; `createIncident` comprueba que el cliente es un cliente no eliminado y que la sesión existe; `setIncidentStatus` guarda `closed_at` al cerrar y lo borra al reabrir). La paginación es «Ver más» con `?limite=` (como Clientes) en lugar de cursor. Las incidencias del cliente se ven en su ficha. Sin cambios de esquema.
 - 2026-10-16 · F8 PR 2: ficha `/admin/clientes/[userId]` tras `requireArea("admin")` e id validado con `z.uuid()` (no cliente o eliminado = 404). `getClientProfileForAdmin` reúne `clients.getClient`, el correo (`clients.getAuthEmail`, solo lectura de `neon_auth.user`; si falla, sin correo), `getPlanSummary`, `listMemberships`, `listUpcomingBookings`, `listBookingHistory` y `summarizeClientActivity` (30 días). «Ver más» del historial con `loadClientHistoryAction` (`BookingHistory` recibe `load` y `sessionBase`). Sin cambios de esquema.
