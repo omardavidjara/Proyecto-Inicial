@@ -97,6 +97,7 @@ Formato de fechas y horas: `es-ES`, 24 h, en la zona horaria del gimnasio. "lun 
 - **Zonas táctiles de 44 × 44 px como mínimo** (botones `h-11`, filas de lista `min-h-11`, iconos con área ampliada). Separación mínima de 8 px entre objetivos.
 - **Navegación inferior** fija en cliente (Calendario · Mis reservas · Avisos · Perfil) y admin en móvil (Hoy · Agenda · Clientes · Incidencias · Más): icono + etiqueta siempre visible, 64 px de alto + `safe-area-inset-bottom`. En pantallas ≥ 1024 px se convierte en barra lateral.
 - **Safe areas**: `viewport-fit=cover` y rellenos con `env(safe-area-inset-*)` en cabecera y barra inferior (muesca de iPhone, barra de gestos de Android).
+- **App instalada en Android**: la barra de gestos y la pantalla de carga toman los colores del manifest (`app/manifest.ts`), que no admite modo claro/oscuro; se usa el fondo oscuro `#0b0b0c` para que no aparezca una franja blanca bajo la barra inferior. Android actualiza la app instalada con el manifest nuevo al cabo de unos días; para verlo al momento, desinstalarla y volver a instalarla.
 - La acción principal queda al alcance del pulgar: botón ancho en la parte inferior de la pantalla de detalle, por encima de la barra.
 - Confirmaciones destructivas (anular, dar de baja) en **diálogo** con el botón destructivo a la derecha y "Volver" como opción por defecto.
 - Sin `hover` como única pista: todo lo que tenga hover debe entenderse también al tocar.
@@ -151,3 +152,4 @@ Componentes propios ya creados: `SessionCard`, `SessionStatusBadge` y `DayPicker
 ## 10. Historial de cambios
 
 - 2026-10-02 · Versión inicial (Fase 2).
+- 2026-10-16 · Manifest con fondo oscuro: sin franja blanca en la barra de gestos de Android.
