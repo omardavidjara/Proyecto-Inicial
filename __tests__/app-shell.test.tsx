@@ -9,7 +9,7 @@ afterEach(cleanup)
 
 function renderScreen() {
   return render(
-    <AppShell nav={clientNav} navLabel="Navegación principal">
+    <AppShell nav={clientNav} navLabel="Navegación principal" profileHref="/perfil">
       <Page title="Calendario" backHref="/inicio">
         <p>Contenido</p>
       </Page>
@@ -36,4 +36,38 @@ test('la navegación tiene nombre y marca la pestaña actual', () => {
   const nav = screen.getByRole('navigation', { name: 'Navegación principal' })
   const current = nav.querySelector('[aria-current="page"]')
   expect(current?.textContent).toBe('Calendario')
+})
+
+test('la cabecera muestra el logo y el nombre, y lleva al inicio', () => {
+  renderScreen()
+  const brand = screen.getByRole('link', { name: 'Athlos, ir al inicio' })
+  expect(brand.getAttribute('href')).toBe('/')
+  expect(brand.textContent).toContain('Athlos')
+  expect(brand.querySelector('img')?.getAttribute('alt')).toBe('')
+  expect(screen.getByRole('banner').contains(brand)).toBe(true)
+})
+
+test('el título y "Volver" van en el contenido, no en la cabecera', () => {
+  renderScreen()
+  const main = screen.getByRole('main')
+  expect(main.contains(screen.getByRole('heading', { level: 1, name: 'Calendario' }))).toBe(true)
+  expect(main.contains(screen.getByRole('link', { name: 'Volver' }))).toBe(true)
+})
+
+test('el perfil está arriba a la derecha, en la cabecera, y no en la barra inferior', () => {
+  renderScreen()
+  const profile = screen.getByRole('link', { name: 'Mi perfil' })
+  expect(profile.getAttribute('href')).toBe('/perfil')
+  expect(screen.getByRole('banner').contains(profile)).toBe(true)
+  const nav = screen.getByRole('navigation', { name: 'Navegación principal' })
+  expect(nav.textContent).not.toContain('Perfil')
+})
+
+test('sin AppShell (pantallas públicas) no hay botón de perfil', () => {
+  render(
+    <Page title="Instalar la app">
+      <p>Contenido</p>
+    </Page>
+  )
+  expect(screen.queryByRole('link', { name: 'Mi perfil' })).toBeNull()
 })

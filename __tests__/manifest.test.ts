@@ -20,3 +20,9 @@ test('el manifest declara iconos 192/512 normales y maskable que existen', () =>
     expect(existsSync(join(process.cwd(), 'public', icon.src))).toBe(true)
   }
 })
+
+test('la barra de gestos de Android y la pantalla de carga usan el fondo oscuro de la app (sin franja blanca)', () => {
+  const m = manifest()
+  expect(m.background_color).toBe('#0b0b0c')
+  expect(m.theme_color).toBe('#0b0b0c')
+})

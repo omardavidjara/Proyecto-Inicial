@@ -121,14 +121,14 @@ Reglas (configurables por el administrador; los periodos de las tarifas se cuent
 
 Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada usuario entra en **su pantalla de inicio** (cliente → Inicio, entrenador → Mi semana, administrador → Hoy).
 
-**Cliente** (navegación inferior: Inicio · Calendario · Mis reservas · Perfil)
+**Cliente** (navegación inferior: Inicio · Calendario · Mis reservas; Perfil arriba a la derecha, en la cabecera)
 - **Inicio**: saludo, próxima clase reservada, clases que le quedan en el periodo, últimos avisos y botón "Reservar clase"
 - Calendario (selector de día + lista de sesiones)
 - Detalle de sesión (reservar / anular / lista de espera)
 - Mis reservas (próximas, historial, clases restantes)
 - Avisos (desde Inicio y el icono de campana de la cabecera)
 
-**Entrenador** (navegación inferior: Mi semana · Incidencias · Perfil)
+**Entrenador** (navegación inferior: Mi semana · Incidencias; Perfil arriba a la derecha, en la cabecera)
 - **Mi semana** (inicio): calendario semanal de sus clases
 - Día: clases que imparte ese día
 - Detalle de sesión con asistentes y asistencia
