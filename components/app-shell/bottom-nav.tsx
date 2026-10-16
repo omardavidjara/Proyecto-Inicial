@@ -34,9 +34,9 @@ export function BottomNav({ items, label }: { items: NavItem[]; label: string })
   return (
     <nav
       aria-label={label}
-      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-safe shadow-[0_-1px_8px_rgb(0_0_0/0.06)] backdrop-blur lg:inset-y-0 lg:right-auto lg:w-60 lg:border-t-0 lg:border-r lg:pt-safe lg:shadow-none"
+      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-safe shadow-[0_-1px_8px_rgb(0_0_0/0.06)] backdrop-blur lg:top-[calc(3.5rem+env(safe-area-inset-top))] lg:right-auto lg:bottom-0 lg:w-60 lg:border-t-0 lg:border-r lg:shadow-none"
     >
-      <ul className="mx-auto flex h-16 max-w-2xl lg:mt-20 lg:h-auto lg:flex-col lg:gap-1 lg:px-3">
+      <ul className="mx-auto flex h-16 max-w-2xl lg:mt-4 lg:h-auto lg:flex-col lg:gap-1 lg:px-3">
         {items.map((item) => {
           const active = item.href === current
           return (

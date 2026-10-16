@@ -37,3 +37,19 @@ test('la navegación tiene nombre y marca la pestaña actual', () => {
   const current = nav.querySelector('[aria-current="page"]')
   expect(current?.textContent).toBe('Calendario')
 })
+
+test('la cabecera muestra el logo y el nombre, y lleva al inicio', () => {
+  renderScreen()
+  const brand = screen.getByRole('link', { name: 'Athlos, ir al inicio' })
+  expect(brand.getAttribute('href')).toBe('/')
+  expect(brand.textContent).toContain('Athlos')
+  expect(brand.querySelector('img')?.getAttribute('alt')).toBe('')
+  expect(screen.getByRole('banner').contains(brand)).toBe(true)
+})
+
+test('el título y "Volver" van en el contenido, no en la cabecera', () => {
+  renderScreen()
+  const main = screen.getByRole('main')
+  expect(main.contains(screen.getByRole('heading', { level: 1, name: 'Calendario' }))).toBe(true)
+  expect(main.contains(screen.getByRole('link', { name: 'Volver' }))).toBe(true)
+})
