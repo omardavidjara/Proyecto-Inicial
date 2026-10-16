@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   viewer: null as unknown,
+  listSessionIncidents: vi.fn(),
   getSessionDetail: vi.fn(),
   setAttendance: vi.fn(),
   refresh: vi.fn(),
@@ -18,6 +19,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/auth', () => ({ getAuth: () => ({ getSession: async () => ({ data: { user: { id: '5b0e3f0a-6f0c-4d8e-9c1a-0d7e2a4b9c11', name: 'X', email: 'x@example.test' } } }) }) }))
 vi.mock('@/lib/data/profiles', () => ({ ensureProfile: async () => mocks.viewer, createSignUpProfile: vi.fn(), getMyProfile: vi.fn(), updateMyProfile: vi.fn() }))
 vi.mock('@/lib/data/session-detail', () => ({ getSessionDetail: mocks.getSessionDetail, setAttendance: mocks.setAttendance }))
+vi.mock('@/lib/data/incidents', () => ({ listSessionIncidents: mocks.listSessionIncidents }))
 vi.mock('@/db', () => ({ getDb: () => 'http-db', getTxDb: () => 'tx-db' }))
 vi.mock('next/cache', () => ({ refresh: mocks.refresh }))
 vi.mock('next/headers', () => ({ cookies: vi.fn(async () => ({})), headers: vi.fn(async () => new Headers()) }))
@@ -45,9 +47,9 @@ const detail = (extra = {}) => ({
   status: 'scheduled',
   cancelReason: null,
   attendees: [
-    { bookingId: 'b1', fullName: 'Ana', attendance: 'attended', addedByStaff: false },
-    { bookingId: 'b2', fullName: 'Bea', attendance: 'no_show', addedByStaff: false },
-    { bookingId: 'b3', fullName: 'Carlos', attendance: 'pending', addedByStaff: false },
+    { bookingId: 'b1', userId: 'c1', fullName: 'Ana', attendance: 'attended', addedByStaff: false },
+    { bookingId: 'b2', userId: 'c2', fullName: 'Bea', attendance: 'no_show', addedByStaff: false },
+    { bookingId: 'b3', userId: 'c3', fullName: 'Carlos', attendance: 'pending', addedByStaff: false },
   ],
   waitlist: [],
   lateCancellations: [{ bookingId: 'l1', fullName: 'Dani Tardío', cancelledAt: new Date(), charged: null }],
@@ -57,6 +59,7 @@ const detail = (extra = {}) => ({
 afterEach(cleanup)
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.listSessionIncidents.mockResolvedValue([])
   as('coach', true)
   mocks.getSessionDetail.mockResolvedValue(detail())
   mocks.setAttendance.mockResolvedValue(true)
@@ -96,6 +99,32 @@ describe('detalle de sesión del entrenador', () => {
     expect(screen.queryByRole('group', { name: /Asistencia de/ })).toBeNull()
     expect(screen.getByText('Eva Espera')).toBeDefined()
     expect(screen.queryByRole('button', { name: 'Confirmar plaza' })).toBeNull()
+  })
+
+  test('incidencias: solo las suyas de la sesión, con «Nueva incidencia»', async () => {
+    mocks.listSessionIncidents.mockResolvedValue([
+      {
+        id: 'i-1',
+        title: 'Esterilla rota',
+        description: 'x',
+        priority: 'low',
+        status: 'open',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        closedAt: null,
+        clientId: null,
+        clientName: null,
+        sessionId: SESSION_ID,
+        sessionStartsAt: new Date(),
+        sessionClassName: 'CrossTraining',
+        createdById: 'coach-1',
+        createdByName: 'Laura',
+      },
+    ])
+    render(await page())
+    expect(mocks.listSessionIncidents).toHaveBeenCalledWith('http-db', SESSION_ID, { createdBy: 'coach-1' })
+    expect(screen.getByRole('link', { name: /Esterilla rota/ }).getAttribute('href')).toBe('/entrenador/incidencias/i-1')
+    expect(screen.getByRole('button', { name: 'Nueva incidencia' })).toBeTruthy()
   })
 })
 

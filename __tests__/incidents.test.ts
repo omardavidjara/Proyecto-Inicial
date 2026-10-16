@@ -4,13 +4,14 @@ import { randomUUID } from 'node:crypto'
 import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
-import { classTypes, incidents, profiles, sessions } from '@/db/schema'
+import { bookings, classTypes, incidents, profiles, sessions } from '@/db/schema'
 import {
   countIncidentsByStatus,
   createIncident,
   getIncident,
   listClientIncidents,
   listIncidents,
+  listSessionIncidents,
   searchClientsForIncident,
   setIncidentStatus,
   updateIncident,
@@ -25,6 +26,7 @@ let close: () => Promise<void>
 let adminId: string
 let coachId: string
 let sessionId: string
+let classTypeId: string
 
 async function profile(overrides: Partial<typeof profiles.$inferInsert> = {}) {
   const userId = randomUUID()
@@ -51,6 +53,7 @@ beforeAll(async () => {
     .values({ classTypeId: type.id, startsAt, endsAt: new Date(startsAt.getTime() + 3_600_000), capacity: 10 })
     .returning()
   sessionId = session.id
+  classTypeId = type.id
 }, 60_000)
 
 afterAll(async () => {
@@ -159,5 +162,47 @@ describe('buscador de clientes', () => {
     const found = await searchClientsForIncident(db, 'zoe')
     expect(found.map((c) => c.userId).sort()).toEqual([active, inactive].sort())
     expect(await searchClientsForIncident(db, 'z')).toEqual([])
+  })
+})
+
+describe('entrenador', () => {
+  async function coachSession(coach: string | null) {
+    const startsAt = new Date('2026-11-03T09:00:00Z')
+    const [row] = await db
+      .insert(sessions)
+      .values({ classTypeId, coachId: coach, startsAt, endsAt: new Date(startsAt.getTime() + 3_600_000), capacity: 10 })
+      .returning()
+    return row.id
+  }
+
+  test('en su sesión y con un cliente apuntado (aunque anulara): sí', async () => {
+    const own = await coachSession(coachId)
+    const clientId = await profile({ status: 'active' })
+    await db.insert(bookings).values({ sessionId: own, userId: clientId, createdBy: clientId, status: 'cancelled' })
+    const result = await createIncident(db, coachId, { ...base, sessionId: own, clientId }, { coachId })
+    expect(result.status).toBe('created')
+    expect(await createIncident(db, coachId, { ...base }, { coachId })).toMatchObject({ status: 'created' })
+  })
+
+  test('sesión de otro entrenador o sin entrenador: no existe para él', async () => {
+    const otherCoach = await profile({ role: 'coach', isCoach: true, status: 'active' })
+    for (const session of [await coachSession(otherCoach), await coachSession(null)]) {
+      expect(await createIncident(db, coachId, { ...base, sessionId: session }, { coachId })).toEqual({ status: 'session_not_found' })
+    }
+  })
+
+  test('cliente no apuntado a la sesión, o sin sesión: no', async () => {
+    const own = await coachSession(coachId)
+    const clientId = await profile({ status: 'active' })
+    expect(await createIncident(db, coachId, { ...base, sessionId: own, clientId }, { coachId })).toEqual({ status: 'client_not_found' })
+    expect(await createIncident(db, coachId, { ...base, clientId }, { coachId })).toEqual({ status: 'client_not_found' })
+  })
+
+  test('incidencias de una sesión: todas o solo las de quien las abrió', async () => {
+    const own = await coachSession(coachId)
+    const mine = await open(coachId, { sessionId: own })
+    const admins = await open(adminId, { sessionId: own })
+    expect((await listSessionIncidents(db, own)).map((i) => i.id).sort()).toEqual([mine, admins].sort())
+    expect((await listSessionIncidents(db, own, { createdBy: coachId })).map((i) => i.id)).toEqual([mine])
   })
 })

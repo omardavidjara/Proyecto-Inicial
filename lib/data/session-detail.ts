@@ -26,7 +26,7 @@ export type SessionDetail = {
   status: "scheduled" | "cancelled"
   cancelReason: string | null
   /** Reservas confirmadas, por nombre */
-  attendees: { bookingId: string; fullName: string; attendance: Attendance; addedByStaff: boolean }[]
+  attendees: { bookingId: string; userId: string; fullName: string; attendance: Attendance; addedByStaff: boolean }[]
   /** Por orden de llegada; vacía cuando la sesión ya ha empezado (la lista caduca) */
   waitlist: { bookingId: string; userId: string; fullName: string }[]
   /** `charged`: `null` = pendiente de decidir */
@@ -81,7 +81,13 @@ export async function getSessionDetail(db: Db, sessionId: unknown, now = new Dat
     ...(session as Omit<SessionDetail, "attendees" | "waitlist" | "lateCancellations">),
     attendees: rows
       .filter((r) => r.status === "confirmed")
-      .map((r) => ({ bookingId: r.bookingId, fullName: r.fullName, attendance: r.attendance, addedByStaff: r.createdBy !== r.userId })),
+      .map((r) => ({
+        bookingId: r.bookingId,
+        userId: r.userId,
+        fullName: r.fullName,
+        attendance: r.attendance,
+        addedByStaff: r.createdBy !== r.userId,
+      })),
     waitlist: started
       ? []
       : rows

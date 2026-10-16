@@ -3,59 +3,36 @@
 import { refresh } from "next/cache"
 import { z } from "zod"
 
+import { CLIENT_GONE, incidentFieldErrors, parseIncidentEdit, parseNewIncident, SESSION_GONE, type IncidentFormState } from "@/lib/incident-form"
 import {
   createIncidentForAdmin,
   searchClientsForIncident,
   setIncidentStatusForAdmin,
   updateIncidentForAdmin,
 } from "@/lib/dal"
-import { INCIDENT_STATUSES, incidentSchema, newIncidentSchema, STATUS_LABEL } from "@/lib/validation/incidents"
+import { INCIDENT_STATUSES, STATUS_LABEL } from "@/lib/validation/incidents"
 
 // Incidencias (SPEC F9). La DAL exige el rol de administración y valida los ids
 
-export type IncidentFormState = {
-  saved?: boolean
-  error?: string
-  fieldErrors?: { title?: string; description?: string; priority?: string; clientId?: string }
-}
-
 const NOT_FOUND = "Esa incidencia ya no existe. Recarga la página."
-
-function fieldsOf(formData: FormData) {
-  return { title: formData.get("title"), description: formData.get("description"), priority: formData.get("priority") }
-}
 
 /** Crear (con cliente o sesión opcionales) o editar (con el campo oculto `id`: título, descripción y prioridad) */
 export async function saveIncidentAction(_prev: IncidentFormState, formData: FormData): Promise<IncidentFormState> {
   const id = formData.get("id")
   if (id) {
-    const parsed = incidentSchema.safeParse(fieldsOf(formData))
-    if (!parsed.success) return { fieldErrors: firstErrors(parsed.error) }
+    const parsed = parseIncidentEdit(formData)
+    if (!parsed.success) return { fieldErrors: incidentFieldErrors(parsed.error) }
     if (!(await updateIncidentForAdmin(id, parsed.data))) return { error: NOT_FOUND }
     refresh()
     return { saved: true }
   }
-  const parsed = newIncidentSchema.safeParse({
-    ...fieldsOf(formData),
-    clientId: formData.get("clientId"),
-    sessionId: formData.get("sessionId"),
-  })
-  if (!parsed.success) return { fieldErrors: firstErrors(parsed.error) }
+  const parsed = parseNewIncident(formData)
+  if (!parsed.success) return { fieldErrors: incidentFieldErrors(parsed.error) }
   const result = await createIncidentForAdmin(parsed.data)
-  if (result.status === "client_not_found") return { fieldErrors: { clientId: "Ese cliente ya no existe. Elige otro." } }
-  if (result.status === "session_not_found") return { error: "Esa sesión ya no existe. Recarga la página." }
+  if (result.status === "client_not_found") return { fieldErrors: { clientId: CLIENT_GONE } }
+  if (result.status === "session_not_found") return { error: SESSION_GONE }
   refresh()
   return { saved: true }
-}
-
-function firstErrors(error: z.ZodError) {
-  const fields = z.flattenError(error).fieldErrors as Record<string, string[] | undefined>
-  return {
-    title: fields.title?.[0],
-    description: fields.description?.[0],
-    priority: fields.priority?.[0],
-    clientId: fields.clientId?.[0],
-  }
 }
 
 export type IncidentActionResult = { ok: boolean; message: string }

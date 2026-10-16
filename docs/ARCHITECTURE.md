@@ -196,6 +196,7 @@ app/
   entrenador/dia/[date]            Clases que imparte ese día (AAAA-MM-DD)
   entrenador/sesiones/[sessionId]  Asistentes + marcar asistencia
   entrenador/incidencias           Incidencias que ha abierto (F9)
+  entrenador/incidencias/[incidentId]  Detalle de solo lectura de una suya
   entrenador/perfil                Perfil (mismo componente que /perfil, con la navegación del entrenador)
   admin/                           Hoy
   admin/agenda                     ?vista=dia|semana|mes&fecha=AAAA-MM-DD (si no valen: Día de hoy)
@@ -342,6 +343,7 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 12. Historial de cambios
 
+- 2026-10-16 · F9 PR 2: incidencias del entrenador tras `requireArea("coach")` (`/entrenador/incidencias` y `/entrenador/incidencias/[incidentId]`, todo con `scope.createdBy`: una ajena es inexistente). `createIncident(…, { coachId })` exige que la sesión sea suya y que el cliente tenga una reserva (cualquier estado) en ella; sin sesión, no asocia cliente. Sección «Incidencias» en el detalle de sesión de administración (todas) y del entrenador (las suyas) con `listSessionIncidents`; `SessionDetail.attendees` trae `userId`. Formulario compartido en `components/incidents/`. Sin cambios de esquema.
 - 2026-10-16 · F9 PR 1: incidencias de administración (`/admin/incidencias?estado=&limite=` y `/admin/incidencias/[incidentId]`) tras `requireArea("admin")`. Capa `lib/data/incidents.ts` (`listIncidents`, `countIncidentsByStatus`, `getIncident` y `listClientIncidents`, con `scope.createdBy` para el entrenador en la PR 2; `createIncident` comprueba que el cliente es un cliente no eliminado y que la sesión existe; `setIncidentStatus` guarda `closed_at` al cerrar y lo borra al reabrir). La paginación es «Ver más» con `?limite=` (como Clientes) en lugar de cursor. Las incidencias del cliente se ven en su ficha. Sin cambios de esquema.
 - 2026-10-16 · F8 PR 2: ficha `/admin/clientes/[userId]` tras `requireArea("admin")` e id validado con `z.uuid()` (no cliente o eliminado = 404). `getClientProfileForAdmin` reúne `clients.getClient`, el correo (`clients.getAuthEmail`, solo lectura de `neon_auth.user`; si falla, sin correo), `getPlanSummary`, `listMemberships`, `listUpcomingBookings`, `listBookingHistory` y `summarizeClientActivity` (30 días). «Ver más» del historial con `loadClientHistoryAction` (`BookingHistory` recibe `load` y `sessionBase`). Sin cambios de esquema.
 - 2026-10-16 · F7 PR 5: «Entrenadores» en administración (`/admin/entrenadores` y `/admin/entrenadores/[coachId]`), solo consulta tras `requireArea("admin")`. `AgendaSession` trae `coachId`; `getCoachesOverview` consulta el periodo una vez y agrupa con `summarizeCoaches` (`lib/coach-summary.ts`); `getCoachPeriodForAdmin` valida el id con `z.uuid()` y `schedule.getCoach` (entrenador activo; si no, 404). El calendario del entrenador pasa a `components/coach/coach-calendar.tsx`, compartido con «Mi semana». Sin cambios de esquema.

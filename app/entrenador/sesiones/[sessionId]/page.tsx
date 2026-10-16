@@ -4,8 +4,9 @@ import { connection } from "next/server"
 import { CalendarDays, Clock, Users } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { AttendeeList, WaitlistList } from "@/components/admin/session-detail"
+import { SessionIncidents } from "@/components/incidents/session-incidents"
 import { Badge } from "@/components/ui/badge"
-import { getSessionDetailForCoach } from "@/lib/dal"
+import { getSessionDetailForCoach, listSessionIncidentsForCoach } from "@/lib/dal"
 import { formatDayLong, toDateKey, toTimeKey } from "@/lib/dates"
 import { CLASS_COLOR_BG } from "@/lib/sessions"
 import { cn } from "@/lib/utils"
@@ -19,7 +20,7 @@ export const metadata: Metadata = { title: "Asistentes" }
 export default async function CoachSessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
   await connection() // la asistencia y la lista de espera dependen de la hora actual
   const { sessionId } = await params
-  const session = await getSessionDetailForCoach(sessionId)
+  const [session, incidents] = await Promise.all([getSessionDetailForCoach(sessionId), listSessionIncidentsForCoach(sessionId)])
   if (!session) notFound()
 
   const now = new Date()
@@ -79,6 +80,8 @@ export default async function CoachSessionPage({ params }: { params: Promise<{ s
           <WaitlistList sessionId={session.id} items={session.waitlist} readOnly />
         </section>
       )}
+
+      <SessionIncidents area="coach" session={session} items={incidents} />
     </Page>
   )
 }

@@ -765,3 +765,46 @@ export async function setIncidentStatusForAdmin(id: unknown, status: IncidentSta
   await requireArea("admin")
   return incidents.setIncidentStatus(getDb(), id, status)
 }
+
+const sessionIdSchema = z.uuid()
+
+/** Incidencias de una sesión (su detalle de administración) */
+export async function listSessionIncidentsForAdmin(sessionId: unknown) {
+  await requireArea("admin")
+  const id = sessionIdSchema.safeParse(sessionId)
+  return id.success ? incidents.listSessionIncidents(getDb(), id.data) : []
+}
+
+// ── Incidencias del entrenador (F9): solo las que ha abierto; una ajena es inexistente ───────────────────
+
+export async function listIncidentsForCoach(status: IncidentStatus, limit?: unknown) {
+  const viewer = await requireArea("coach")
+  return incidents.listIncidents(getDb(), status, { limit: incidentLimitSchema.parse(limit), createdBy: viewer.userId })
+}
+
+export async function countIncidentsForCoach() {
+  const viewer = await requireArea("coach")
+  return incidents.countIncidentsByStatus(getDb(), { createdBy: viewer.userId })
+}
+
+export async function getIncidentForCoach(id: unknown) {
+  const viewer = await requireArea("coach")
+  const db = getDb()
+  const incident = await incidents.getIncident(db, id, { createdBy: viewer.userId })
+  if (!incident) return null
+  const settings = await bookingData.getBookingSettings(db)
+  return { incident, timeZone: settings.timeZone }
+}
+
+/** Las suyas de una sesión (su detalle de entrenador) */
+export async function listSessionIncidentsForCoach(sessionId: unknown) {
+  const viewer = await requireArea("coach")
+  const id = sessionIdSchema.safeParse(sessionId)
+  return id.success ? incidents.listSessionIncidents(getDb(), id.data, { createdBy: viewer.userId }) : []
+}
+
+/** Solo en sus sesiones y con clientes apuntados a ellas (lo comprueba la capa de datos) */
+export async function createIncidentForCoach(input: NewIncidentInput) {
+  const viewer = await requireArea("coach")
+  return incidents.createIncident(getDb(), viewer.userId, input, { coachId: viewer.userId })
+}

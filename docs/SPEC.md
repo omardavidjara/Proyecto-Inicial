@@ -100,6 +100,7 @@ Reglas (configurables por el administrador; los periodos de las tarifas se cuent
 - La abre un administrador (o entrenador). Título, descripción, prioridad, y opcionalmente asociada a un **cliente** o a una **sesión**.
 - Estados: **abierta → en curso → cerrada**.
 - Solo las ven administradores (y el entrenador que la abrió).
+- El entrenador las abre desde «Incidencias» o desde el detalle de una sesión suya, y solo puede asociarlas a sus sesiones y a los clientes apuntados a ellas. No cambia el estado ni las edita: eso lo hace administración (decidido el 2026-10-16).
 
 ### F10. Avisos y notificaciones
 - El administrador publica **avisos generales** del gimnasio (se ven en la app y llegan como push).

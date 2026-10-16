@@ -3,13 +3,9 @@
 import { useActionState, useEffect, useState, useTransition } from "react"
 import { Loader2, Pencil, Plus } from "lucide-react"
 import { toast } from "sonner"
-import {
-  saveIncidentAction,
-  searchIncidentClientsAction,
-  setIncidentStatusAction,
-  type IncidentFormState,
-} from "@/app/admin/incidencias/actions"
-import { FieldError } from "@/components/admin/schedule-slot-form"
+import { saveIncidentAction, searchIncidentClientsAction, setIncidentStatusAction } from "@/app/admin/incidencias/actions"
+import { createCoachIncidentAction } from "@/app/entrenador/incidencias/actions"
+import { FieldError, SELECT } from "@/components/admin/schedule-slot-form"
 import { ClientInitial, ClientSearch, type ClientOption } from "@/components/client-search"
 import { Button } from "@/components/ui/button"
 import {
@@ -25,15 +21,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { IncidentRow } from "@/lib/data/incidents"
-import {
-  DESCRIPTION_MAX,
-  INCIDENT_PRIORITIES,
-  PRIORITY_LABEL,
-  TITLE_MAX,
-  type IncidentStatus,
-} from "@/lib/validation/incidents"
+import type { IncidentFormState } from "@/lib/incident-form"
+import { DESCRIPTION_MAX, INCIDENT_PRIORITIES, PRIORITY_LABEL, TITLE_MAX, type IncidentStatus } from "@/lib/validation/incidents"
 
-// Incidencias (SPEC F9). Sin datos de salud (RGPD art. 9, ARCHITECTURE §7): el formulario lo recuerda
+// Incidencias (SPEC F9). Sin datos de salud (RGPD art. 9, ARCHITECTURE §7): el formulario lo recuerda.
+// Administración crea y edita con cliente opcional (buscador); el entrenador solo crea, y solo asocia su sesión
+// y a alguien apuntado a ella (lo comprueba el servidor)
 
 const initialState: IncidentFormState = {}
 
@@ -41,14 +34,20 @@ export const TEXTAREA =
   "min-h-28 w-full min-w-0 rounded-lg border border-input bg-transparent px-3 py-2 text-base transition-colors outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30"
 
 type Props = {
-  /** Editar esta incidencia (sin cambiar el cliente ni la sesión) */
+  area?: "admin" | "coach"
+  /** Editar esta incidencia (solo administración; sin cambiar el cliente ni la sesión) */
   incident?: IncidentRow
   /** Nueva incidencia ya asociada a este cliente (desde su ficha) */
   client?: ClientOption
+  /** Nueva incidencia asociada a esta sesión (desde su detalle) */
+  session?: { id: string; label: string }
+  /** Con `session`: los clientes apuntados, para elegir uno (opcional) */
+  sessionClients?: ClientOption[]
 }
 
 /** Botón «Nueva incidencia» o «Editar» con el formulario en un diálogo. Se cierra al guardar */
-export function IncidentDialog({ incident, client }: Props) {
+export function IncidentDialog(props: Props) {
+  const { incident } = props
   const [open, setOpen] = useState(false)
   const [formKey, setFormKey] = useState(0)
 
@@ -77,14 +76,14 @@ export function IncidentDialog({ incident, client }: Props) {
           <DialogTitle>{incident ? "Editar incidencia" : "Nueva incidencia"}</DialogTitle>
           <DialogDescription>No escribas datos de salud (lesiones, enfermedades, medicación).</DialogDescription>
         </DialogHeader>
-        <IncidentForm key={formKey} incident={incident} client={client} onSaved={() => setOpen(false)} />
+        <IncidentForm key={formKey} {...props} onSaved={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )
 }
 
-function IncidentForm({ incident, client: fixedClient, onSaved }: Props & { onSaved: () => void }) {
-  const [state, formAction, pending] = useActionState(saveIncidentAction, initialState)
+function IncidentForm({ area = "admin", incident, client: fixedClient, session, sessionClients = [], onSaved }: Props & { onSaved: () => void }) {
+  const [state, formAction, pending] = useActionState(area === "coach" ? createCoachIncidentAction : saveIncidentAction, initialState)
   const [client, setClient] = useState<ClientOption | null>(fixedClient ?? null)
   const errors = state.fieldErrors ?? {}
 
@@ -103,6 +102,13 @@ function IncidentForm({ incident, client: fixedClient, onSaved }: Props & { onSa
   return (
     <form action={formAction} className="flex flex-col gap-4" noValidate>
       {incident ? <input type="hidden" name="id" value={incident.id} /> : null}
+      {session ? <input type="hidden" name="sessionId" value={session.id} /> : null}
+
+      {session ? (
+        <p className="rounded-lg bg-muted px-3 py-2 text-sm">
+          Sesión: <span className="font-medium">{session.label}</span>
+        </p>
+      ) : null}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="title">Título</Label>
@@ -151,7 +157,39 @@ function IncidentForm({ incident, client: fixedClient, onSaved }: Props & { onSa
         <FieldError id="priority-error" message={errors.priority} />
       </fieldset>
 
-      {incident ? null : (
+      {incident ? null : fixedClient ? (
+        <div className="flex flex-col gap-2">
+          <input type="hidden" name="clientId" value={fixedClient.userId} />
+          <span className="text-sm font-medium">Cliente</span>
+          <div className="flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2">
+            <ClientInitial name={fixedClient.fullName} />
+            <span className="flex-1 font-medium">{fixedClient.fullName}</span>
+          </div>
+          <FieldError id="clientId-error" message={errors.clientId} />
+        </div>
+      ) : session ? (
+        sessionClients.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="clientId">Cliente (opcional)</Label>
+            <select
+              id="clientId"
+              name="clientId"
+              className={SELECT}
+              defaultValue=""
+              aria-invalid={invalid("clientId")}
+              aria-describedby={describedBy("clientId")}
+            >
+              <option value="">Ninguno</option>
+              {sessionClients.map((c) => (
+                <option key={c.userId} value={c.userId}>
+                  {c.fullName}
+                </option>
+              ))}
+            </select>
+            <FieldError id="clientId-error" message={errors.clientId} />
+          </div>
+        ) : null
+      ) : area === "admin" ? (
         <>
           <input type="hidden" name="clientId" value={client?.userId ?? ""} />
           {client ? (
@@ -160,11 +198,9 @@ function IncidentForm({ incident, client: fixedClient, onSaved }: Props & { onSa
               <div className="flex min-h-12 items-center gap-3 rounded-xl border px-3 py-2">
                 <ClientInitial name={client.fullName} />
                 <span className="flex-1 font-medium">{client.fullName}</span>
-                {fixedClient ? null : (
-                  <Button type="button" variant="ghost" onClick={() => setClient(null)} aria-label={`Quitar el cliente ${client.fullName}`}>
-                    Quitar
-                  </Button>
-                )}
+                <Button type="button" variant="ghost" onClick={() => setClient(null)} aria-label={`Quitar el cliente ${client.fullName}`}>
+                  Quitar
+                </Button>
               </div>
               <FieldError id="clientId-error" message={errors.clientId} />
             </div>
@@ -172,6 +208,10 @@ function IncidentForm({ incident, client: fixedClient, onSaved }: Props & { onSa
             <ClientSearch search={searchIncidentClientsAction} onPick={setClient} error={errors.clientId} label="Cliente (opcional)" />
           )}
         </>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Para asociarla a una sesión tuya o a uno de sus clientes, ábrela desde el detalle de esa sesión.
+        </p>
       )}
 
       <DialogFooter>
@@ -201,7 +241,7 @@ const NEXT_STEPS: Record<IncidentStatus, { status: IncidentStatus; label: string
   closed: [{ status: "open", label: "Reabrir" }],
 }
 
-/** Botones para pasar de estado: abierta → en curso → cerrada, y reabrir */
+/** Botones para pasar de estado (solo administración): abierta → en curso → cerrada, y reabrir */
 export function IncidentStatusActions({ id, status }: { id: string; status: IncidentStatus }) {
   const [pending, startTransition] = useTransition()
 
