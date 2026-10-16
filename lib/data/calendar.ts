@@ -110,12 +110,23 @@ function withMine(rows: SessionRow[], mine: Map<string, MyBooking>, now: Date): 
 
 /** Sesiones de un día (en la zona del gimnasio), canceladas incluidas, por hora */
 export async function listDaySessions(db: Db, userId: string, day: string, now = new Date()): Promise<CalendarSession[]> {
+  return listSessionsBetween(db, userId, day, day, now)
+}
+
+/** Sesiones de `from` a `to` (días incluidos, en la zona del gimnasio), canceladas incluidas, por hora */
+export async function listSessionsBetween(
+  db: Db,
+  userId: string,
+  from: string,
+  to: string,
+  now = new Date(),
+): Promise<CalendarSession[]> {
   const rows = (await db
     .select(sessionColumns)
     .from(sessions)
     .innerJoin(classTypes, eq(classTypes.id, sessions.classTypeId))
     .leftJoin(profiles, eq(profiles.userId, sessions.coachId))
-    .where(and(gte(sessions.startsAt, startOfDay(day)), lt(sessions.startsAt, startOfDay(addDays(day, 1)))))
+    .where(and(gte(sessions.startsAt, startOfDay(from)), lt(sessions.startsAt, startOfDay(addDays(to, 1)))))
     .orderBy(asc(sessions.startsAt), asc(classTypes.name))) as SessionRow[]
   return withMine(rows, await myBookingsIn(db, userId, rows.map((r) => r.id)), now)
 }

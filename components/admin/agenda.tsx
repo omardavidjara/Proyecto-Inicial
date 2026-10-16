@@ -15,15 +15,32 @@ const linkFocus = "outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 export const sessionHref = (id: string) => `/admin/sesiones/${id}`
 
-/** Pestañas Día / Semana / Mes, ‹ Hoy › y el título del periodo */
-export function AgendaToolbar({ view, date, today, range }: { view: AgendaView; date: string; today: string; range: AgendaRange }) {
+/**
+ * Pestañas Día / Semana / Mes, ‹ Hoy › y el título del periodo. El calendario del cliente la reutiliza con sus
+ * enlaces (`hrefFor`) y sin ‹ cuando el periodo anterior ya ha pasado (`canGoBack`)
+ */
+export function AgendaToolbar({
+  view,
+  date,
+  today,
+  range,
+  hrefFor = agendaHref,
+  canGoBack = true,
+}: {
+  view: AgendaView
+  date: string
+  today: string
+  range: AgendaRange
+  hrefFor?: (view: AgendaView, date: string) => string
+  canGoBack?: boolean
+}) {
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <nav aria-label="Vista de la agenda" className="flex gap-1 rounded-xl bg-muted p-1 sm:w-72">
         {AGENDA_VIEWS.map((v) => (
           <Link
             key={v.param}
-            href={agendaHref(v.param, date)}
+            href={hrefFor(v.param, date)}
             aria-current={v.param === view ? "page" : undefined}
             className={cn(
               "flex min-h-11 flex-1 items-center justify-center rounded-lg text-sm font-medium",
@@ -36,16 +53,22 @@ export function AgendaToolbar({ view, date, today, range }: { view: AgendaView; 
         ))}
       </nav>
       <div className="flex items-center gap-1">
-        <NavLink href={agendaHref(view, range.prev)} label="Anterior">
-          <ChevronLeft aria-hidden="true" className="size-5" />
-        </NavLink>
+        {canGoBack ? (
+          <NavLink href={hrefFor(view, range.prev)} label="Anterior">
+            <ChevronLeft aria-hidden="true" className="size-5" />
+          </NavLink>
+        ) : (
+          <span aria-hidden="true" className="flex size-11 items-center justify-center text-muted-foreground/40">
+            <ChevronLeft className="size-5" />
+          </span>
+        )}
         <Link
-          href={agendaHref(view, today)}
+          href={hrefFor(view, today)}
           className={cn("flex min-h-11 items-center rounded-lg px-3 text-sm font-medium hover:bg-muted", linkFocus)}
         >
           Hoy
         </Link>
-        <NavLink href={agendaHref(view, range.next)} label="Siguiente">
+        <NavLink href={hrefFor(view, range.next)} label="Siguiente">
           <ChevronRight aria-hidden="true" className="size-5" />
         </NavLink>
         <h2 className="ml-2 text-lg font-semibold first-letter:uppercase">{range.title}</h2>
@@ -135,7 +158,7 @@ export function AgendaDay({ sessions, now }: { sessions: AgendaSession[]; now: D
   return <SessionsTable sessions={sessions} now={now} />
 }
 
-const byDay = (sessions: AgendaSession[]) => Map.groupBy(sessions, (s) => toDateKey(s.startsAt))
+const byDay = <T extends Pick<AgendaSession, "startsAt">>(sessions: T[]) => Map.groupBy(sessions, (s) => toDateKey(s.startsAt))
 
 /** Lunes a domingo: en móvil, un bloque por día; desde 1024 px, siete columnas */
 export function AgendaWeek({ range, sessions, today, now }: { range: AgendaRange; sessions: AgendaSession[]; today: string; now: Date }) {
@@ -203,12 +226,15 @@ export function AgendaMonth({
   sessions,
   today,
   dayHref = (day) => agendaHref("dia", day),
+  minDay,
 }: {
   range: AgendaRange
   date: string
-  sessions: AgendaSession[]
+  sessions: Pick<AgendaSession, "color" | "startsAt" | "status">[]
   today: string
   dayHref?: (day: string) => string
+  /** Los días anteriores salen atenuados y sin enlace (el cliente no consulta días pasados) */
+  minDay?: string
 }) {
   const groups = byDay(sessions.filter((s) => s.status === "scheduled"))
   const days = daysBetween(range.from, range.to)
@@ -225,6 +251,16 @@ export function AgendaMonth({
           const daySessions = groups.get(day) ?? []
           const colors = [...new Set(daySessions.map((s) => s.color))]
           const count = daySessions.length
+          const cell = "flex min-h-16 flex-col gap-1 rounded-lg border p-1.5 text-sm lg:min-h-24"
+          if (minDay && day < minDay) {
+            return (
+              <li key={day}>
+                <span className={cn(cell, "border-transparent text-muted-foreground")}>
+                  <span className="flex size-7 items-center justify-center tabular-nums">{formatDayNumber(day)}</span>
+                </span>
+              </li>
+            )
+          }
           return (
             <li key={day}>
               <Link
@@ -232,7 +268,8 @@ export function AgendaMonth({
                 aria-current={day === today ? "date" : undefined}
                 aria-label={`${formatDayLong(day)}: ${count === 1 ? "1 sesión" : `${count} sesiones`}`}
                 className={cn(
-                  "flex min-h-16 flex-col gap-1 rounded-lg border bg-card p-1.5 text-sm hover:bg-muted/50 lg:min-h-24",
+                  cell,
+                  "bg-card hover:bg-muted/50",
                   linkFocus,
                   !day.startsWith(month) && "bg-transparent text-muted-foreground",
                 )}

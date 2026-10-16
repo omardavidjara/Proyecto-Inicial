@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm'
 import { afterAll, beforeAll, describe, expect, test } from 'vitest'
 
 import { bookings, classTypes, profiles, sessions } from '@/db/schema'
-import { getCalendarSession, getMyLiveBooking, listDaySessions } from '@/lib/data/calendar'
+import { getCalendarSession, getMyLiveBooking, listDaySessions, listSessionsBetween } from '@/lib/data/calendar'
 
 import { createTestDb, type TestDb } from './helpers/test-db'
 
@@ -107,6 +107,23 @@ describe('sesiones de un día', () => {
     const ana = await person()
     expect(await getCalendarSession(db, ana, "' or 1=1 --", now)).toBeNull()
     expect(await getCalendarSession(db, ana, randomUUID(), now)).toBeNull()
+  })
+})
+
+describe('sesiones de varios días', () => {
+  test('incluye el primer y el último día (en Madrid) y mi reserva', async () => {
+    // Fechas lejanas para no mezclarse con las demás pruebas
+    const first = await session('2027-03-01T08:00:00Z')
+    const last = await session('2027-03-07T21:30:00Z') // 22:30 del día 7 en Madrid (UTC+1)
+    await session('2027-02-28T22:59:00Z') // 23:59 del día 28
+    await session('2027-03-07T23:00:00Z') // 00:00 del día 8
+    const ana = await person()
+    const mine = await book(last, ana, 'confirmed')
+    const rows = await listSessionsBetween(db, ana, '2027-03-01', '2027-03-07', now)
+    expect(rows.map((s) => s.id)).toEqual([first, last])
+    expect(rows[1].myBooking).toEqual({ id: mine, status: 'confirmed' })
+    // Otra persona no ve mi reserva
+    expect((await listSessionsBetween(db, await person(), '2027-03-01', '2027-03-07', now))[1].myBooking).toBeNull()
   })
 })
 

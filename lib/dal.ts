@@ -135,6 +135,12 @@ export async function getMyCalendarDay(day: string) {
   return calendar.listDaySessions(getDb(), viewer.userId, day)
 }
 
+/** Sesiones de `from` a `to` (días incluidos) con mis reservas: semana y mes del calendario */
+export async function getMyCalendarBetween(from: string, to: string) {
+  const viewer = await requireArea("client")
+  return calendar.listSessionsBetween(getDb(), viewer.userId, from, to)
+}
+
 /** Una sesión con mi reserva, o `null` */
 export async function getMyCalendarSession(sessionId: unknown) {
   const viewer = await requireArea("client")
