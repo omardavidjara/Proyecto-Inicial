@@ -1,7 +1,7 @@
 import { and, asc, count, desc, eq, gte, ilike, isNull, lte, or, sql } from "drizzle-orm"
 import type { PgUpdateSetSource } from "drizzle-orm/pg-core"
 
-import { memberships, plans, profiles } from "@/db/schema"
+import { bookings, memberships, plans, profiles, sessions } from "@/db/schema"
 import { addDays, toDateKey } from "@/lib/dates"
 import type { ProfileStatus } from "@/lib/roles"
 
@@ -174,4 +174,76 @@ export async function changeClientPlan(db: Db, userId: string, planId: string | 
     if (!client) return "not_found"
     return assignPlan(tx, userId, planId, startsOn)
   })
+}
+
+// ── Ficha del cliente (F8) ──────────────────────────────────────────────────────────────────────────────
+
+/** Un cliente (cualquier estado, no eliminado), con su tarifa de hoy; `null` si no existe o no es cliente */
+export async function getClient(db: Db, userId: string, today = toDateKey(new Date())): Promise<ClientRow | null> {
+  const [row] = await db
+    .select(clientColumns)
+    .from(profiles)
+    .leftJoin(
+      memberships,
+      and(
+        eq(memberships.userId, profiles.userId),
+        lte(memberships.startsOn, today),
+        or(isNull(memberships.endsOn), gte(memberships.endsOn, today)),
+      ),
+    )
+    .leftJoin(plans, eq(plans.id, memberships.planId))
+    .where(and(isListedClient, eq(profiles.userId, userId)))
+    .limit(1)
+  return row ?? null
+}
+
+/**
+ * Correo de la cuenta, leído de `neon_auth.user` (lo gestiona Neon Auth, ARCHITECTURE §2). Solo lectura; si la
+ * tabla no está disponible, la ficha se muestra sin correo en lugar de fallar.
+ */
+export async function getAuthEmail(db: Db, userId: string): Promise<string | null> {
+  try {
+    const result = await db.execute(sql`select email from neon_auth."user" where id = ${userId} limit 1`)
+    const [row] = (result as unknown as { rows: { email: string | null }[] }).rows
+    return row?.email ?? null
+  } catch {
+    return null
+  }
+}
+
+export type ClientActivity = {
+  /** Clases ya empezadas con la reserva confirmada */
+  attended: number
+  noShow: number
+  /** Confirmadas sin asistencia marcada */
+  unmarked: number
+  lateCancelled: number
+  cancelled: number
+}
+
+/** Resumen de las reservas de sesiones (no canceladas) que empezaron entre `from` y `now` */
+export async function summarizeClientActivity(db: Db, userId: string, from: Date, now = new Date()): Promise<ClientActivity> {
+  const rows = await db
+    .select({ status: bookings.status, attendance: bookings.attendance, n: count() })
+    .from(bookings)
+    .innerJoin(sessions, eq(sessions.id, bookings.sessionId))
+    .where(
+      and(
+        eq(bookings.userId, userId),
+        eq(sessions.status, "scheduled"),
+        gte(sessions.startsAt, from),
+        lte(sessions.startsAt, now),
+      ),
+    )
+    .groupBy(bookings.status, bookings.attendance)
+  const activity: ClientActivity = { attended: 0, noShow: 0, unmarked: 0, lateCancelled: 0, cancelled: 0 }
+  for (const { status, attendance, n } of rows) {
+    if (status === "confirmed") {
+      if (attendance === "attended") activity.attended += n
+      else if (attendance === "no_show") activity.noShow += n
+      else activity.unmarked += n
+    } else if (status === "late_cancelled") activity.lateCancelled += n
+    else if (status === "cancelled") activity.cancelled += n
+  }
+  return activity
 }

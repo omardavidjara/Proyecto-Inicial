@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Phone, Search, UserCheck, UserRoundX, Users } from "lucide-react"
+import { ChevronRight, Phone, Search, UserCheck, UserRoundX, Users } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { ClientActions } from "@/components/admin/client-actions"
 import { EmptyState } from "@/components/empty-state"
@@ -92,7 +92,13 @@ export default async function ClientesPage({ searchParams }: PageProps<"/admin/c
           {clients.map((client) => (
             <li key={client.userId} className="flex flex-col gap-3 rounded-xl border bg-card p-4 sm:flex-row sm:items-center">
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="truncate font-medium">{client.fullName}</span>
+                <Link
+                  href={`/admin/clientes/${client.userId}`}
+                  className="inline-flex min-h-11 items-center gap-1 self-start truncate font-medium underline-offset-4 outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring sm:min-h-0"
+                >
+                  <span className="truncate">{client.fullName}</span>
+                  <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                </Link>
                 {client.phone ? (
                   <a href={`tel:${client.phone}`} className="inline-flex min-h-11 items-center gap-1.5 self-start text-sm text-muted-foreground tabular-nums hover:text-foreground sm:min-h-0">
                     <Phone className="size-3.5" aria-hidden="true" />
