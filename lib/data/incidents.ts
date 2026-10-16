@@ -2,7 +2,7 @@ import { and, asc, count, desc, eq, ilike, isNull, sql, type SQL } from "drizzle
 import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
-import { classTypes, incidents, profiles, sessions } from "@/db/schema"
+import { bookings, classTypes, incidents, profiles, sessions } from "@/db/schema"
 import {
   INCIDENT_MAX_LIMIT,
   INCIDENT_PAGE_SIZE,
@@ -104,6 +104,14 @@ export async function getIncident(db: Db, id: unknown, scope: IncidentScope = {}
   return row ?? null
 }
 
+/** Las incidencias de una sesión (su detalle), con el mismo orden que las del cliente */
+export async function listSessionIncidents(db: Db, sessionId: string, scope: IncidentScope = {}): Promise<IncidentRow[]> {
+  return selectIncidents(db)
+    .where(and(eq(incidents.sessionId, sessionId), scopeFilter(scope)))
+    .orderBy(sql`${incidents.status} = 'closed'`, desc(incidents.createdAt), asc(incidents.id))
+    .limit(CLIENT_INCIDENTS_LIMIT)
+}
+
 /** Las incidencias de un cliente (ficha F8): las abiertas y en curso primero, después las más recientes */
 export async function listClientIncidents(db: Db, userId: string): Promise<IncidentRow[]> {
   return selectIncidents(db)
@@ -129,8 +137,34 @@ export async function searchClientsForIncident(db: Db, query: unknown) {
 
 export type CreateIncidentResult = { status: "created"; id: string } | { status: "client_not_found" | "session_not_found" }
 
-/** Crea la incidencia abierta. El cliente debe ser un cliente no eliminado; la sesión, existir */
-export async function createIncident(db: Db, createdBy: string, input: NewIncidentInput): Promise<CreateIncidentResult> {
+/**
+ * Crea la incidencia abierta. El cliente debe ser un cliente no eliminado; la sesión, existir. Con `coachId`
+ * (entrenador, SPEC F9): la sesión debe ser suya y el cliente, alguien apuntado a esa sesión (con cualquier estado)
+ */
+export async function createIncident(
+  db: Db,
+  createdBy: string,
+  input: NewIncidentInput,
+  { coachId }: { coachId?: string } = {},
+): Promise<CreateIncidentResult> {
+  if (coachId) {
+    if (input.sessionId) {
+      const [own] = await db
+        .select({ id: sessions.id })
+        .from(sessions)
+        .where(and(eq(sessions.id, input.sessionId), eq(sessions.coachId, coachId)))
+      if (!own) return { status: "session_not_found" }
+    }
+    if (input.clientId) {
+      if (!input.sessionId) return { status: "client_not_found" }
+      const [booked] = await db
+        .select({ id: bookings.id })
+        .from(bookings)
+        .where(and(eq(bookings.sessionId, input.sessionId), eq(bookings.userId, input.clientId)))
+        .limit(1)
+      if (!booked) return { status: "client_not_found" }
+    }
+  }
   if (input.clientId) {
     const [found] = await db
       .select({ userId: profiles.userId })

@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
   viewer: null as unknown,
+  listSessionIncidents: vi.fn(),
   getSessionDetail: vi.fn(),
   setAttendance: vi.fn(),
   addClientToSession: vi.fn(),
@@ -26,6 +27,7 @@ vi.mock('@/lib/data/session-detail', () => ({
   removeBookingFromSession: mocks.removeBookingFromSession,
   searchClientsForSession: vi.fn(async () => []),
 }))
+vi.mock('@/lib/data/incidents', () => ({ listSessionIncidents: mocks.listSessionIncidents }))
 vi.mock('@/db', () => ({ getDb: () => 'http-db', getTxDb: () => 'tx-db' }))
 vi.mock('next/cache', () => ({ refresh: mocks.refresh }))
 vi.mock('next/headers', () => ({ cookies: vi.fn(async () => ({})), headers: vi.fn(async () => new Headers()) }))
@@ -53,9 +55,9 @@ const detail = (extra = {}) => ({
   status: 'scheduled',
   cancelReason: null,
   attendees: [
-    { bookingId: 'b1', fullName: 'Ana', attendance: 'attended', addedByStaff: false },
-    { bookingId: 'b2', fullName: 'Bea', attendance: 'no_show', addedByStaff: true },
-    { bookingId: 'b3', fullName: 'Carlos', attendance: 'pending', addedByStaff: false },
+    { bookingId: 'b1', userId: 'c1', fullName: 'Ana', attendance: 'attended', addedByStaff: false },
+    { bookingId: 'b2', userId: 'c2', fullName: 'Bea', attendance: 'no_show', addedByStaff: true },
+    { bookingId: 'b3', userId: 'c3', fullName: 'Carlos', attendance: 'pending', addedByStaff: false },
   ],
   waitlist: [],
   lateCancellations: [],
@@ -65,6 +67,7 @@ const detail = (extra = {}) => ({
 afterEach(cleanup)
 beforeEach(() => {
   vi.clearAllMocks()
+  mocks.listSessionIncidents.mockResolvedValue([])
   as('admin')
   mocks.getSessionDetail.mockResolvedValue(detail())
 })
@@ -94,6 +97,14 @@ describe('página del detalle', () => {
     expect(screen.getByText('3/12 ocupadas')).toBeDefined()
     expect(screen.getByRole('button', { name: 'Añadir cliente' })).toBeDefined()
     expect(screen.getByRole('button', { name: 'Quitar a Carlos' })).toBeDefined()
+  })
+
+  test('incidencias de la sesión: todas, y «Nueva incidencia» ya asociada', async () => {
+    render(await page())
+    expect(mocks.listSessionIncidents).toHaveBeenCalledWith('http-db', SESSION_ID)
+    const section = screen.getByRole('region', { name: 'Incidencias' })
+    expect(within(section).getByText('Sin incidencias')).toBeDefined()
+    expect(within(section).getByRole('button', { name: 'Nueva incidencia' })).toBeDefined()
   })
 
   test('futura: sin asistencia todavía, con lista de espera y anulaciones tardías', async () => {

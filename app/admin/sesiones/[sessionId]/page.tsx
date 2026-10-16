@@ -5,9 +5,10 @@ import { CalendarDays, Clock, User, Users } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
 import { LateCancellations } from "@/components/admin/late-cancellations"
 import { AddClientDialog, AttendeeList, WaitlistList } from "@/components/admin/session-detail"
+import { SessionIncidents } from "@/components/incidents/session-incidents"
 import { Badge } from "@/components/ui/badge"
 import { agendaHref, lateCancellationItem } from "@/lib/agenda"
-import { getSessionDetailForAdmin } from "@/lib/dal"
+import { getSessionDetailForAdmin, listSessionIncidentsForAdmin } from "@/lib/dal"
 import { formatDayLong, toDateKey, toTimeKey } from "@/lib/dates"
 import { CLASS_COLOR_BG } from "@/lib/sessions"
 import { cn } from "@/lib/utils"
@@ -18,7 +19,7 @@ export const metadata: Metadata = { title: "Sesión" }
 export default async function AdminSessionPage({ params }: PageProps<"/admin/sesiones/[sessionId]">) {
   await connection() // la asistencia y la lista de espera dependen de la hora actual
   const { sessionId } = await params
-  const session = await getSessionDetailForAdmin(sessionId)
+  const [session, incidents] = await Promise.all([getSessionDetailForAdmin(sessionId), listSessionIncidentsForAdmin(sessionId)])
   if (!session) notFound()
 
   const now = new Date()
@@ -113,6 +114,8 @@ export default async function AdminSessionPage({ params }: PageProps<"/admin/ses
           )}
         </section>
       )}
+
+      <SessionIncidents area="admin" session={session} items={incidents} />
     </Page>
   )
 }
