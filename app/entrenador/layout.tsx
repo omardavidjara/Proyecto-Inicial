@@ -7,7 +7,7 @@ import { requireArea } from "@/lib/dal"
 export default async function CoachLayout({ children }: { children: React.ReactNode }) {
   await requireArea("coach")
   return (
-    <AppShell nav={coachNav} navLabel="Navegación del entrenador">
+    <AppShell nav={coachNav} navLabel="Navegación del entrenador" profileHref="/entrenador/perfil">
       {children}
     </AppShell>
   )

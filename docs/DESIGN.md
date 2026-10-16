@@ -37,7 +37,8 @@ El naranja sale del logo de Athlos Centro Deportivo (`#c4713e`, terracota). Sobr
 
 - Original: `public/logo.png` (círculo recortado, fondo transparente). Fuente: imagen de WhatsApp de 755 px; **para las tiendas (icono de 1024 px) hará falta el original en alta resolución o vectorial**.
 - Iconos generados: `app/icon.png` (favicon), `app/apple-icon.png` (iOS, sobre `#18181b`), `public/icons/icon-{192,512}.png` (PWA) y `public/icons/icon-maskable-{192,512}.png` (Android, logo dentro de la zona segura sobre `#18181b`).
-- En la app el logo aparece solo en login, registro y cabecera; nunca a menos de 32 px (el texto "Centro deportivo" deja de leerse por debajo de 96 px).
+- En la app el logo aparece solo en login, registro y la **cabecera de marca**; nunca a menos de 32 px (el texto "Centro deportivo" deja de leerse por debajo de 96 px).
+- **Cabecera de marca** (`Page`, en todas las pantallas): barra fija de 64 px + safe area con el logo a 40 px y "ATHLOS" **centrados**, el nombre en **Cinzel** (`font-brand`, la letra romana tipo Trajan del logo) y color `primary`. Enlaza a `/`, que lleva al inicio de cada rol (cliente → Inicio, entrenador → Mi semana, administrador → Hoy). A la derecha, el botón **«Mi perfil»** del rol (solo dentro de `AppShell`, con `profileHref`); por eso «Perfil» no está en la barra inferior. En pantallas ≥ 1024 px ocupa todo el ancho y la barra lateral empieza debajo.
 
 ### 2.2 Estados de sesión y reserva
 
@@ -76,7 +77,7 @@ En base de datos se guarda la **clave** (`class_types.color = 'teal'`), no el he
 
 | Estilo | Clase Tailwind | Uso |
 |---|---|---|
-| Título de pantalla | `text-xl font-semibold tracking-tight` | Uno por pantalla (`h1`), en la cabecera fija de 56 px |
+| Título de pantalla | `text-2xl font-semibold tracking-tight` | Uno por pantalla (`h1`), al principio del contenido, con "Volver" a su izquierda y las acciones de la pantalla a su derecha |
 | Título de sección | `text-lg font-semibold` | "Próximas", "Historial" |
 | Cuerpo | `text-base` | Texto general, campos |
 | Secundario | `text-sm text-muted-foreground` | Entrenador, duración, metadatos |
@@ -95,7 +96,7 @@ Formato de fechas y horas: `es-ES`, 24 h, en la zona horaria del gimnasio. "lun 
 ## 5. Interacción táctil y diseño móvil
 
 - **Zonas táctiles de 44 × 44 px como mínimo** (botones `h-11`, filas de lista `min-h-11`, iconos con área ampliada). Separación mínima de 8 px entre objetivos.
-- **Navegación inferior** fija en cliente (Calendario · Mis reservas · Avisos · Perfil) y admin en móvil (Hoy · Agenda · Clientes · Incidencias · Más): icono + etiqueta siempre visible, 64 px de alto + `safe-area-inset-bottom`. En pantallas ≥ 1024 px se convierte en barra lateral.
+- **Navegación inferior** fija en cliente (Inicio · Calendario · Mis reservas; el perfil va en la cabecera) y admin en móvil (Hoy · Agenda · Clientes · Incidencias · Más): icono + etiqueta siempre visible, 64 px de alto + `safe-area-inset-bottom`. En pantallas ≥ 1024 px se convierte en barra lateral.
 - **Safe areas**: `viewport-fit=cover` y rellenos con `env(safe-area-inset-*)` en cabecera y barra inferior (muesca de iPhone, barra de gestos de Android).
 - **App instalada en Android**: la barra de gestos y la pantalla de carga toman los colores del manifest (`app/manifest.ts`), que no admite modo claro/oscuro; se usa el fondo oscuro `#0b0b0c` para que no aparezca una franja blanca bajo la barra inferior. Android actualiza la app instalada con el manifest nuevo al cabo de unos días; para verlo al momento, desinstalarla y volver a instalarla.
 - La acción principal queda al alcance del pulgar: botón ancho en la parte inferior de la pantalla de detalle, por encima de la barra.
@@ -116,7 +117,7 @@ Formato de fechas y horas: `es-ES`, 24 h, en la zona horaria del gimnasio. "lun 
 
 ## 7. Componentes base (shadcn/ui)
 
-Viven en `components/ui/` (generados con la CLI de shadcn y adaptables). Componentes propios de la app en `components/`. El marco de pantalla es `components/app-shell/`: `AppShell` (navegación del rol) y `Page` (cabecera con título, "Volver" y acciones; `wide` para admin).
+Viven en `components/ui/` (generados con la CLI de shadcn y adaptables). Componentes propios de la app en `components/`. El marco de pantalla es `components/app-shell/`: `AppShell` (navegación del rol) y `Page` (cabecera de marca fija, y título con "Volver" y acciones al principio del contenido; `wide` para admin).
 
 | Componente | Variantes / notas |
 |---|---|
@@ -153,3 +154,4 @@ Componentes propios ya creados: `SessionCard`, `SessionStatusBadge` y `DayPicker
 
 - 2026-10-02 · Versión inicial (Fase 2).
 - 2026-10-16 · Manifest con fondo oscuro: sin franja blanca en la barra de gestos de Android.
+- 2026-10-16 · Cabecera de marca con logo y nombre centrados (Cinzel) y botón de perfil en todas las pantallas; el título pasa al contenido y «Perfil» sale de la barra inferior.
