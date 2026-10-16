@@ -12,10 +12,11 @@ const linkFocus = "outline-none focus-visible:ring-2 focus-visible:ring-ring"
 
 export type CoachView = "semana" | "mes"
 
-export const coachPeriodHref = (view: CoachView, date: string) =>
-  view === "semana" ? `/entrenador?semana=${date}` : `/entrenador?vista=mes&fecha=${date}`
+/** `base`: «Mi semana» del entrenador, o sus páginas en administración (`/admin/entrenadores…`) */
+export const coachPeriodHref = (view: CoachView, date: string, base = "/entrenador") =>
+  view === "semana" ? `${base}?semana=${date}` : `${base}?vista=mes&fecha=${date}`
 
-export function CoachViewTabs({ view, date }: { view: CoachView; date: string }) {
+export function CoachViewTabs({ view, date, base }: { view: CoachView; date: string; base?: string }) {
   const views = [
     { param: "semana", label: "Semana" },
     { param: "mes", label: "Mes" },
@@ -25,7 +26,7 @@ export function CoachViewTabs({ view, date }: { view: CoachView; date: string })
       {views.map((v) => (
         <Link
           key={v.param}
-          href={coachPeriodHref(v.param, date)}
+          href={coachPeriodHref(v.param, date, base)}
           aria-current={v.param === view ? "page" : undefined}
           className={cn(
             "flex min-h-11 flex-1 items-center justify-center rounded-lg text-sm font-medium",
@@ -60,14 +61,22 @@ export function CoachSummaryTiles({ summary }: { summary: CoachSummary }) {
 }
 
 /** Clases ya dadas del periodo: fecha, hora, tipo y asistieron/reservaron; cada fila lleva a su detalle */
-export function TaughtTable({ sessions }: { sessions: CoachSummary["taughtSessions"] }) {
+export function TaughtTable({
+  sessions,
+  sessionHref = (id) => `/entrenador/sesiones/${id}`,
+  emptyText = "Aún no has dado clases en este periodo.",
+}: {
+  sessions: CoachSummary["taughtSessions"]
+  sessionHref?: (id: string) => string
+  emptyText?: string
+}) {
   return (
     <section aria-labelledby="taught-title" className="flex flex-col gap-2">
       <h2 id="taught-title" className="text-lg font-semibold">
         Clases impartidas
       </h2>
       {sessions.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Aún no has dado clases en este periodo.</p>
+        <p className="text-sm text-muted-foreground">{emptyText}</p>
       ) : (
         <div className="rounded-xl border bg-card">
           <Table>
@@ -91,7 +100,7 @@ export function TaughtTable({ sessions }: { sessions: CoachSummary["taughtSessio
                     <span className="flex items-center gap-2">
                       <span aria-hidden="true" className={cn("size-2.5 shrink-0 rounded-full", CLASS_COLOR_BG[s.color])} />
                       {/* El enlace cubre toda la fila (after:absolute) */}
-                      <Link href={`/entrenador/sesiones/${s.id}`} className="outline-none after:absolute after:inset-0">
+                      <Link href={sessionHref(s.id)} className="outline-none after:absolute after:inset-0">
                         {s.className}
                       </Link>
                     </span>

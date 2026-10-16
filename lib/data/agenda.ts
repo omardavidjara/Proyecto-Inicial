@@ -26,6 +26,7 @@ export type AgendaSession = {
   waitlisted: number
   /** Confirmadas marcadas como asistidas */
   attended: number
+  coachId: string | null
   coachName: string | null
   status: "scheduled" | "cancelled"
 }
@@ -61,6 +62,7 @@ async function selectSessionsBetween(db: Db, from: string, to: string, now: Date
       booked: countBookings("confirmed"),
       waitlisted: countBookings("waitlisted"),
       attended: countAttended,
+      coachId: sessions.coachId,
       coachName: profiles.fullName,
       status: sessions.status,
     })

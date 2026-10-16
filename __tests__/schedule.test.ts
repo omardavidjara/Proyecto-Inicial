@@ -12,6 +12,7 @@ import {
   createScheduleSlot,
   deleteScheduleSlot,
   generateSessions,
+  getCoach,
   listCoaches,
   listScheduleSlots,
   listUpcomingSessions,
@@ -242,6 +243,12 @@ describe('franjas', () => {
 describe('entrenadores', () => {
   test('solo perfiles de entrenador activos', async () => {
     expect(await listCoaches(db)).toEqual([{ userId: coachId, fullName: 'Laura Coach' }])
+  })
+
+  test('getCoach: un entrenador activo por id; un cliente o un id desconocido no lo son', async () => {
+    expect(await getCoach(db, coachId)).toEqual({ userId: coachId, fullName: 'Laura Coach' })
+    expect(await getCoach(db, clientId)).toBeNull()
+    expect(await getCoach(db, randomUUID())).toBeNull()
   })
 })
 

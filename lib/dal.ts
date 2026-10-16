@@ -31,7 +31,7 @@ import { del } from "@vercel/blob"
 
 import { agendaRange, parseAgendaParams } from "@/lib/agenda"
 import { isOwnAvatarUrl } from "@/lib/avatar"
-import { summarizeCoachPeriod } from "@/lib/coach-summary"
+import { summarizeCoachPeriod, summarizeCoaches } from "@/lib/coach-summary"
 import { addDays, startOfMonth, toDateKey } from "@/lib/dates"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
@@ -520,17 +520,30 @@ export async function getAdminAgenda(params: { vista?: unknown; fecha?: unknown 
  * Semana (lunes a domingo) o mes que contiene `fecha` (o `semana`, el enlace antiguo; si no es válida, hoy), con
  * el resumen de clases impartidas del periodo
  */
-export async function getCoachPeriod(params: { vista?: unknown; fecha?: unknown; semana?: unknown }) {
+export async function getCoachPeriod(params: CoachPeriodParams) {
   const viewer = await requireArea("coach")
-  const now = new Date()
+  return coachPeriodFor(viewer.userId, params)
+}
+
+type CoachPeriodParams = { vista?: unknown; fecha?: unknown; semana?: unknown }
+
+/** ?vista (semana | mes) y ?fecha (o ?semana) del navegador, validados; si no valen, la semana de hoy */
+function parseCoachPeriod(params: CoachPeriodParams, now: Date) {
   const today = toDateKey(now)
   const { date } = parseAgendaParams({ fecha: params.fecha ?? params.semana }, today)
   const view: "semana" | "mes" = params.vista === "mes" ? "mes" : "semana"
   const range = agendaRange(view, date)
-  const rows = await agenda.listCoachSessionsBetween(getDb(), viewer.userId, range.from, range.to)
   // El mes se consulta con la cuadrícula entera, pero el resumen solo cuenta sus días
   const period = view === "mes" ? { from: startOfMonth(date), to: addDays(startOfMonth(date, 1), -1) } : range
-  return { today, view, date, range, sessions: rows, summary: summarizeCoachPeriod(rows, period.from, period.to, now) }
+  return { today, view, date, range, period }
+}
+
+/** Solo tras comprobar el área: `coachId` es el de la sesión (entrenador) o uno validado (administración) */
+async function coachPeriodFor(coachId: string, params: CoachPeriodParams) {
+  const now = new Date()
+  const { period, ...rest } = parseCoachPeriod(params, now)
+  const rows = await agenda.listCoachSessionsBetween(getDb(), coachId, rest.range.from, rest.range.to)
+  return { ...rest, sessions: rows, summary: summarizeCoachPeriod(rows, period.from, period.to, now) }
 }
 
 /** Clases del entrenador en un día; `date` ya validado por la página con `isDateKey` */
@@ -581,6 +594,30 @@ export async function removeBookingFromSession(bookingId: unknown) {
 export async function setBookingAttendance(bookingId: unknown, attendance: sessionDetail.Attendance) {
   await requireArea("admin")
   return sessionDetail.setAttendance(getDb(), bookingId, attendance)
+}
+
+// ── «Entrenadores» de administración (F7): solo consulta ────────────────────────────────────────────────
+
+/** Cada entrenador activo con sus clases impartidas, programadas y canceladas en la semana o el mes */
+export async function getCoachesOverview(params: CoachPeriodParams) {
+  await requireArea("admin")
+  const now = new Date()
+  const { period, ...rest } = parseCoachPeriod(params, now)
+  const db = getDb()
+  const [coaches, rows] = await Promise.all([schedule.listCoaches(db), agenda.listSessionsBetween(db, period.from, period.to, now)])
+  return { ...rest, coaches: summarizeCoaches(coaches, rows, period.from, period.to, now) }
+}
+
+const coachIdSchema = z.uuid()
+
+/** El calendario y el resumen de un entrenador, o `null` si el id no es de un entrenador activo */
+export async function getCoachPeriodForAdmin(coachId: unknown, params: CoachPeriodParams) {
+  await requireArea("admin")
+  const id = coachIdSchema.safeParse(coachId)
+  if (!id.success) return null
+  const coach = await schedule.getCoach(getDb(), id.data)
+  if (!coach) return null
+  return { coach, ...(await coachPeriodFor(coach.userId, params)) }
 }
 
 // ── Detalle de sesión del entrenador (F7): solo las sesiones que imparte; una ajena es inexistente ─────────

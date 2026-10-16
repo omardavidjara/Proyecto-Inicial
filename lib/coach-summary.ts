@@ -27,3 +27,20 @@ export function summarizeCoachPeriod(sessions: AgendaSession[], from: string, to
     taughtSessions,
   }
 }
+
+export type CoachRow = { userId: string; fullName: string; summary: CoachSummary }
+
+/**
+ * «Entrenadores» de administración (SPEC F7): el resumen del periodo de cada entrenador de `coaches`, en su orden;
+ * los que no tienen clases salen con ceros. Las sesiones sin entrenador o de alguien que ya no lo es no cuentan
+ */
+export function summarizeCoaches(
+  coaches: { userId: string; fullName: string }[],
+  sessions: AgendaSession[],
+  from: string,
+  to: string,
+  now: Date,
+): CoachRow[] {
+  const byCoach = Map.groupBy(sessions, (s) => s.coachId)
+  return coaches.map((c) => ({ ...c, summary: summarizeCoachPeriod(byCoach.get(c.userId) ?? [], from, to, now) }))
+}
