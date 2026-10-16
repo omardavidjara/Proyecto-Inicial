@@ -2,7 +2,7 @@
 // Básico: página sin conexión y caché de recursos estáticos con hash.
 // Las páginas con datos personales NO se guardan aquí todavía: la lectura sin conexión
 // de "Mis reservas" llegará con F5 y deberá borrarse al cerrar sesión.
-const VERSION = "v1"
+const VERSION = "v2"
 const STATIC_CACHE = `athlos-static-${VERSION}`
 const OFFLINE_URL = "/offline"
 const PRECACHE = [OFFLINE_URL, "/logo.png", "/icons/icon-192.png"]
