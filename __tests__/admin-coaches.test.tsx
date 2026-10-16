@@ -29,7 +29,7 @@ const LAURA = '0f6b9a52-3c1d-4e8f-9a7b-2d5c8e1f4a63'
 const PABLO = '7c2e4d81-9b3a-4f6e-8d1c-5a7b9e2f3c04'
 
 const as = (role: string, isCoach = false) => {
-  mocks.viewer = { userId: 'admin-1', fullName: 'Admin', role, isCoach, status: 'active' }
+  mocks.viewer = { userId: 'admin-1', fullName: 'Admin Prueba', role, isCoach, status: 'active', phone: '600000000' }
 }
 const overview = (params: Record<string, string> = {}) => CoachesPage({ searchParams: Promise.resolve(params) } as never)
 const detail = (coachId: string, params: Record<string, string> = {}) =>

@@ -36,7 +36,7 @@ import MasOpcionesPage from '../app/admin/mas/page'
 import TiposClasePage from '../app/admin/tipos-clase/page'
 
 const as = (role: string, status = 'active') => {
-  mocks.viewer = { userId: 'admin-1', fullName: 'Admin', role, isCoach: role === 'coach', status }
+  mocks.viewer = { userId: 'admin-1', fullName: 'Admin Prueba', role, isCoach: role === 'coach', status, phone: '600000000' }
 }
 
 function form(fields: Record<string, string>) {

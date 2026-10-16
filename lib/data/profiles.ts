@@ -12,6 +12,7 @@ const viewerColumns = {
   role: profiles.role,
   isCoach: profiles.isCoach,
   status: profiles.status,
+  phone: profiles.phone,
 } as const
 
 export type Viewer = {
@@ -20,6 +21,7 @@ export type Viewer = {
   role: (typeof profiles.$inferSelect)["role"]
   isCoach: boolean
   status: (typeof profiles.$inferSelect)["status"]
+  phone: string | null
 }
 
 /** Nombre inicial del perfil: el de la cuenta o, si no hay, la parte local del correo */

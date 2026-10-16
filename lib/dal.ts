@@ -36,7 +36,7 @@ import { summarizeCoachPeriod, summarizeCoaches } from "@/lib/coach-summary"
 import { addDays, startOfMonth, toDateKey } from "@/lib/dates"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
-import { canAccessArea, homePathFor, LOGIN_PATH, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
+import { canAccessArea, COMPLETE_PROFILE_PATH, homePathFor, LOGIN_PATH, mustCompleteProfile, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
 import type { ClassTypeInput } from "@/lib/validation/class-types"
 import { INCIDENT_MAX_LIMIT, INCIDENT_PAGE_SIZE, type IncidentInput, type IncidentStatus, type NewIncidentInput } from "@/lib/validation/incidents"
@@ -77,11 +77,13 @@ export async function requireViewer(): Promise<Viewer> {
 }
 
 /**
- * Exige sesión, perfil activo y permiso para la zona. Si falta algo, lleva a donde corresponde:
- * sin sesión → /login; pendiente o de baja → /pendiente; otra zona → su inicio.
+ * Exige sesión, datos de contacto completos, perfil activo y permiso para la zona. Si falta algo, lleva a
+ * donde corresponde: sin sesión → /login; sin nombre y apellidos o teléfono → /completar-perfil;
+ * pendiente o de baja → /pendiente; otra zona → su inicio.
  */
 export async function requireArea(area: Area): Promise<Viewer> {
   const viewer = await requireViewer()
+  if (mustCompleteProfile(viewer)) redirect(COMPLETE_PROFILE_PATH)
   if (viewer.status !== "active") redirect(PENDING_PATH)
   if (!canAccessArea(viewer, area)) redirect(homePathFor(viewer))
   return viewer

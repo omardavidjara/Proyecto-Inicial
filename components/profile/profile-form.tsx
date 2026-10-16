@@ -3,15 +3,26 @@
 import { useActionState, useEffect } from "react"
 import { LoaderCircle } from "lucide-react"
 import { toast } from "sonner"
-import { updateProfile, type ProfileState } from "@/app/(cuenta)/perfil/actions"
+import { completeProfile, updateProfile, type ProfileState } from "@/app/(cuenta)/perfil/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 const initialState: ProfileState = {}
 
-export function ProfileForm({ fullName, phone, email }: { fullName: string; phone: string | null; email: string }) {
-  const [state, formAction, pending] = useActionState(updateProfile, initialState)
+export function ProfileForm({
+  fullName,
+  phone,
+  email,
+  firstEntry = false,
+}: {
+  fullName: string
+  phone: string | null
+  email: string
+  /** /completar-perfil: al guardar sigue a la pantalla que toque */
+  firstEntry?: boolean
+}) {
+  const [state, formAction, pending] = useActionState(firstEntry ? completeProfile : updateProfile, initialState)
   const errors = state.fieldErrors ?? {}
 
   useEffect(() => {
@@ -65,7 +76,7 @@ export function ProfileForm({ fullName, phone, email }: { fullName: string; phon
       </div>
       <Button type="submit" size="lg" className="w-full" disabled={pending}>
         {pending ? <LoaderCircle className="animate-spin" aria-hidden="true" /> : null}
-        {pending ? "Guardando…" : "Guardar cambios"}
+        {pending ? "Guardando…" : firstEntry ? "Continuar" : "Guardar cambios"}
       </Button>
     </form>
   )

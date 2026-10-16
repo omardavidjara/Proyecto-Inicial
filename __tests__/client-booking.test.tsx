@@ -38,7 +38,7 @@ import { bookSessionAction, cancelBookingAction, changeBookingAction } from '../
 import { BookingActions } from '@/components/sessions/booking-actions'
 
 const as = (role: string, isCoach = role === 'coach') => {
-  mocks.viewer = { userId: 'user-1', fullName: 'Ana', role, isCoach, status: 'active' }
+  mocks.viewer = { userId: 'user-1', fullName: 'Ana Prueba', role, isCoach, status: 'active', phone: '600000000' }
 }
 
 beforeEach(() => {

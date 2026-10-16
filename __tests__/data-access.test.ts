@@ -116,7 +116,7 @@ describe('editar el propio perfil (F1)', () => {
     const userId = randomUUID()
     await createSignUpProfile(db, { userId, fullName: 'Usuario eliminado', phone: '600000000' })
     await db.update(profiles).set({ deletedAt: new Date(), phone: null }).where(eq(profiles.userId, userId))
-    const ghost = { userId, fullName: 'Usuario eliminado', role: 'client', isCoach: false, status: 'inactive' } as const
+    const ghost = { userId, fullName: 'Usuario eliminado', role: 'client', isCoach: false, status: 'inactive', phone: null } as const
     await updateMyProfile(db, ghost, { fullName: 'Vuelvo', phone: '622222222' })
     expect(await getMyProfile(db, ghost)).toMatchObject({ fullName: 'Usuario eliminado', phone: null })
   })

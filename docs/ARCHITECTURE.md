@@ -185,6 +185,7 @@ app/
   (auth)/registro                  Registro
   (auth)/confirmar-correo          Código de 6 cifras para confirmar el correo ?correo= (tras registrarse o al entrar sin confirmar)
   (auth)/pendiente                 Alta pendiente de aprobación
+  (auth)/completar-perfil          Primera entrada: nombre y apellidos y teléfono obligatorios antes de seguir
   (client)/inicio                  Inicio del cliente
   (client)/calendario              Calendario
   (client)/calendario/[sessionId]  Detalle de sesión
@@ -269,7 +270,7 @@ Sesión y cookies (decidido en la Fase 3):
 
 La columna **coach** aplica a cualquier perfil con `is_coach = true` (también admins) para las sesiones donde es `coach_id`. Un entrenador que no es admin no ve datos de clientes fuera de las sesiones que imparte.
 
-Usuario `pending` o `inactive`: solo `/pendiente` y `/perfil`.
+Usuario `pending` o `inactive`: solo `/pendiente` y `/perfil` (y `/completar-perfil`). Cualquier cuenta no dada de baja sin nombre y apellidos o teléfono válidos (`mustCompleteProfile` en `lib/roles.ts`, mismo Zod que el perfil) va primero a `/completar-perfil`: lo aplican `requireArea`, `/pendiente` y `/` (`homePathFor`).
 
 ## 7. Estructura de carpetas
 
@@ -344,6 +345,7 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 12. Historial de cambios
 
+- 2026-10-16 · `/completar-perfil`: `Viewer` trae `phone`; `mustCompleteProfile` (puro) en `requireArea`, `/pendiente` y `homePathFor`; acción `completeProfile` (guarda con `updateProfile` y sigue a `homePathFor`). `fullNameSchema` exige al menos dos palabras (nombre y apellidos), también en el registro y el perfil. Sin cambios de esquema.
 - 2026-10-16 · Ruta pública `instalar` (PWA): pasos de instalación y botón con `beforeinstallprompt`; detección pura en `lib/install.ts`, `useStandalone` en `components/pwa/`. Sin cambios de esquema.
 - 2026-10-16 · F9 PR 2: incidencias del entrenador tras `requireArea("coach")` (`/entrenador/incidencias` y `/entrenador/incidencias/[incidentId]`, todo con `scope.createdBy`: una ajena es inexistente). `createIncident(…, { coachId })` exige que la sesión sea suya y que el cliente tenga una reserva (cualquier estado) en ella; sin sesión, no asocia cliente. Sección «Incidencias» en el detalle de sesión de administración (todas) y del entrenador (las suyas) con `listSessionIncidents`; `SessionDetail.attendees` trae `userId`. Formulario compartido en `components/incidents/`. Sin cambios de esquema.
 - 2026-10-16 · F9 PR 1: incidencias de administración (`/admin/incidencias?estado=&limite=` y `/admin/incidencias/[incidentId]`) tras `requireArea("admin")`. Capa `lib/data/incidents.ts` (`listIncidents`, `countIncidentsByStatus`, `getIncident` y `listClientIncidents`, con `scope.createdBy` para el entrenador en la PR 2; `createIncident` comprueba que el cliente es un cliente no eliminado y que la sesión existe; `setIncidentStatus` guarda `closed_at` al cerrar y lo borra al reabrir). La paginación es «Ver más» con `?limite=` (como Clientes) en lugar de cursor. Las incidencias del cliente se ven en su ficha. Sin cambios de esquema.

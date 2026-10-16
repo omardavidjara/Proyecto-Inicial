@@ -39,7 +39,7 @@ import { addClientAction, removeBookingAction, setAttendanceAction } from '../ap
 
 const SESSION_ID = '0d4b7f6e-2a1c-4e5f-8b9a-1c2d3e4f5a6b'
 const as = (role: string, status = 'active') => {
-  mocks.viewer = { userId: 'admin-1', fullName: 'Admin', role, isCoach: role === 'coach', status }
+  mocks.viewer = { userId: 'admin-1', fullName: 'Admin Prueba', role, isCoach: role === 'coach', status, phone: '600000000' }
 }
 const page = () => AdminSessionPage({ params: Promise.resolve({ sessionId: SESSION_ID }) } as never)
 
