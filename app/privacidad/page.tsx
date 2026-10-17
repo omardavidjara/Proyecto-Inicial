@@ -53,7 +53,8 @@ export default function PrivacyPage() {
             <strong>Incidencias</strong> que el personal del gimnasio pueda registrar relacionadas con tu cuenta o con una clase.
           </li>
           <li>
-            <strong>Dispositivo</strong>: identificador para enviarte notificaciones, solo si las activas.
+            <strong>Dispositivo</strong>: si activas los avisos, la dirección que da tu navegador para enviarte
+            notificaciones y las claves para cifrarlas, y un registro de qué avisos te hemos enviado (para no repetirlos).
           </li>
           <li>
             <strong>Datos técnicos</strong>: registros de acceso y de errores necesarios para la seguridad y el funcionamiento.
@@ -133,6 +134,10 @@ export default function PrivacyPage() {
             Al cambiar o quitar tu foto de perfil, la anterior se borra en ese momento.
           </li>
           <li>
+            Los datos de tu dispositivo para los avisos se borran al desactivarlos, al cerrar sesión en ese dispositivo,
+            al eliminar tu cuenta o cuando tu navegador deja de admitirlos.
+          </li>
+          <li>
             Los datos que deban guardarse por obligación legal se conservan bloqueados solo durante los plazos legales
             (LOPDGDD art. 32).
           </li>
@@ -154,7 +159,10 @@ export default function PrivacyPage() {
           <li>Vercel Inc.: alojamiento de la app y de las fotos de perfil (servidores en Fráncfort, Alemania).</li>
           <li>Neon: base de datos e inicio de sesión (servidores en Fráncfort, Alemania).</li>
           <li>Cloudflare: copias de seguridad cifradas de la base de datos (servidores en la Unión Europea).</li>
-          <li>Apple y Google: entrega de notificaciones push en la app móvil, si las activas.</li>
+          <li>
+            El servicio de notificaciones de tu navegador (Google, Apple, Mozilla o Microsoft, según el que uses):
+            entrega los avisos push, si los activas. Los recibe cifrados y no puede leer su contenido.
+          </li>
           <li>
             Functional Software Inc. (Sentry): registro de errores (servidores en Fráncfort, Alemania). Cuando la app
             falla recibe solo datos técnicos del fallo (pantalla, navegador y sistema operativo), nunca tu nombre,

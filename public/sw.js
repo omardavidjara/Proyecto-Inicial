@@ -1,5 +1,5 @@
 // Service worker de Athlos (docs/DESIGN.md §6).
-// Básico: página sin conexión y caché de recursos estáticos con hash.
+// Básico: página sin conexión, caché de recursos estáticos con hash y avisos push (F10).
 // Las páginas con datos personales NO se guardan aquí todavía: la lectura sin conexión
 // de "Mis reservas" llegará con F5 y deberá borrarse al cerrar sesión.
 const VERSION = "v2"
@@ -58,6 +58,38 @@ self.addEventListener("fetch", (event) => {
       )
     )
   }
+})
+
+// Avisos push (F10): el servidor envía { title, body, url } cifrado; solo este navegador puede leerlo
+self.addEventListener("push", (event) => {
+  let message = {}
+  try {
+    message = event.data ? event.data.json() : {}
+  } catch {
+    // Un aviso sin JSON válido muestra el texto genérico
+  }
+  const url = typeof message.url === "string" && message.url.startsWith("/") && !message.url.startsWith("//") ? message.url : "/"
+  event.waitUntil(
+    self.registration.showNotification(message.title || "Athlos", {
+      body: message.body || "Tienes un aviso nuevo del gimnasio.",
+      icon: "/icons/icon-192.png",
+      lang: "es",
+      data: { url },
+    })
+  )
+})
+
+// Al tocar el aviso: si la app ya está abierta, se lleva ahí; si no, se abre en esa pantalla
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close()
+  const target = new URL(event.notification.data?.url || "/", self.location.origin).href
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((windows) => {
+      const open = windows.find((client) => new URL(client.url).origin === self.location.origin)
+      if (open) return open.focus().then((client) => client.navigate(target)).catch(() => self.clients.openWindow(target))
+      return self.clients.openWindow(target)
+    })
+  )
 })
 
 async function trim(cache) {

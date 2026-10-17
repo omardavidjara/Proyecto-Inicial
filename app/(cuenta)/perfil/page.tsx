@@ -4,6 +4,7 @@ import { AppShell, Page } from "@/components/app-shell/app-shell"
 import { clientNav } from "@/components/app-shell/nav"
 import { ProfileView } from "@/components/profile/profile-view"
 import { accountDeletion, getMyProfile } from "@/lib/dal"
+import { pushPublicKey } from "@/lib/push"
 import { canAccessArea, PENDING_PATH } from "@/lib/roles"
 
 export const metadata: Metadata = { title: "Perfil" }
@@ -17,7 +18,7 @@ export default async function PerfilPage() {
   if (viewer.status !== "active") {
     return (
       <Page title="Perfil" backHref={PENDING_PATH}>
-        <ProfileView profile={profile} deletion={deletion} />
+        <ProfileView profile={profile} deletion={deletion} pushPublicKey={pushPublicKey()} />
       </Page>
     )
   }
@@ -25,7 +26,7 @@ export default async function PerfilPage() {
   return (
     <AppShell nav={clientNav} navLabel="Navegación principal" profileHref="/perfil">
       <Page title="Perfil">
-        <ProfileView profile={profile} deletion={deletion} />
+        <ProfileView profile={profile} deletion={deletion} pushPublicKey={pushPublicKey()} />
       </Page>
     </AppShell>
   )
