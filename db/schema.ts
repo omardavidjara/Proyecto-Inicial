@@ -335,11 +335,18 @@ export const pushDevices = pgTable(
       .notNull()
       .references(() => profiles.userId, { onDelete: "restrict" }),
     platform: platformEnum("platform").notNull(),
+    // Web Push: `token` es la dirección (endpoint) del servicio de push del navegador, y `p256dh`/`auth` las claves
+    // con que se cifra cada aviso (solo el navegador puede leerlo). Las apps nativas solo tendrían `token`
     token: text("token").notNull().unique(),
+    p256dh: text("p256dh"),
+    auth: text("auth"),
     lastSeenAt: timestamptz("last_seen_at").notNull().defaultNow(),
     ...timestamps,
   },
-  (t) => [index("push_devices_user_idx").on(t.userId)],
+  (t) => [
+    index("push_devices_user_idx").on(t.userId),
+    check("push_devices_web_keys", sql`${t.platform} <> 'web' or (${t.p256dh} is not null and ${t.auth} is not null)`),
+  ],
 );
 
 // Registro de envíos: el único evita avisos duplicados aunque el programador se ejecute dos veces

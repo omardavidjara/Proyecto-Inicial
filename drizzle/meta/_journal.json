@@ -43,6 +43,13 @@
       "when": 1791897110106,
       "tag": "0005_plans_name_unique",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792229556956,
+      "tag": "0006_push_device_keys",
+      "breakpoints": true
     }
   ]
 }

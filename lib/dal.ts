@@ -7,6 +7,7 @@ import { timingSafeEqual } from "node:crypto"
 
 import * as Sentry from "@sentry/nextjs"
 import { cookies, headers } from "next/headers"
+import { after } from "next/server"
 import { redirect, unstable_rethrow } from "next/navigation"
 import { cache } from "react"
 import { z } from "zod"
@@ -24,6 +25,7 @@ import * as individualSessions from "@/lib/data/individual-sessions"
 import * as clients from "@/lib/data/clients"
 import * as memberships from "@/lib/data/memberships"
 import * as plans from "@/lib/data/plans"
+import * as push from "@/lib/data/push"
 import * as schedule from "@/lib/data/schedule"
 import * as sessionDetail from "@/lib/data/session-detail"
 import { clearLoginFailures, isLoginBlocked, recordLoginFailure } from "@/lib/data/login-attempts"
@@ -36,8 +38,11 @@ import { summarizeCoachPeriod, summarizeCoaches } from "@/lib/coach-summary"
 import { addDays, startOfMonth, toDateKey } from "@/lib/dates"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
+import { accountApprovedMessage } from "@/lib/notification-messages"
+import { pushPublicKey, webPushSender } from "@/lib/push"
 import { canAccessArea, COMPLETE_PROFILE_PATH, homePathFor, LOGIN_PATH, mustCompleteProfile, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
+import { pushEndpointSchema, pushSubscriptionSchema } from "@/lib/validation/push"
 import type { ClassTypeInput } from "@/lib/validation/class-types"
 import { INCIDENT_MAX_LIMIT, INCIDENT_PAGE_SIZE, type IncidentInput, type IncidentStatus, type NewIncidentInput } from "@/lib/validation/incidents"
 import type { PlanInput } from "@/lib/validation/plans"
@@ -87,6 +92,38 @@ export async function requireArea(area: Area): Promise<Viewer> {
   if (viewer.status !== "active") redirect(PENDING_PATH)
   if (!canAccessArea(viewer, area)) redirect(homePathFor(viewer))
   return viewer
+}
+
+// ── Avisos push (F10) ─────────────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Activar los avisos en este navegador. Vale para cualquier estado de la cuenta: quien espera el alta quiere
+ * saber cuándo se la aprueban. La suscripción llega del navegador: se valida aquí
+ */
+export async function saveMyPushDevice(subscription: unknown): Promise<boolean> {
+  const viewer = await requireViewer()
+  const parsed = pushSubscriptionSchema.safeParse(subscription)
+  if (!parsed.success || !pushPublicKey()) return false
+  await push.savePushDevice(getDb(), viewer.userId, parsed.data)
+  return true
+}
+
+/** Desactivar los avisos en este navegador (o al cerrar sesión): solo un dispositivo propio */
+export async function removeMyPushDevice(endpoint: unknown): Promise<void> {
+  const parsed = pushEndpointSchema.safeParse(endpoint)
+  if (!parsed.success) return
+  const viewer = await getViewer()
+  if (!viewer) return
+  await push.removePushDevice(getDb(), viewer.userId, parsed.data)
+}
+
+/** Envía los avisos cuando ya se ha respondido: un servicio de push lento no retrasa la pantalla */
+function notifyAfterResponse(notices: push.Notice[]) {
+  if (notices.length === 0 || !pushPublicKey()) return
+  after(() => push.sendNotices(getDb(), webPushSender, notices).then(
+    () => {},
+    (error) => Sentry.captureException(error),
+  ))
 }
 
 /** Mi tarifa de hoy y las clases que me quedan en el periodo (solo las del usuario de la sesión) */
@@ -338,8 +375,11 @@ export async function decideClient(decision: ClientDecision, userId: unknown, pl
   const planIdValue = plan ? plan.data : null
   switch (decision) {
     // Transacciones (perfil + tarifa o reservas): necesitan el Pool, el driver HTTP no las admite
-    case "approve":
-      return clients.approveClient(getTxDb(), parsed.data, planIdValue)
+    case "approve": {
+      const outcome = await clients.approveClient(getTxDb(), parsed.data, planIdValue)
+      if (outcome === "done") notifyAfterResponse([{ userId: parsed.data, kind: "account_approved", refId: null, message: accountApprovedMessage() }])
+      return outcome
+    }
     case "reactivate":
       return clients.reactivateClient(getTxDb(), parsed.data, planIdValue)
     case "reject":
