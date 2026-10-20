@@ -28,7 +28,7 @@ vi.mock('@/lib/dal', () => ({
   noteAttempt: mocks.noteAttempt,
   saveSignUpProfile: mocks.saveSignUpProfile,
 }))
-vi.mock('@sentry/nextjs', () => ({ captureException: mocks.captureException }))
+vi.mock('@sentry/nextjs', () => ({ captureException: mocks.captureException, captureMessage: vi.fn() }))
 vi.mock('next/navigation', () => ({ redirect: mocks.redirect }))
 
 import { resendEmailCode, signUpWithEmail, verifyEmailCode } from '../app/(auth)/actions'
