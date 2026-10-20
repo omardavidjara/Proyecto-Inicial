@@ -5,8 +5,10 @@ import { Clock, UserX } from "lucide-react"
 import { SignOutButton } from "@/components/auth/sign-out-button"
 import { EmptyState } from "@/components/empty-state"
 import { LegalLinks } from "@/components/legal/legal-links"
+import { PushToggle } from "@/components/pwa/push-toggle"
 import { Button } from "@/components/ui/button"
 import { getMyProfile } from "@/lib/dal"
+import { pushPublicKey } from "@/lib/push"
 import { COMPLETE_PROFILE_PATH, homePathFor, mustCompleteProfile } from "@/lib/roles"
 
 export const metadata: Metadata = { title: "Cuenta pendiente" }
@@ -33,6 +35,8 @@ export default async function PendingPage() {
             : "El gimnasio tiene que aprobar tu cuenta antes de que puedas reservar. Te avisaremos cuando esté lista."
         }
       />
+      {/* Quien espera el alta puede activar los avisos para saber cuándo se la aprueban (F10) */}
+      {!inactive && <PushToggle publicKey={pushPublicKey()} />}
       <Button asChild variant="outline" size="lg" className="w-full">
         <Link href="/perfil">Mi perfil</Link>
       </Button>

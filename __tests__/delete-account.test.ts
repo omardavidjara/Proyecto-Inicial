@@ -44,7 +44,7 @@ describe('anonimizar la cuenta', () => {
     const future = await booking(userId, 48)
     const past = await booking(userId, -48)
     const othersFuture = await booking(other, 48)
-    await db.insert(pushDevices).values({ userId, platform: 'web', token: `t-${userId}` })
+    await db.insert(pushDevices).values({ userId, platform: 'web', token: `t-${userId}`, p256dh: 'p', auth: 'a' })
 
     expect(await anonymizeAccount(db, userId)).toEqual({ avatarUrl: 'https://x/avatars/a/foto.webp' })
 

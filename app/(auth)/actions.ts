@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import { z } from "zod"
 
 import { getAuth } from "@/lib/auth"
-import { isLoginRateLimited, isRateLimited, noteAttempt, noteLoginFailure, noteLoginSuccess, saveSignUpProfile } from "@/lib/dal"
+import { isLoginRateLimited, isRateLimited, noteAttempt, noteLoginFailure, noteLoginSuccess, removeMyPushDevice, saveSignUpProfile } from "@/lib/dal"
 import { confirmEmailPath, LOGIN_PATH } from "@/lib/roles"
 import { resendCodeSchema, signInSchema, signUpSchema, verifyEmailSchema, type SignUpInput } from "@/lib/validation/auth"
 
@@ -59,7 +59,12 @@ export async function signInWithEmail(_prev: SignInState, formData: FormData): P
   redirect("/")
 }
 
-export async function signOut() {
+/**
+ * Cerrar sesión. Si este navegador tenía los avisos activados, el formulario envía su dirección de push y se quita
+ * el dispositivo: quien entre después en el mismo móvil no debe recibir los avisos de esta cuenta (F10)
+ */
+export async function signOut(formData?: FormData) {
+  await removeMyPushDevice(formData?.get("pushEndpoint")).catch((error) => Sentry.captureException(error))
   await getAuth().signOut()
   redirect(LOGIN_PATH)
 }
@@ -102,6 +107,9 @@ export async function signUpWithEmail(_prev: SignUpState, formData: FormData): P
     if (error.status === 429) return { values, error: TOO_MANY_ATTEMPTS }
     // Correo ya registrado: lo mismo que un registro nuevo (no revela quién tiene cuenta)
     if (!(error.status === 422 || /ALREADY_EXISTS/.test(error.code ?? ""))) {
+      // Solo el estado y el código de Neon Auth: nunca el correo ni el nombre
+      console.error("Registro rechazado por Neon Auth", error.status, error.code)
+      Sentry.captureMessage(`Registro rechazado por Neon Auth: ${error.status} ${error.code ?? ""}`)
       return { values, error: "No se ha podido crear la cuenta. Inténtalo de nuevo en unos minutos." }
     }
   } else if (data?.user?.id) {
