@@ -107,6 +107,9 @@ export async function signUpWithEmail(_prev: SignUpState, formData: FormData): P
     if (error.status === 429) return { values, error: TOO_MANY_ATTEMPTS }
     // Correo ya registrado: lo mismo que un registro nuevo (no revela quién tiene cuenta)
     if (!(error.status === 422 || /ALREADY_EXISTS/.test(error.code ?? ""))) {
+      // Solo el estado y el código de Neon Auth: nunca el correo ni el nombre
+      console.error("Registro rechazado por Neon Auth", error.status, error.code)
+      Sentry.captureMessage(`Registro rechazado por Neon Auth: ${error.status} ${error.code ?? ""}`)
       return { values, error: "No se ha podido crear la cuenta. Inténtalo de nuevo en unos minutos." }
     }
   } else if (data?.user?.id) {
