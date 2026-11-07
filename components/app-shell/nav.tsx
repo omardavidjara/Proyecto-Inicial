@@ -1,4 +1,5 @@
 import {
+  Bell,
   CalendarDays,
   CalendarRange,
   House,
@@ -19,6 +20,7 @@ export const clientNav: NavItem[] = [
 export const coachNav: NavItem[] = [
   { href: "/entrenador", label: "Mi semana", icon: <CalendarRange /> },
   { href: "/entrenador/incidencias", label: "Incidencias", icon: <TriangleAlert /> },
+  { href: "/entrenador/avisos", label: "Avisos", icon: <Bell /> },
 ]
 
 export const adminNav: NavItem[] = [

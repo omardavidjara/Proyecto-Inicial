@@ -214,7 +214,8 @@ app/
   admin/tarifas
   admin/incidencias                ?estado=
   admin/incidencias/[incidentId]
-  admin/avisos
+  admin/avisos                     Publicar y eliminar avisos generales
+  entrenador/avisos                Avisos generales para quien solo es entrenador (no entra en la zona de cliente)
   admin/ajustes
   admin/equipo                     Solo desarrollador
   admin/mas                        Menú "Más" en móvil: horario, tipos de clase, tarifas, avisos, ajustes, vista cliente
@@ -261,7 +262,8 @@ Sesión y cookies (decidido en la Fase 3):
 | Tarifas | — | — | ✔ | ✔ |
 | Incidencias: crear | — | ✔ | ✔ | ✔ |
 | Incidencias: ver / gestionar | — | las suyas | ✔ | ✔ |
-| Avisos: publicar | — | — | ✔ | ✔ |
+| Avisos: leer | ✔ | ✔ | ✔ | ✔ |
+| Avisos: publicar y eliminar | — | — | ✔ | ✔ |
 | Ajustes: reglas de reserva | — | — | ✔ | ✔ |
 | Ajustes técnicos: nombre, zona horaria | — | — | — | ✔ |
 | Eliminar mi cuenta | ✔ | ✔ | ✔ | — |
@@ -345,6 +347,7 @@ Los filtros y la página viven en la URL (`searchParams`), así se pueden compar
 
 ## 12. Historial de cambios
 
+- 2026-11-07 · F10 PR 2: avisos generales. Migración 0007 (`profiles.announcements_seen_at`; sin valor cuenta `created_at`, para que una cuenta nueva no vea como no leídos los anteriores a ella). Se marcan como leídos desde el navegador al abrir la pantalla, no al pintarla: un prefetch no debe contar. `published_at` se guarda en milisegundos para que el cursor `(published_at, id)` no se salte filas. El push va a las cuentas `active`: `/avisos`, o `/entrenador/avisos` si el rol es `coach`.
 - 2026-10-17 · F10 PR 1: base de Web Push. Migración 0006 (`push_devices.p256dh`/`auth` con `check` para web). Activar o desactivar en «Perfil» (todos los roles) y en `/pendiente`; en iPhone sin instalar, enlace a `/instalar`. Primer aviso: «Alta aprobada» al aprobar una cuenta.
 - 2026-10-16 · `/completar-perfil`: `Viewer` trae `phone`; `mustCompleteProfile` (puro) en `requireArea`, `/pendiente` y `homePathFor`; acción `completeProfile` (guarda con `updateProfile` y sigue a `homePathFor`). `fullNameSchema` exige al menos dos palabras (nombre y apellidos), también en el registro y el perfil. Sin cambios de esquema.
 - 2026-10-16 · Ruta pública `instalar` (PWA): pasos de instalación y botón con `beforeinstallprompt`; detección pura en `lib/install.ts`, `useStandalone` en `components/pwa/`. Sin cambios de esquema.

@@ -2,22 +2,27 @@ import type { Metadata } from "next"
 import Link from "next/link"
 import { Bell, CalendarPlus } from "lucide-react"
 import { Page } from "@/components/app-shell/app-shell"
+import { AnnouncementCards } from "@/components/announcements/announcement-list"
 import { InstallLink } from "@/components/pwa/install-link"
 import { PlanSummaryTiles } from "@/components/sessions/plan-summary"
 import { NextClassHero } from "@/components/sessions/next-class-hero"
 import { Button } from "@/components/ui/button"
-import { getBookingSettings, getMyFirstName, getMyNextBooking, getMyPlanSummary } from "@/lib/dal"
+import { getBookingSettings, getLatestAnnouncements, getMyFirstName, getMyNextBooking, getMyPlanSummary, hasUnreadAnnouncements } from "@/lib/dal"
+import { toAnnouncementEntry } from "@/lib/announcements"
 import { formatDayLabel, formatStartsIn, toDateKey, toTimeKey } from "@/lib/dates"
 
 export const metadata: Metadata = { title: "Inicio" }
 
-// Los últimos avisos del gimnasio llegan con la F10 (SPEC: «Inicio» los muestra)
+const LATEST_ANNOUNCEMENTS = 3
+
 export default async function ClientHomePage() {
-  const [name, next, plan, settings] = await Promise.all([
+  const [name, next, plan, settings, latest, unread] = await Promise.all([
     getMyFirstName(),
     getMyNextBooking(),
     getMyPlanSummary(),
     getBookingSettings(),
+    getLatestAnnouncements(LATEST_ANNOUNCEMENTS),
+    hasUnreadAnnouncements(),
   ])
   const { timeZone } = settings
   const now = new Date()
@@ -29,10 +34,11 @@ export default async function ClientHomePage() {
       actions={
         <Link
           href="/avisos"
-          aria-label="Avisos"
-          className="-mr-3 flex size-11 items-center justify-center rounded-lg outline-none hover:bg-muted active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring"
+          aria-label={unread ? "Avisos, hay avisos sin leer" : "Avisos"}
+          className="relative -mr-3 flex size-11 items-center justify-center rounded-lg outline-none hover:bg-muted active:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Bell className="size-6" aria-hidden="true" />
+          {unread && <span aria-hidden="true" className="absolute top-2 right-2 size-2.5 rounded-full bg-primary ring-2 ring-background" />}
         </Link>
       }
     >
@@ -64,6 +70,20 @@ export default async function ClientHomePage() {
       <Link href="/reservas" className="inline-flex min-h-11 items-center justify-center text-sm font-medium text-primary">
         Ver mis reservas
       </Link>
+
+      {latest.length > 0 && (
+        <section aria-labelledby="ultimos-avisos" className="flex flex-col gap-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 id="ultimos-avisos" className="font-semibold">
+              Últimos avisos
+            </h2>
+            <Link href="/avisos" className="inline-flex min-h-11 items-center text-sm font-medium text-primary">
+              Ver todos
+            </Link>
+          </div>
+          <AnnouncementCards items={latest.map((item) => toAnnouncementEntry(item, timeZone))} />
+        </section>
+      )}
 
       <InstallLink />
     </Page>

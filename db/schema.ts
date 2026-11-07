@@ -76,6 +76,8 @@ export const profiles = pgTable(
     approvedAt: timestamptz("approved_at"),
     deactivatedAt: timestamptz("deactivated_at"),
     deletedAt: timestamptz("deleted_at"),
+    // Última vez que abrió los avisos del gimnasio (F10): lo publicado después sale como no leído
+    announcementsSeenAt: timestamptz("announcements_seen_at"),
     ...timestamps,
   },
   (t) => [

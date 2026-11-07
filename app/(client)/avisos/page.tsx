@@ -1,8 +1,14 @@
 import type { Metadata } from "next"
-import { ComingSoon } from "@/components/coming-soon"
+import { Page } from "@/components/app-shell/app-shell"
+import { AnnouncementsScreen } from "@/components/announcements/announcements-screen"
 
 export const metadata: Metadata = { title: "Avisos" }
 
+// SPEC F10: los avisos del gimnasio, del más reciente al más antiguo
 export default function AvisosPage() {
-  return <ComingSoon title="Avisos" feature="F10 · Avisos y notificaciones" />
+  return (
+    <Page title="Avisos" backHref="/inicio">
+      <AnnouncementsScreen />
+    </Page>
+  )
 }

@@ -191,6 +191,7 @@ Flujo: la app abre siempre en **Inicio de sesión**; con sesión iniciada, cada 
 
 ## 9. Historial de cambios
 
+- 2026-11-07 · Avisos generales (F10, PR 2): administración los publica en «Avisos» (título y texto) y los elimina; no se editan porque el push enviado no se puede cambiar. Los reciben todas las cuentas activas, también entrenadores (los leen en su zona, con una entrada «Avisos» en el menú) y administración. Al cliente le salen los 3 últimos en «Inicio» y un punto en la campana si hay sin leer.
 - 2026-10-17 · Avisos push (F10, PR 1): cada persona los activa o desactiva en su perfil (y quien espera el alta, en «Cuenta pendiente»); en iPhone, solo con la app instalada. Primer aviso automático: «Alta aprobada». Al cerrar sesión, ese dispositivo deja de recibirlos.
 - 2026-10-17 · Calendario del cliente con vistas Día · Semana · Mes; las sesiones fuera de la ventana de reserva llevan «Se abre …» (opción a).
 - 2026-10-16 · Primera entrada: nombre y apellidos y teléfono obligatorios para todos («Completa tus datos»), para que el gimnasio sepa quién es cada cliente que se registra.

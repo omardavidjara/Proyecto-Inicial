@@ -1,0 +1,1 @@
+ALTER TABLE "profiles" ADD COLUMN "announcements_seen_at" timestamp with time zone;

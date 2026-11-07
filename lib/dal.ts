@@ -16,6 +16,7 @@ import { getDb, getTxDb } from "@/db"
 import { getAuth } from "@/lib/auth"
 import { anonymizeAccount } from "@/lib/data/account"
 import * as agenda from "@/lib/data/agenda"
+import * as announcements from "@/lib/data/announcements"
 import * as bookingData from "@/lib/data/bookings"
 import * as calendar from "@/lib/data/calendar"
 import * as myBookings from "@/lib/data/my-bookings"
@@ -38,9 +39,10 @@ import { summarizeCoachPeriod, summarizeCoaches } from "@/lib/coach-summary"
 import { addDays, startOfMonth, toDateKey } from "@/lib/dates"
 import { clientIp, limitKeys, type LimitScope } from "@/lib/login-limit"
 import { canDeleteAuthUsers, deleteAuthUser } from "@/lib/neon-admin"
-import { accountApprovedMessage } from "@/lib/notification-messages"
+import { accountApprovedMessage, announcementMessage } from "@/lib/notification-messages"
 import { pushPublicKey, webPushSender } from "@/lib/push"
 import { canAccessArea, COMPLETE_PROFILE_PATH, homePathFor, LOGIN_PATH, mustCompleteProfile, PENDING_PATH, type Area, type ProfileStatus } from "@/lib/roles"
+import type { AnnouncementInput } from "@/lib/validation/announcements"
 import { sessionUserSchema, type SessionUser } from "@/lib/validation/auth"
 import { pushEndpointSchema, pushSubscriptionSchema } from "@/lib/validation/push"
 import type { ClassTypeInput } from "@/lib/validation/class-types"
@@ -87,10 +89,16 @@ export async function requireViewer(): Promise<Viewer> {
  * pendiente o de baja → /pendiente; otra zona → su inicio.
  */
 export async function requireArea(area: Area): Promise<Viewer> {
+  const viewer = await requireActiveViewer()
+  if (!canAccessArea(viewer, area)) redirect(homePathFor(viewer))
+  return viewer
+}
+
+/** Exige sesión, datos de contacto completos y perfil activo, sea cual sea la zona */
+async function requireActiveViewer(): Promise<Viewer> {
   const viewer = await requireViewer()
   if (mustCompleteProfile(viewer)) redirect(COMPLETE_PROFILE_PATH)
   if (viewer.status !== "active") redirect(PENDING_PATH)
-  if (!canAccessArea(viewer, area)) redirect(homePathFor(viewer))
   return viewer
 }
 
@@ -124,6 +132,62 @@ function notifyAfterResponse(notices: push.Notice[]) {
     () => {},
     (error) => Sentry.captureException(error),
   ))
+}
+
+// ── Avisos generales (F10) ────────────────────────────────────────────────────────────────────────────────
+// Los lee cualquier cuenta activa; publicar y eliminar es de administración.
+
+const announcementIdSchema = z.uuid()
+
+/** Una página de avisos; `cursor` llega del navegador y se valida en la capa de datos */
+export async function listAnnouncements(cursor?: unknown) {
+  await requireActiveViewer()
+  return announcements.listAnnouncements(getDb(), { cursor })
+}
+
+/** Los últimos avisos de «Inicio» */
+export async function getLatestAnnouncements(limit: number) {
+  await requireActiveViewer()
+  return (await announcements.listAnnouncements(getDb(), { limit })).items
+}
+
+/** Zona horaria del gimnasio para las fechas de los avisos */
+export async function getAnnouncementsTimeZone() {
+  await requireActiveViewer()
+  return (await bookingData.getBookingSettings(getDb())).timeZone
+}
+
+export async function hasUnreadAnnouncements() {
+  const viewer = await requireActiveViewer()
+  return announcements.hasUnreadAnnouncements(getDb(), viewer.userId)
+}
+
+export async function markAnnouncementsSeen() {
+  const viewer = await requireActiveViewer()
+  await announcements.markAnnouncementsSeen(getDb(), viewer.userId)
+}
+
+/** Publica el aviso y, ya respondida la petición, lo envía por push a todas las cuentas activas */
+export async function publishAnnouncement(input: AnnouncementInput) {
+  const viewer = await requireArea("admin")
+  const db = getDb()
+  const announcement = await announcements.createAnnouncement(db, viewer.userId, input)
+  const recipients = await announcements.listAnnouncementRecipients(db)
+  notifyAfterResponse(
+    recipients.map(({ userId, role }) => ({
+      userId,
+      kind: "announcement" as const,
+      refId: announcement.id,
+      message: announcementMessage(announcement, role),
+    })),
+  )
+}
+
+export async function deleteAnnouncement(id: unknown) {
+  await requireArea("admin")
+  const parsed = announcementIdSchema.safeParse(id)
+  if (!parsed.success) return false
+  return announcements.deleteAnnouncement(getDb(), parsed.data)
 }
 
 /** Mi tarifa de hoy y las clases que me quedan en el periodo (solo las del usuario de la sesión) */
