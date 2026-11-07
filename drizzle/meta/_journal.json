@@ -50,6 +50,13 @@
       "when": 1792229556956,
       "tag": "0006_push_device_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794054315238,
+      "tag": "0007_profiles_announcements_seen_at",
+      "breakpoints": true
     }
   ]
 }

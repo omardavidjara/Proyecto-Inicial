@@ -16,7 +16,7 @@ const OPTIONS: Option[] = [
   { label: "Tarifas", href: "/admin/tarifas", icon: <Tags /> },
   { label: "Anulaciones tardías", href: "/admin/anulaciones", icon: <CalendarX /> },
   { label: "Entrenadores", href: "/admin/entrenadores", icon: <Users /> },
-  { label: "Avisos", comingIn: "F10", icon: <Bell /> },
+  { label: "Avisos", href: "/admin/avisos", icon: <Bell /> },
   { label: "Ajustes", comingIn: "F11", icon: <Settings /> },
   { label: "Mi perfil", href: "/admin/perfil", icon: <UserRound /> },
 ]
