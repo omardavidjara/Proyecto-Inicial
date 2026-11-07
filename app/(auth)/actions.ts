@@ -119,6 +119,15 @@ export async function signUpWithEmail(_prev: SignUpState, formData: FormData): P
   redirect(confirmEmailPath(email))
 }
 
+// Con better-auth 1.7 (forzada en package.json) el tipo de `emailOtp` que deduce el SDK queda como `unknown`.
+// Las rutas son fijas en el SDK: aquí se declaran solo los dos métodos que se usan
+type EmailOtpResult = Promise<{ error: { status?: number } | null }>
+type EmailOtpApi = {
+  verifyEmail(input: { email: string; otp: string }): EmailOtpResult
+  sendVerificationOtp(input: { email: string; type: "email-verification" }): EmailOtpResult
+}
+const emailOtp = () => getAuth().emailOtp as EmailOtpApi
+
 export type VerifyEmailState = { error?: string; fieldErrors?: { email?: string; otp?: string }; notice?: string }
 
 /** Confirma el correo con el código. Neon Auth inicia la sesión y "/" lleva a /pendiente */
@@ -128,7 +137,7 @@ export async function verifyEmailCode(_prev: VerifyEmailState, formData: FormDat
   const { email, otp } = parsed.data
 
   if (await isRateLimited("verify", email)) return { error: TOO_MANY_ATTEMPTS }
-  const { error } = await getAuth().emailOtp.verifyEmail({ email, otp })
+  const { error } = await emailOtp().verifyEmail({ email, otp })
   if (error) {
     if (error.status === 429) return { error: TOO_MANY_ATTEMPTS }
     await noteAttempt("verify", email)
@@ -145,7 +154,7 @@ export async function resendEmailCode(_prev: VerifyEmailState, formData: FormDat
 
   if (await isRateLimited("verify", email)) return { error: TOO_MANY_ATTEMPTS }
   await noteAttempt("verify", email)
-  const { error } = await getAuth().emailOtp.sendVerificationOtp({ email, type: "email-verification" })
+  const { error } = await emailOtp().sendVerificationOtp({ email, type: "email-verification" })
   if (error?.status === 429) return { error: TOO_MANY_ATTEMPTS }
   return { notice: "Si el correo tiene una cuenta sin confirmar, te hemos enviado un código nuevo." }
 }
